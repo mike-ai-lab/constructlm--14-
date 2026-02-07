@@ -1,5 +1,5 @@
 {
   "name": "ConstructLM",
-  "description": "A minimal, black-and-white RAG (Retrieval-Augmented Generation) workspace inspired by NotebookLM. Upload documents, index them locally, and chat with your knowledge base using Gemini.",
+  "description": "A privacy-first RAG workspace with local embeddings. Upload documents, query across multiple sources, and get AI-powered answers with citations using Gemini or Cerebras AI.",
   "requestFramePermissions": []
 }
