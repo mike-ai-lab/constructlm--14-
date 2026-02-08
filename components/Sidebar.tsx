@@ -52,7 +52,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <div 
       className={`w-full flex flex-col h-full bg-white flex-shrink-0 transition-all duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}
-      style={{ width: window.innerWidth >= 768 ? `${width}px` : '100vw', maxWidth: '100vw' }}
+      style={{ 
+        width: window.innerWidth >= 768 ? `${width}px` : '100vw', 
+        maxWidth: '100vw',
+        paddingTop: onClose ? 'calc(60px + env(safe-area-inset-top))' : '0'
+      }}
     >
       <style>{`
         /* Scribble Checkbox Integration */
