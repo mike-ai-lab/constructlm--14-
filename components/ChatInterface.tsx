@@ -30,24 +30,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   return (
     <div className="flex flex-col h-full bg-white relative overflow-hidden">
-      {/* Technical Metadata Bar - Right Side */}
-      <div className="hidden md:block absolute right-0 top-0 bottom-0 w-12 bg-black text-white border-l-2 border-black z-10">
-        <div className="h-full flex flex-col items-center justify-center gap-8 py-6">
-          {/* Rotated metadata text */}
-          <div className="transform -rotate-90 whitespace-nowrap font-mono text-[10px] tracking-wider">
-            <span className="opacity-60">CONSTRUCT_LM</span>
-          </div>
-          <div className="transform -rotate-90 whitespace-nowrap font-mono text-[9px] tracking-wide">
-            <span className="opacity-80">v1.0.0</span>
-          </div>
-          <div className="transform -rotate-90 whitespace-nowrap font-mono text-[9px] tracking-wide">
-            <span className="opacity-60">{new Date().getFullYear()}</span>
-          </div>
-        </div>
-      </div>
-
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 md:pr-16 space-y-6" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 space-y-6" style={{ WebkitOverflowScrolling: 'touch' }}>
         {messages.length === 0 && (
           <div className="h-full flex flex-col items-center justify-center text-gray-400 opacity-50 select-none">
             <svg className="w-12 h-12 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

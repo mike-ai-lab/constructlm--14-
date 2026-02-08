@@ -1,8 +1,20 @@
 import * as pdfjsLib from 'pdfjs-dist';
 
-// Configure PDF.js worker
+// Configure PDF.js worker - use multiple CDN fallbacks
 if (typeof window !== 'undefined') {
-  pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+  const pdfjsVersion = '5.4.624';
+  
+  // Try multiple CDN sources for reliability
+  const workerSources = [
+    `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.mjs`,
+    `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsVersion}/pdf.worker.min.mjs`,
+    `https://unpkg.com/pdfjs-dist@${pdfjsVersion}/build/pdf.worker.min.mjs`
+  ];
+  
+  // Use the first CDN source by default
+  pdfjsLib.GlobalWorkerOptions.workerSrc = workerSources[0];
+  
+  console.log('PDF.js worker configured:', pdfjsLib.GlobalWorkerOptions.workerSrc);
 }
 
 export const parsePDF = async (file: File): Promise<string> => {
