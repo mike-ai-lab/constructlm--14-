@@ -30,6 +30,7 @@ const App: React.FC = () => {
 
   // CONSTANT: Define exact header height to sync sidebar and header
   const MOBILE_HEADER_HEIGHT = '60px';
+  const MOBILE_HEADER_HEIGHT_WITH_SAFE_AREA = `calc(${MOBILE_HEADER_HEIGHT} + env(safe-area-inset-top))`;
 
   // Transition constant for synchronized animations
   const transitionStyle = "transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]";
@@ -302,7 +303,7 @@ const App: React.FC = () => {
 
   return (
     <div 
-      className="flex flex-col h-screen w-full bg-[#f5f5f5] text-[#1a1a1a] font-mono selection:bg-black selection:text-white overflow-hidden relative"
+      className="flex flex-col min-h-[100dvh] h-[100dvh] w-full bg-[#f5f5f5] text-[#1a1a1a] font-mono selection:bg-black selection:text-white overflow-hidden relative"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
@@ -331,7 +332,7 @@ const App: React.FC = () => {
       {/* FIXED: Added fixed height to ensure sidebar offset matches exactly */}
       <header 
         className="block md:hidden p-3 border-b-2 border-black flex justify-between items-center bg-white z-50 flex-shrink-0 sticky top-0"
-        style={{ height: MOBILE_HEADER_HEIGHT }}
+        style={{ height: MOBILE_HEADER_HEIGHT_WITH_SAFE_AREA, paddingTop: 'env(safe-area-inset-top)' }}
       >
         <div className="flex items-center gap-2">
           <button
@@ -369,7 +370,7 @@ const App: React.FC = () => {
         <div 
           className="md:hidden fixed bg-black bg-opacity-50 z-40"
           style={{ 
-            top: MOBILE_HEADER_HEIGHT, 
+            top: MOBILE_HEADER_HEIGHT_WITH_SAFE_AREA, 
             left: 0, 
             right: 0, 
             bottom: 0 
@@ -387,9 +388,9 @@ const App: React.FC = () => {
             ? '100vw' 
             : (isSidebarCollapsed ? 0 : sidebarWidth),
           // FIXED: Top offset now strictly matches the header height constant
-          top: isMobileSidebarOpen ? MOBILE_HEADER_HEIGHT : '0',
+          top: isMobileSidebarOpen ? MOBILE_HEADER_HEIGHT_WITH_SAFE_AREA : '0',
           // FIXED: Height calculation accounts for the fixed header
-          height: isMobileSidebarOpen ? `calc(100vh - ${MOBILE_HEADER_HEIGHT})` : '100%'
+          height: isMobileSidebarOpen ? `calc(100dvh - ${MOBILE_HEADER_HEIGHT_WITH_SAFE_AREA})` : '100%'
         }}
       >
         {/* Collapse/Expand Rail */}
