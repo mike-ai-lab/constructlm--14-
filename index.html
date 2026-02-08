@@ -4,64 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <title>ConstructLM</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-              mono: ['JetBrains Mono', 'monospace'],
-            },
-            colors: {
-              black: '#000000',
-              white: '#ffffff',
-              gray: {
-                50: '#f9fafb',
-                100: '#f3f4f6',
-                200: '#e5e7eb',
-                800: '#1f2937',
-                900: '#111827',
-              }
-            }
-          }
-        }
-      }
-    </script>
-    <style>
-      body {
-        background-color: #ffffff;
-        color: #000000;
-        -webkit-font-smoothing: antialiased;
-      }
-      
-      /* Fix mobile viewport height */
-      html, body, #root {
-        height: 100%;
-        overflow: hidden;
-        position: fixed;
-        width: 100%;
-      }
-      
-      /* Custom Scrollbar for brutalist look */
-      ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-      }
-      ::-webkit-scrollbar-track {
-        background: #fff;
-        border-left: 1px solid #000;
-      }
-      ::-webkit-scrollbar-thumb {
-        background: #000;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: #333;
-      }
-    </style>
   <script type="importmap">
 {
   "imports": {
