@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Lightbulb, Eye, EyeOff } from 'lucide-react';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -132,15 +133,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         {/* Content */}
         <div className="p-6 space-y-6">
           {/* Info */}
-          <div className="bg-blue-50 border border-blue-300 p-3 text-xs font-mono">
-            <strong>💡 TIP:</strong> API keys are stored locally in your browser. They never leave your device.
+          <div className="bg-gray-100 border border-gray-300 p-3 text-xs font-mono flex items-start gap-2">
+            <Lightbulb size={16} className="shrink-0 mt-0.5" />
+            <div>
+              <strong>TIP:</strong> API keys are stored locally in your browser. They never leave your device.
+            </div>
           </div>
 
           {/* Gemini API Key */}
           <div>
             <label className="block font-mono text-sm font-bold mb-2">
               GEMINI API KEY
-              <span className="text-gray-500 font-normal ml-2">(Optional)</span>
             </label>
             <div className="flex gap-2 mb-2">
               <div className="flex-1 relative">
@@ -158,9 +161,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowGeminiKey(!showGeminiKey)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black text-sm"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black"
                 >
-                  {showGeminiKey ? '👁️' : '👁️‍🗨️'}
+                  {showGeminiKey ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
               <button
@@ -191,7 +194,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <div>
             <label className="block font-mono text-sm font-bold mb-2">
               CEREBRAS API KEY
-              <span className="text-red-500 font-normal ml-2">(Required for default model)</span>
             </label>
             <div className="flex gap-2 mb-2">
               <div className="flex-1 relative">
@@ -209,9 +211,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowCerebrasKey(!showCerebrasKey)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black text-sm"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black"
                 >
-                  {showCerebrasKey ? '👁️' : '👁️‍🗨️'}
+                  {showCerebrasKey ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
               <button
