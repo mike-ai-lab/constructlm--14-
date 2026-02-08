@@ -368,12 +368,13 @@ const App: React.FC = () => {
       {/* Mobile Sidebar Overlay */}
       {isMobileSidebarOpen && (
         <div 
-          className="md:hidden fixed bg-black bg-opacity-50 z-40"
+          className="md:hidden fixed bg-black z-40 transition-opacity duration-300"
           style={{ 
             top: 0,
             left: 0, 
             right: 0, 
-            bottom: 0 
+            bottom: 0,
+            opacity: isMobileSidebarOpen ? 0.5 : 0
           }}
           onClick={() => setIsMobileSidebarOpen(false)}
         />
@@ -381,16 +382,17 @@ const App: React.FC = () => {
       
       {/* SIDEBAR */}
       <aside 
-        className={`relative bg-white shrink-0 flex flex-col border-r-2 border-black ${transitionStyle} ${isMobileSidebarOpen ? 'fixed left-0 z-50' : 'hidden md:flex'}`}
+        className={`bg-white shrink-0 flex flex-col border-r-2 border-black ${
+          isMobileSidebarOpen ? 'fixed md:relative left-0 z-50' : 'fixed md:relative left-0 -translate-x-full md:translate-x-0 md:flex'
+        } ${isSidebarCollapsed ? 'md:hidden' : ''}`}
         style={{ 
-          // FIXED: Logic handles both collapse state and mobile full width
           width: isMobileSidebarOpen 
             ? '100vw' 
             : (isSidebarCollapsed ? 0 : sidebarWidth),
-          // FIXED: Mobile sidebar starts at top:0, desktop at top:0
           top: 0,
-          // FIXED: Mobile sidebar is full height
-          height: isMobileSidebarOpen ? '100dvh' : '100%'
+          height: isMobileSidebarOpen ? '100dvh' : '100%',
+          transform: isMobileSidebarOpen ? 'translateX(0)' : (window.innerWidth < 768 ? 'translateX(-100%)' : 'translateX(0)'),
+          transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
         }}
       >
         {/* Collapse/Expand Rail - Desktop Only */}
@@ -450,6 +452,23 @@ const App: React.FC = () => {
           />
         )}
       </aside>
+
+      {/* Mobile Swipe Indicator - Only visible when sidebar is closed */}
+      {!isMobileSidebarOpen && (
+        <div 
+          className="md:hidden fixed left-0 top-1/2 -translate-y-1/2 z-30 pointer-events-none"
+          style={{ top: 'calc(50% + 30px)' }}
+        >
+          <div className="flex items-center">
+            <div className="w-1 h-16 bg-black rounded-r-full animate-pulse" />
+            <div className="ml-1 flex flex-col gap-1">
+              <div className="w-2 h-2 bg-black rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <div className="w-2 h-2 bg-black rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <div className="w-2 h-2 bg-black rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MAIN */}
       {/* FIXED: Added w-full and proper flex properties to ensure ChatInterface renders on mobile */}
