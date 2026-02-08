@@ -53,8 +53,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       className={`w-full border-r-2 border-black flex flex-col h-full bg-gray-50 flex-shrink-0 transition-all duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}
       style={{ width: window.innerWidth >= 768 ? `${width}px` : '100vw', maxWidth: '100vw' }}
     >
-      <div className="h-16 border-b-2 border-black bg-white flex items-center justify-end px-5 flex-shrink-0">
-        {/* Tabs */}
+      <div className="h-16 border-b-2 border-black bg-white flex items-center justify-center flex-shrink-0">
+        {/* Tabs - Centered and responsive */}
         <div className="flex gap-1 border-2 border-black">
           <button
             onClick={() => setActiveTab('chats')}
@@ -80,7 +80,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {onClose && (
           <button 
             onClick={onClose}
-            className="md:hidden ml-3 px-3 text-xl font-bold hover:bg-gray-100"
+            className="md:hidden absolute right-3 px-3 text-xl font-bold hover:bg-gray-100"
           >
             ×
           </button>
