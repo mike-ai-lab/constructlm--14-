@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { ChatInterface } from './components/ChatInterface';
 import { SettingsModal } from './components/SettingsModal';
-import { FileDocument, ChatMessage, Citation } from './types';
+import { FileDocument, ChatMessage, Citation, ChatSession } from './types';
 import * as VectorDB from './services/vectorDb';
 import * as GeminiService from './services/geminiService';
 import * as CerebrasService from './services/cerebrasService';
+import * as ChatStorage from './services/chatStorage';
 
 const App: React.FC = () => {
   const [files, setFiles] = useState<FileDocument[]>([]);
@@ -20,6 +21,8 @@ const App: React.FC = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [geminiApiKey, setGeminiApiKey] = useState('');
   const [cerebrasApiKey, setCerebrasApiKey] = useState('');
+  const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
 
   // Load files and API keys on mount
   useEffect(() => {
@@ -38,6 +41,17 @@ const App: React.FC = () => {
     const storedCerebrasKey = localStorage.getItem('cerebras_api_key') || '';
     setGeminiApiKey(storedGeminiKey);
     setCerebrasApiKey(storedCerebrasKey);
+
+    // Load chat sessions
+    const sessions = ChatStorage.getAllChatSessions();
+    setChatSessions(sessions);
+    
+    // Load last active chat or create new one
+    if (sessions.length > 0) {
+      setCurrentChatId(sessions[0].id);
+      setMessages(sessions[0].messages);
+      setAiModel(sessions[0].aiModel);
+    }
 
     // Show settings if no keys are configured
     if (!storedGeminiKey && !storedCerebrasKey) {
@@ -108,6 +122,49 @@ const App: React.FC = () => {
     setCerebrasApiKey(cerebras);
   };
 
+  const saveCurrentChat = () => {
+    if (!currentChatId || messages.length === 0) return;
+    
+    const session: ChatSession = {
+      id: currentChatId,
+      title: ChatStorage.generateChatTitle(messages[0]?.content || 'New Chat'),
+      messages: messages,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      aiModel: aiModel
+    };
+    
+    ChatStorage.saveChatSession(session);
+    setChatSessions(ChatStorage.getAllChatSessions());
+  };
+
+  const handleNewChat = () => {
+    saveCurrentChat();
+    const newChatId = crypto.randomUUID();
+    setCurrentChatId(newChatId);
+    setMessages([]);
+  };
+
+  const handleSelectChat = (id: string) => {
+    saveCurrentChat();
+    const session = ChatStorage.getChatSession(id);
+    if (session) {
+      setCurrentChatId(id);
+      setMessages(session.messages);
+      setAiModel(session.aiModel);
+    }
+  };
+
+  const handleDeleteChat = (id: string) => {
+    if (!window.confirm("Delete this chat?")) return;
+    ChatStorage.deleteChatSession(id);
+    setChatSessions(ChatStorage.getAllChatSessions());
+    
+    if (currentChatId === id) {
+      handleNewChat();
+    }
+  };
+
   const handleSendMessage = async (text: string) => {
     // Check if API key is configured for selected model
     if (aiModel === 'gemini' && !geminiApiKey) {
@@ -173,6 +230,9 @@ const App: React.FC = () => {
           : msg
       ));
 
+      // Save chat after successful response
+      setTimeout(() => saveCurrentChat(), 100);
+
     } catch (error) {
       console.error("Chat Error", error);
       setMessages(prev => [...prev, {
@@ -188,7 +248,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-screen w-full bg-white text-black font-sans overflow-hidden" style={{ height: '100vh', height: '100dvh' }}>
+    <div className="flex flex-col md:flex-row h-screen w-full bg-white text-black font-sans overflow-hidden" style={{ height: '100dvh' }}>
       {/* Mobile Sidebar Overlay */}
       {isMobileSidebarOpen && (
         <div 
@@ -205,11 +265,14 @@ const App: React.FC = () => {
           onDelete={handleDelete}
           isUploading={isUploading}
           uploadStatus={uploadStatus}
-          aiModel={aiModel}
-          onModelChange={setAiModel}
           width={sidebarWidth}
           onClose={() => setIsMobileSidebarOpen(false)}
           onOpenSettings={() => setIsSettingsOpen(true)}
+          chatSessions={chatSessions}
+          currentChatId={currentChatId}
+          onSelectChat={handleSelectChat}
+          onNewChat={handleNewChat}
+          onDeleteChat={handleDeleteChat}
         />
       </div>
       

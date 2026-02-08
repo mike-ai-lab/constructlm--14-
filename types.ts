@@ -26,6 +26,15 @@ export interface ChatMessage {
   citations?: Citation[];
 }
 
+export interface ChatSession {
+  id: string;
+  title: string;
+  messages: ChatMessage[];
+  createdAt: number;
+  updatedAt: number;
+  aiModel: 'gemini' | 'cerebras';
+}
+
 export interface Citation {
   docId: string;
   docName: string;
