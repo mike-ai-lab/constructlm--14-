@@ -12,6 +12,7 @@ interface SidebarProps {
   onModelChange: (model: 'gemini' | 'cerebras') => void;
   width: number;
   onClose?: () => void;
+  onOpenSettings: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ 
@@ -23,7 +24,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   aiModel,
   onModelChange,
   width,
-  onClose
+  onClose,
+  onOpenSettings
 }) => {
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -43,14 +45,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="p-4 border-b-2 border-black bg-white">
         <div className="flex justify-between items-center mb-3">
           <h1 className="font-mono text-base font-bold tracking-tight">CONSTRUCT_LM</h1>
-          {onClose && (
-            <button 
-              onClick={onClose}
-              className="md:hidden text-xl font-bold hover:bg-gray-100 px-2"
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onOpenSettings}
+              className="text-lg hover:bg-gray-100 px-2 py-1 rounded"
+              title="Settings"
             >
-              ×
+              ⚙️
             </button>
-          )}
+            {onClose && (
+              <button 
+                onClick={onClose}
+                className="md:hidden text-xl font-bold hover:bg-gray-100 px-2"
+              >
+                ×
+              </button>
+            )}
+          </div>
         </div>
         
         {/* AI Model Toggle - Compact */}
