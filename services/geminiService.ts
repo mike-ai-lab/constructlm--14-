@@ -1,14 +1,29 @@
-import { GoogleGenAI } from "@google/genai";
 import { ChatMessage, Citation } from "../types";
-
-// Initialize client
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 // Using text-embedding-004 as it is a standard stable model.
 const EMBEDDING_MODEL = "text-embedding-004";
 const CHAT_MODEL = "gemini-3-flash-preview";
 
-export const getEmbeddings = async (texts: string[]): Promise<number[][]> => {
+// Lazy load GoogleGenAI to avoid initialization errors
+let GoogleGenAI: any = null;
+const loadGoogleGenAI = async () => {
+  if (!GoogleGenAI) {
+    const module = await import("@google/genai");
+    GoogleGenAI = module.GoogleGenAI;
+  }
+  return GoogleGenAI;
+};
+
+export const getEmbeddings = async (texts: string[], apiKey?: string): Promise<number[][]> => {
+  const key = apiKey || import.meta.env.VITE_GEMINI_API_KEY || process.env.API_KEY;
+  
+  if (!key) {
+    throw new Error("Gemini API key not configured");
+  }
+
+  const GenAI = await loadGoogleGenAI();
+  const ai = new GenAI({ apiKey: key });
+  
   if (!texts.length) return [];
   
   const embeddings: number[][] = [];
@@ -48,8 +63,17 @@ export const streamChatResponse = async (
   message: string,
   history: ChatMessage[],
   context: Citation[],
-  onChunk: (text: string) => void
+  onChunk: (text: string) => void,
+  apiKey?: string
 ) => {
+  const key = apiKey || import.meta.env.VITE_GEMINI_API_KEY || process.env.API_KEY;
+  
+  if (!key) {
+    throw new Error("Gemini API key not configured");
+  }
+
+  const GenAI = await loadGoogleGenAI();
+  const ai = new GenAI({ apiKey: key });
   // Format context for the system instruction
   const contextString = context.map((c, i) => 
     `[SOURCE ${i + 1} - ${c.docName}]
