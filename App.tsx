@@ -398,7 +398,7 @@ const App: React.FC = () => {
       {/* MAIN */}
       <main className="flex-1 flex flex-col relative bg-[#f9f9f9] min-w-0 ml-0 md:ml-6">
         {/* Mobile Header */}
-        <header className="md:hidden p-3 border-b-2 border-black flex justify-between items-center bg-white z-10 flex-shrink-0">
+        <header className="md:hidden p-3 border-b-2 border-black flex justify-between items-center bg-white z-20 flex-shrink-0">
           <div className="flex items-center gap-2">
             <button
               onClick={() => setIsSettingsOpen(true)}
@@ -428,7 +428,7 @@ const App: React.FC = () => {
         </header>
 
         {/* Desktop Header */}
-        <header className="hidden md:flex h-16 border-b-2 border-black items-center justify-between px-8 bg-white shrink-0">
+        <header className="hidden md:flex h-16 border-b-2 border-black items-center justify-between px-8 bg-white shrink-0 z-20">
           <div className="flex items-center gap-6">
             <Settings 
               size={18} 
