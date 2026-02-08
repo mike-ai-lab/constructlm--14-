@@ -23,6 +23,9 @@ const App: React.FC = () => {
   const [cerebrasApiKey, setCerebrasApiKey] = useState('');
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
   // Load files and API keys on mount
   useEffect(() => {
@@ -165,6 +168,33 @@ const App: React.FC = () => {
     }
   };
 
+  // Swipe gesture handling for mobile
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    
+    if (isLeftSwipe && isMobileSidebarOpen) {
+      setIsMobileSidebarOpen(false);
+    }
+    if (isRightSwipe && !isMobileSidebarOpen) {
+      setIsMobileSidebarOpen(true);
+    }
+  };
+
   const handleSendMessage = async (text: string) => {
     // Check if API key is configured for selected model
     if (aiModel === 'gemini' && !geminiApiKey) {
@@ -248,7 +278,13 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-screen w-full bg-white text-black font-sans overflow-hidden" style={{ height: '100dvh' }}>
+    <div 
+      className="flex flex-col md:flex-row h-screen w-full bg-white text-black font-sans overflow-hidden" 
+      style={{ height: '100dvh' }}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
+    >
       {/* Mobile Sidebar Overlay */}
       {isMobileSidebarOpen && (
         <div 
@@ -258,7 +294,7 @@ const App: React.FC = () => {
       )}
       
       {/* Sidebar */}
-      <div className={`${isMobileSidebarOpen ? 'fixed inset-y-0 left-0 z-50' : 'hidden'} md:block`}>
+      <div className={`${isMobileSidebarOpen ? 'fixed inset-y-0 left-0 z-50' : 'hidden'} md:block transition-all duration-300 ${isSidebarCollapsed ? 'md:w-0 md:overflow-hidden' : ''}`}>
         <Sidebar 
           files={files} 
           onUpload={handleUpload} 
@@ -273,15 +309,27 @@ const App: React.FC = () => {
           onSelectChat={handleSelectChat}
           onNewChat={handleNewChat}
           onDeleteChat={handleDeleteChat}
+          isCollapsed={isSidebarCollapsed}
         />
       </div>
       
-      {/* Resize Handle */}
-      <div 
-        className="hidden md:block w-1 bg-gray-200 hover:bg-black cursor-col-resize transition-colors relative group"
-        onMouseDown={() => setIsResizing(true)}
-      >
-        <div className="absolute inset-y-0 -left-1 -right-1" />
+      {/* Resize Handle / Toggle Button */}
+      <div className="hidden md:flex items-center relative">
+        {!isSidebarCollapsed && (
+          <div 
+            className="w-1 bg-gray-200 hover:bg-black cursor-col-resize transition-colors h-full"
+            onMouseDown={() => setIsResizing(true)}
+          >
+            <div className="absolute inset-y-0 -left-1 -right-1" />
+          </div>
+        )}
+        <button
+          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-12 bg-black text-white hover:bg-gray-800 flex items-center justify-center z-10 rounded-r"
+          title={isSidebarCollapsed ? "Open sidebar" : "Close sidebar"}
+        >
+          <span className="text-xs">{isSidebarCollapsed ? '›' : '‹'}</span>
+        </button>
       </div>
       
       <main className="flex-1 flex flex-col h-full relative overflow-hidden">
@@ -289,9 +337,10 @@ const App: React.FC = () => {
         <header className="md:hidden p-3 border-b-2 border-black flex justify-between items-center bg-white z-10 flex-shrink-0">
           <button 
             onClick={() => setIsMobileSidebarOpen(true)}
-            className="font-mono font-bold text-sm hover:bg-gray-100 px-2 py-1"
+            className="font-mono font-bold text-sm hover:bg-gray-100 px-2 py-1 flex items-center gap-2"
           >
             ☰ CONSTRUCT_LM
+            <span className="text-[8px] text-gray-400">SWIPE →</span>
           </button>
           <div className="flex items-center gap-3">
             <span className="text-[10px] font-mono">{files.length} FILES</span>
