@@ -301,7 +301,7 @@ const App: React.FC = () => {
 
   return (
     <div 
-      className="flex h-screen w-full bg-[#f5f5f5] text-[#1a1a1a] font-mono selection:bg-black selection:text-white overflow-hidden relative"
+      className="flex flex-col h-screen w-full bg-[#f5f5f5] text-[#1a1a1a] font-mono selection:bg-black selection:text-white overflow-hidden relative"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
@@ -326,6 +326,38 @@ const App: React.FC = () => {
         }
       `}</style>
 
+      {/* Mobile Header - Always visible on mobile */}
+      <header className="md:hidden p-3 border-b-2 border-black flex justify-between items-center bg-white z-50 flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="hover:bg-gray-100 px-2 py-1 rounded"
+            title="Settings"
+          >
+            <Settings size={18} />
+          </button>
+          <button 
+            onClick={() => setIsMobileSidebarOpen(true)}
+            className="font-mono font-bold text-sm hover:bg-gray-100 px-2 py-1 flex items-center gap-2"
+          >
+            ☰ CONSTRUCT_LM
+          </button>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className="text-[10px] font-mono">{files.length} FILES</span>
+          <select 
+            value={aiModel}
+            onChange={(e) => setAiModel(e.target.value as 'gemini' | 'cerebras')}
+            className="text-[10px] font-mono font-bold px-2 py-1 border border-black bg-white"
+          >
+            <option value="gemini">GEMINI</option>
+            <option value="cerebras">CEREBRAS</option>
+          </select>
+        </div>
+      </header>
+
+      {/* Content wrapper for desktop/mobile */}
+      <div className="flex flex-1 overflow-hidden relative">
       {/* Mobile Sidebar Overlay */}
       {isMobileSidebarOpen && (
         <div 
@@ -472,6 +504,7 @@ const App: React.FC = () => {
         cerebrasKey={cerebrasApiKey}
         onSaveKeys={handleSaveKeys}
       />
+      </div>
     </div>
   );
 };
