@@ -16,6 +16,7 @@ interface SidebarProps {
   onSelectChat: (id: string) => void;
   onNewChat: () => void;
   onDeleteChat: (id: string) => void;
+  isCollapsed?: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ 
@@ -31,7 +32,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   currentChatId,
   onSelectChat,
   onNewChat,
-  onDeleteChat
+  onDeleteChat,
+  isCollapsed = false
 }) => {
   const [activeTab, setActiveTab] = useState<'chats' | 'sources'>('chats');
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -46,7 +48,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <div 
-      className="w-full border-r-2 border-black flex flex-col h-full bg-gray-50 flex-shrink-0"
+      className={`w-full border-r-2 border-black flex flex-col h-full bg-gray-50 flex-shrink-0 transition-all duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}
       style={{ width: window.innerWidth >= 768 ? `${width}px` : '100vw', maxWidth: '100vw' }}
     >
       <div className="p-4 border-b-2 border-black bg-white">
