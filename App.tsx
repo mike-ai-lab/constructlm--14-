@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { ChatInterface } from './components/ChatInterface';
 import { SettingsModal } from './components/SettingsModal';
@@ -7,6 +7,7 @@ import * as VectorDB from './services/vectorDb';
 import * as GeminiService from './services/geminiService';
 import * as CerebrasService from './services/cerebrasService';
 import * as ChatStorage from './services/chatStorage';
+import { Settings, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const App: React.FC = () => {
   const [files, setFiles] = useState<FileDocument[]>([]);
@@ -15,7 +16,7 @@ const App: React.FC = () => {
   const [uploadStatus, setUploadStatus] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [aiModel, setAiModel] = useState<'gemini' | 'cerebras'>('cerebras');
-  const [sidebarWidth, setSidebarWidth] = useState(400);
+  const [sidebarWidth, setSidebarWidth] = useState(320);
   const [isResizing, setIsResizing] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -26,6 +27,10 @@ const App: React.FC = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const isResizingRef = useRef(false);
+
+  // Transition constant for synchronized animations
+  const transitionStyle = "transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]";
 
   // Load files and API keys on mount
   useEffect(() => {
@@ -63,31 +68,31 @@ const App: React.FC = () => {
   }, []);
 
   // Handle sidebar resize
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isResizing) return;
-      const newWidth = Math.min(Math.max(e.clientX, 300), 600);
+  const startResizing = (e: React.MouseEvent) => {
+    isResizingRef.current = true;
+    setIsResizing(true);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', stopResizing);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  };
+
+  const stopResizing = () => {
+    isResizingRef.current = false;
+    setIsResizing(false);
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', stopResizing);
+    document.body.style.cursor = 'default';
+    document.body.style.userSelect = 'auto';
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!isResizingRef.current) return;
+    const newWidth = e.clientX;
+    if (newWidth > 200 && newWidth < 600) {
       setSidebarWidth(newWidth);
-    };
-
-    const handleMouseUp = () => {
-      setIsResizing(false);
-    };
-
-    if (isResizing) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = 'col-resize';
-      document.body.style.userSelect = 'none';
     }
-
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    };
-  }, [isResizing]);
+  };
 
   const handleUpload = async (fileList: FileList) => {
     setIsUploading(true);
@@ -296,12 +301,31 @@ const App: React.FC = () => {
 
   return (
     <div 
-      className="flex flex-col md:flex-row h-screen w-full bg-white text-black font-sans overflow-hidden" 
-      style={{ height: '100dvh' }}
+      className="flex h-screen w-full bg-[#f5f5f5] text-[#1a1a1a] font-mono selection:bg-black selection:text-white overflow-hidden relative"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
     >
+      <style>{`
+        /* Custom Scrollbar Styling */
+        ::-webkit-scrollbar {
+          width: 12px; 
+          height: 12px;
+        }
+        ::-webkit-scrollbar-track {
+          background: #f0f0f0;
+          border-left: 1px solid black;
+        }
+        ::-webkit-scrollbar-thumb {
+          background: black;
+          border-radius: 0px;
+          border: 2px solid #f0f0f0; 
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background: #333;
+        }
+      `}</style>
+
       {/* Mobile Sidebar Overlay */}
       {isMobileSidebarOpen && (
         <div 
@@ -310,63 +334,84 @@ const App: React.FC = () => {
         />
       )}
       
-      {/* Sidebar */}
-      <div className={`${isMobileSidebarOpen ? 'fixed inset-y-0 left-0 z-50' : 'hidden'} md:block transition-all duration-300 ${isSidebarCollapsed ? 'md:w-0 md:overflow-hidden' : ''}`}>
-        <Sidebar 
-          files={files} 
-          onUpload={handleUpload} 
-          onDelete={handleDelete}
-          onToggleFile={handleToggleFile}
-          isUploading={isUploading}
-          uploadStatus={uploadStatus}
-          width={sidebarWidth}
-          onClose={() => setIsMobileSidebarOpen(false)}
-          onOpenSettings={() => setIsSettingsOpen(true)}
-          chatSessions={chatSessions}
-          currentChatId={currentChatId}
-          onSelectChat={handleSelectChat}
-          onNewChat={handleNewChat}
-          onDeleteChat={handleDeleteChat}
-          isCollapsed={isSidebarCollapsed}
-        />
-      </div>
-      
-      {/* Resize Handle / Toggle Button */}
-      <div className="hidden md:flex items-center relative">
+      {/* SIDEBAR */}
+      <aside 
+        style={{ width: isSidebarCollapsed ? 0 : (isMobileSidebarOpen ? '100vw' : sidebarWidth) }}
+        className={`relative bg-white shrink-0 z-30 flex flex-col border-r-2 border-black ${transitionStyle} ${isMobileSidebarOpen ? 'fixed inset-y-0 left-0 z-50' : 'hidden md:flex'}`}
+      >
+        {/* Collapse/Expand Rail */}
+        <div 
+          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          className={`hidden md:flex absolute -right-[26px] top-0 w-6 h-full border-r-2 border-black bg-[#f0f0f0] cursor-pointer group hover:bg-[#e0e0e0] z-50 flex-col items-center ${transitionStyle}`}
+        >
+          <div className={`mt-8 [writing-mode:vertical-lr] text-[8px] font-black tracking-[0.3em] uppercase opacity-30 group-hover:opacity-100 transition-opacity ${transitionStyle}`}>
+            {isSidebarCollapsed ? 'EXPAND' : 'COLLAPSE'}
+          </div>
+
+          <div className="absolute top-1/2 -translate-y-1/2 w-full flex flex-col items-center gap-1">
+            <div className="w-1 h-8 bg-black/10 group-hover:bg-black/20" />
+            <div className={`w-full h-12 bg-black flex items-center justify-center text-white shadow-[2px_0_10px_rgba(0,0,0,0.1)] transition-transform group-hover:scale-x-110`}>
+              {isSidebarCollapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
+            </div>
+            <div className="w-1 h-8 bg-black/10 group-hover:bg-black/20" />
+          </div>
+
+          <div className="absolute bottom-8 [writing-mode:vertical-lr] text-[7px] font-bold tracking-widest text-black/20">
+            SYSTEM_RAIL_V1
+          </div>
+        </div>
+
+        <div 
+          style={{ 
+            width: isMobileSidebarOpen ? '100vw' : sidebarWidth,
+            transform: isSidebarCollapsed ? `translateX(-${sidebarWidth}px)` : 'translateX(0)',
+          }}
+          className={`h-full flex flex-col overflow-hidden ${transitionStyle} ${isSidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}
+        >
+          <Sidebar 
+            files={files} 
+            onUpload={handleUpload} 
+            onDelete={handleDelete}
+            onToggleFile={handleToggleFile}
+            isUploading={isUploading}
+            uploadStatus={uploadStatus}
+            width={sidebarWidth}
+            onClose={() => setIsMobileSidebarOpen(false)}
+            onOpenSettings={() => setIsSettingsOpen(true)}
+            chatSessions={chatSessions}
+            currentChatId={currentChatId}
+            onSelectChat={handleSelectChat}
+            onNewChat={handleNewChat}
+            onDeleteChat={handleDeleteChat}
+            isCollapsed={isSidebarCollapsed}
+          />
+        </div>
+
         {!isSidebarCollapsed && (
           <div 
-            className="w-1 bg-gray-200 hover:bg-black cursor-col-resize transition-colors h-full"
-            onMouseDown={() => setIsResizing(true)}
-          >
-            <div className="absolute inset-y-0 -left-1 -right-1" />
-          </div>
+            onMouseDown={startResizing}
+            className="hidden md:block absolute top-0 right-[-2px] w-2 h-full cursor-col-resize z-[60] active:bg-black/10 hover:bg-black/5"
+          />
         )}
-        <button
-          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-          className="absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-12 bg-black text-white hover:bg-gray-800 flex items-center justify-center z-10 rounded-r"
-          title={isSidebarCollapsed ? "Open sidebar" : "Close sidebar"}
-        >
-          <span className="text-xs">{isSidebarCollapsed ? '›' : '‹'}</span>
-        </button>
-      </div>
-      
-      <main className="flex-1 flex flex-col h-full relative overflow-hidden">
+      </aside>
+
+      {/* MAIN */}
+      <main className="flex-1 flex flex-col relative bg-[#f9f9f9] min-w-0 ml-0 md:ml-6">
         {/* Mobile Header */}
         <header className="md:hidden p-3 border-b-2 border-black flex justify-between items-center bg-white z-10 flex-shrink-0">
           <div className="flex items-center gap-2">
             <button
               onClick={() => setIsSettingsOpen(true)}
-              className="text-lg hover:bg-gray-100 px-2 py-1 rounded"
+              className="hover:bg-gray-100 px-2 py-1 rounded"
               title="Settings"
             >
-              ⚙️
+              <Settings size={18} />
             </button>
             <button 
               onClick={() => setIsMobileSidebarOpen(true)}
               className="font-mono font-bold text-sm hover:bg-gray-100 px-2 py-1 flex items-center gap-2"
             >
               ☰ CONSTRUCT_LM
-              <span className="text-[8px] text-gray-400">SWIPE →</span>
             </button>
           </div>
           <div className="flex items-center gap-3">
@@ -383,41 +428,31 @@ const App: React.FC = () => {
         </header>
 
         {/* Desktop Header */}
-        <header className="hidden md:flex h-16 px-4 border-b-2 border-black justify-between items-center bg-white z-10 flex-shrink-0">
-          <div className="flex items-center gap-4">
-            <button
+        <header className="hidden md:flex h-16 border-b-2 border-black items-center justify-between px-8 bg-white shrink-0">
+          <div className="flex items-center gap-6">
+            <Settings 
+              size={18} 
+              className="cursor-pointer hover:rotate-45 transition-transform" 
               onClick={() => setIsSettingsOpen(true)}
-              className="text-lg hover:bg-gray-100 px-2 py-1 rounded"
-              title="Settings"
-            >
-              ⚙️
-            </button>
-            <h1 className="font-mono text-lg font-bold">CONSTRUCT_LM</h1>
-            <span className="text-xs font-mono text-gray-500">{files.length} FILES INDEXED</span>
+            />
+            <h1 className="text-lg font-black uppercase tracking-tighter">Construct_LM</h1>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-mono text-gray-500">AI MODEL:</span>
-            <div className="flex gap-1 border-2 border-black">
-              <button
-                onClick={() => setAiModel('gemini')}
-                className={`px-3 py-1 text-xs font-mono font-bold transition-all ${
-                  aiModel === 'gemini'
-                    ? 'bg-black text-white'
-                    : 'bg-white text-black hover:bg-gray-100'
-                }`}
-              >
-                GEMINI
-              </button>
-              <button
-                onClick={() => setAiModel('cerebras')}
-                className={`px-3 py-1 text-xs font-mono font-bold transition-all ${
-                  aiModel === 'cerebras'
-                    ? 'bg-black text-white'
-                    : 'bg-white text-black hover:bg-gray-100'
-                }`}
-              >
-                CEREBRAS
-              </button>
+          
+          <div className="flex items-center gap-4">
+            <div className="flex gap-2">
+              {['GEMINI', 'CEREBRAS'].map(m => (
+                <button 
+                  key={m}
+                  onClick={() => setAiModel(m.toLowerCase() as 'gemini' | 'cerebras')}
+                  className={`h-9 px-4 text-[10px] font-black uppercase transition-all duration-75 border-2 ${
+                    aiModel === m.toLowerCase()
+                    ? 'bg-white border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] translate-x-[-1px] translate-y-[-1px] text-black' 
+                    : 'bg-white border-gray-100 text-black'
+                  }`}
+                >
+                  {m}
+                </button>
+              ))}
             </div>
           </div>
         </header>
