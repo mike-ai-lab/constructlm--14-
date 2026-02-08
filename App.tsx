@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { ChatInterface } from './components/ChatInterface';
 import { SettingsModal } from './components/SettingsModal';
-import { FileDocument, ChatMessage, Citation, ChatSession } from './types';
+import { FileDocument, ChatMessage, ChatSession } from './types';
 import * as VectorDB from './services/vectorDb';
 import * as GeminiService from './services/geminiService';
 import * as CerebrasService from './services/cerebrasService';
@@ -17,7 +17,6 @@ const App: React.FC = () => {
   const [isStreaming, setIsStreaming] = useState(false);
   const [aiModel, setAiModel] = useState<'gemini' | 'cerebras'>('cerebras');
   const [sidebarWidth, setSidebarWidth] = useState(320);
-  const [isResizing, setIsResizing] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [geminiApiKey, setGeminiApiKey] = useState('');
@@ -69,8 +68,8 @@ const App: React.FC = () => {
 
   // Handle sidebar resize
   const startResizing = (e: React.MouseEvent) => {
+    e.preventDefault();
     isResizingRef.current = true;
-    setIsResizing(true);
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', stopResizing);
     document.body.style.cursor = 'col-resize';
@@ -79,7 +78,6 @@ const App: React.FC = () => {
 
   const stopResizing = () => {
     isResizingRef.current = false;
-    setIsResizing(false);
     document.removeEventListener('mousemove', handleMouseMove);
     document.removeEventListener('mouseup', stopResizing);
     document.body.style.cursor = 'default';
@@ -361,15 +359,20 @@ const App: React.FC = () => {
       {/* Mobile Sidebar Overlay */}
       {isMobileSidebarOpen && (
         <div 
-          className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+          className="md:hidden fixed bg-black bg-opacity-50 z-40"
+          style={{ top: '60px', left: 0, right: 0, bottom: 0 }}
           onClick={() => setIsMobileSidebarOpen(false)}
         />
       )}
       
       {/* SIDEBAR */}
       <aside 
-        style={{ width: isSidebarCollapsed ? 0 : (isMobileSidebarOpen ? '100vw' : sidebarWidth) }}
-        className={`relative bg-white shrink-0 z-30 flex flex-col border-r-2 border-black ${transitionStyle} ${isMobileSidebarOpen ? 'fixed inset-y-0 left-0 z-50' : 'hidden md:flex'}`}
+        className={`relative bg-white shrink-0 flex flex-col border-r-2 border-black ${transitionStyle} ${isMobileSidebarOpen ? 'fixed left-0 z-50' : 'hidden md:flex'}`}
+        style={{ 
+          width: isSidebarCollapsed ? 0 : (isMobileSidebarOpen ? '100vw' : sidebarWidth),
+          top: isMobileSidebarOpen ? '60px' : '0',
+          height: isMobileSidebarOpen ? 'calc(100vh - 60px)' : '100%'
+        }}
       >
         {/* Collapse/Expand Rail */}
         <div 
@@ -429,36 +432,6 @@ const App: React.FC = () => {
 
       {/* MAIN */}
       <main className="flex-1 flex flex-col relative bg-[#f9f9f9] min-w-0 ml-0 md:ml-6">
-        {/* Mobile Header */}
-        <header className="md:hidden p-3 border-b-2 border-black flex justify-between items-center bg-white z-20 flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsSettingsOpen(true)}
-              className="hover:bg-gray-100 px-2 py-1 rounded"
-              title="Settings"
-            >
-              <Settings size={18} />
-            </button>
-            <button 
-              onClick={() => setIsMobileSidebarOpen(true)}
-              className="font-mono font-bold text-sm hover:bg-gray-100 px-2 py-1 flex items-center gap-2"
-            >
-              ☰ CONSTRUCT_LM
-            </button>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-[10px] font-mono">{files.length} FILES</span>
-            <select 
-              value={aiModel}
-              onChange={(e) => setAiModel(e.target.value as 'gemini' | 'cerebras')}
-              className="text-[10px] font-mono font-bold px-2 py-1 border border-black bg-white"
-            >
-              <option value="gemini">GEMINI</option>
-              <option value="cerebras">CEREBRAS</option>
-            </select>
-          </div>
-        </header>
-
         {/* Desktop Header */}
         <header className="hidden md:flex h-16 border-b-2 border-black items-center justify-between px-8 bg-white shrink-0 z-20">
           <div className="flex items-center gap-6">
