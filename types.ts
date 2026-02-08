@@ -6,6 +6,7 @@ export interface FileDocument {
   uploadDate: number;
   status: 'processing' | 'ready' | 'error';
   tokenCount?: number;
+  isEnabled?: boolean; // Default true - controls if file is included in RAG search
 }
 
 export interface TextChunk {

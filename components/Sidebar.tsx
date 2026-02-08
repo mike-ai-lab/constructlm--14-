@@ -6,6 +6,7 @@ interface SidebarProps {
   files: FileDocument[];
   onUpload: (files: FileList) => void;
   onDelete: (id: string) => void;
+  onToggleFile: (id: string, isEnabled: boolean) => void;
   isUploading: boolean;
   uploadStatus: string;
   width: number;
@@ -22,7 +23,8 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ 
   files, 
   onUpload, 
-  onDelete, 
+  onDelete,
+  onToggleFile,
   isUploading, 
   uploadStatus,
   width,
@@ -51,33 +53,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       className={`w-full border-r-2 border-black flex flex-col h-full bg-gray-50 flex-shrink-0 transition-all duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}
       style={{ width: window.innerWidth >= 768 ? `${width}px` : '100vw', maxWidth: '100vw' }}
     >
-      <div className="p-4 border-b-2 border-black bg-white">
-        <div className="flex justify-between items-center mb-3">
-          <h1 className="font-mono text-base font-bold tracking-tight">CONSTRUCT_LM</h1>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onOpenSettings}
-              className="text-lg hover:bg-gray-100 px-2 py-1 rounded"
-              title="Settings"
-            >
-              ⚙️
-            </button>
-            {onClose && (
-              <button 
-                onClick={onClose}
-                className="md:hidden text-xl font-bold hover:bg-gray-100 px-2"
-              >
-                ×
-              </button>
-            )}
-          </div>
-        </div>
-        
+      <div className="h-16 border-b-2 border-black bg-white flex items-center justify-end px-5 flex-shrink-0">
         {/* Tabs */}
         <div className="flex gap-1 border-2 border-black">
           <button
             onClick={() => setActiveTab('chats')}
-            className={`flex-1 px-3 py-2 text-xs font-mono font-bold transition-all ${
+            className={`px-3 py-1 text-xs font-mono font-bold transition-all ${
               activeTab === 'chats'
                 ? 'bg-black text-white'
                 : 'bg-white text-black hover:bg-gray-100'
@@ -87,7 +68,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </button>
           <button
             onClick={() => setActiveTab('sources')}
-            className={`flex-1 px-3 py-2 text-xs font-mono font-bold transition-all ${
+            className={`px-3 py-1 text-xs font-mono font-bold transition-all ${
               activeTab === 'sources'
                 ? 'bg-black text-white'
                 : 'bg-white text-black hover:bg-gray-100'
@@ -96,6 +77,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
             SOURCES
           </button>
         </div>
+        {onClose && (
+          <button 
+            onClick={onClose}
+            className="md:hidden ml-3 px-3 text-xl font-bold hover:bg-gray-100"
+          >
+            ×
+          </button>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
@@ -104,7 +93,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {/* New Chat Button */}
             <button
               onClick={onNewChat}
-              className="w-full border-2 border-black p-2 text-center hover:bg-black hover:text-white transition-colors font-mono text-xs font-bold"
+              className="w-full border-2 border-black p-3 text-center hover:bg-black hover:text-white transition-colors font-mono text-xs font-bold"
             >
               + NEW CHAT
             </button>
@@ -118,7 +107,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {chatSessions.map(session => (
               <div 
                 key={session.id}
-                className={`group relative border p-2 bg-white transition-all cursor-pointer ${
+                className={`group relative border p-3 bg-white transition-all cursor-pointer ${
                   currentChatId === session.id 
                     ? 'border-black border-2' 
                     : 'border-gray-300 hover:border-black'
@@ -158,7 +147,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onChange={handleFileChange}
                 disabled={isUploading}
               />
-              <div className={`w-full border-2 border-black border-dashed p-2 text-center hover:bg-gray-100 transition-colors ${isUploading ? 'opacity-50' : ''}`}>
+              <div className={`w-full border-2 border-black border-dashed p-3 text-center hover:bg-gray-100 transition-colors ${isUploading ? 'opacity-50' : ''}`}>
                 <span className="font-mono text-xs font-bold">
                   + ADD SOURCE
                 </span>
@@ -178,21 +167,35 @@ export const Sidebar: React.FC<SidebarProps> = ({
             )}
             
             {files.map(file => (
-              <div key={file.id} className="group relative border border-gray-300 hover:border-black p-2 bg-white transition-all">
-                <div className="flex justify-between items-start mb-1">
-                  <span className="font-mono text-xs font-bold truncate max-w-[280px]" title={file.name}>
-                    {file.name}
-                  </span>
-                  <button 
-                    onClick={() => onDelete(file.id)}
-                    className="opacity-0 group-hover:opacity-100 text-[10px] text-red-600 hover:underline font-mono ml-2"
-                  >
-                    DEL
-                  </button>
-                </div>
-                <div className="flex justify-between text-[10px] text-gray-500 font-mono">
-                  <span>{file.type.split('/')[1]?.toUpperCase() || 'FILE'}</span>
-                  <span>~{Math.round(file.tokenCount || 0)} TOKENS</span>
+              <div key={file.id} className="group relative border-2 border-gray-300 hover:border-black p-3 bg-white transition-all">
+                <div className="flex items-start gap-2">
+                  <input
+                    type="checkbox"
+                    checked={file.isEnabled !== false}
+                    onChange={(e) => onToggleFile(file.id, e.target.checked)}
+                    className="mt-0.5 w-4 h-4 cursor-pointer accent-black flex-shrink-0"
+                    title={file.isEnabled !== false ? "Enabled for RAG search" : "Disabled from RAG search"}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start mb-1">
+                      <span 
+                        className={`font-mono text-xs font-bold truncate max-w-[240px] ${file.isEnabled === false ? 'text-gray-400' : ''}`}
+                        title={file.name}
+                      >
+                        {file.name}
+                      </span>
+                      <button 
+                        onClick={() => onDelete(file.id)}
+                        className="opacity-0 group-hover:opacity-100 text-[10px] text-red-600 hover:underline font-mono ml-2"
+                      >
+                        DEL
+                      </button>
+                    </div>
+                    <div className="flex justify-between text-[10px] text-gray-500 font-mono">
+                      <span>{file.type.split('/')[1]?.toUpperCase() || 'FILE'}</span>
+                      <span>~{Math.round(file.tokenCount || 0)} TOKENS</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             ))}
@@ -200,14 +203,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
       </div>
 
-      <div className="p-3 border-t-2 border-black bg-white">
-        <div className="flex justify-between items-center font-mono text-[10px]">
-          <span>CONTEXT USAGE</span>
+      <div className="h-[80px] p-4 border-t-2 border-black bg-white flex flex-col justify-center flex-shrink-0">
+        <div className="flex justify-between items-center font-mono text-[10px] mb-2">
+          <span className="font-semibold">CONTEXT USAGE</span>
           <span className={totalTokens > 30000 ? "text-red-600 font-bold" : ""}>
             {Math.round(totalTokens).toLocaleString()} / 1M
           </span>
         </div>
-        <div className="w-full bg-gray-200 h-1.5 mt-1.5 border border-black">
+        <div className="w-full bg-gray-200 h-2 border-2 border-black">
           <div 
             className="bg-black h-full transition-all duration-500" 
             style={{ width: `${Math.min((totalTokens / 1000000) * 100, 100)}%` }}
