@@ -28,6 +28,9 @@ const App: React.FC = () => {
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const isResizingRef = useRef(false);
 
+  // CONSTANT: Define exact header height to sync sidebar and header
+  const MOBILE_HEADER_HEIGHT = '60px';
+
   // Transition constant for synchronized animations
   const transitionStyle = "transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]";
 
@@ -325,7 +328,11 @@ const App: React.FC = () => {
       `}</style>
 
       {/* Mobile Header - Always visible on mobile */}
-      <header className="block md:hidden p-3 border-b-2 border-black flex justify-between items-center bg-white z-50 flex-shrink-0 sticky top-0">
+      {/* FIXED: Added fixed height to ensure sidebar offset matches exactly */}
+      <header 
+        className="block md:hidden p-3 border-b-2 border-black flex justify-between items-center bg-white z-50 flex-shrink-0 sticky top-0"
+        style={{ height: MOBILE_HEADER_HEIGHT }}
+      >
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsSettingsOpen(true)}
@@ -356,11 +363,17 @@ const App: React.FC = () => {
 
       {/* Content wrapper for desktop/mobile */}
       <div className="flex flex-1 overflow-hidden relative">
+      
       {/* Mobile Sidebar Overlay */}
       {isMobileSidebarOpen && (
         <div 
           className="md:hidden fixed bg-black bg-opacity-50 z-40"
-          style={{ top: '60px', left: 0, right: 0, bottom: 0 }}
+          style={{ 
+            top: MOBILE_HEADER_HEIGHT, 
+            left: 0, 
+            right: 0, 
+            bottom: 0 
+          }}
           onClick={() => setIsMobileSidebarOpen(false)}
         />
       )}
@@ -369,9 +382,14 @@ const App: React.FC = () => {
       <aside 
         className={`relative bg-white shrink-0 flex flex-col border-r-2 border-black ${transitionStyle} ${isMobileSidebarOpen ? 'fixed left-0 z-50' : 'hidden md:flex'}`}
         style={{ 
-          width: isSidebarCollapsed ? 0 : (isMobileSidebarOpen ? '100vw' : sidebarWidth),
-          top: isMobileSidebarOpen ? '60px' : '0',
-          height: isMobileSidebarOpen ? 'calc(100vh - 60px)' : '100%'
+          // FIXED: Logic handles both collapse state and mobile full width
+          width: isMobileSidebarOpen 
+            ? '100vw' 
+            : (isSidebarCollapsed ? 0 : sidebarWidth),
+          // FIXED: Top offset now strictly matches the header height constant
+          top: isMobileSidebarOpen ? MOBILE_HEADER_HEIGHT : '0',
+          // FIXED: Height calculation accounts for the fixed header
+          height: isMobileSidebarOpen ? `calc(100vh - ${MOBILE_HEADER_HEIGHT})` : '100%'
         }}
       >
         {/* Collapse/Expand Rail */}
@@ -399,9 +417,9 @@ const App: React.FC = () => {
         <div 
           style={{ 
             width: isMobileSidebarOpen ? '100vw' : sidebarWidth,
-            transform: isSidebarCollapsed ? `translateX(-${sidebarWidth}px)` : 'translateX(0)',
+            transform: (!isMobileSidebarOpen && isSidebarCollapsed) ? `translateX(-${sidebarWidth}px)` : 'translateX(0)',
           }}
-          className={`h-full flex flex-col overflow-hidden ${transitionStyle} ${isSidebarCollapsed ? 'opacity-0' : 'opacity-100'}`}
+          className={`h-full flex flex-col overflow-hidden ${transitionStyle} ${(!isMobileSidebarOpen && isSidebarCollapsed) ? 'opacity-0' : 'opacity-100'}`}
         >
           <Sidebar 
             files={files} 
@@ -422,7 +440,7 @@ const App: React.FC = () => {
           />
         </div>
 
-        {!isSidebarCollapsed && (
+        {!isSidebarCollapsed && !isMobileSidebarOpen && (
           <div 
             onMouseDown={startResizing}
             className="hidden md:block absolute top-0 right-[-2px] w-2 h-full cursor-col-resize z-[60] active:bg-black/10 hover:bg-black/5"
@@ -431,7 +449,8 @@ const App: React.FC = () => {
       </aside>
 
       {/* MAIN */}
-      <main className="flex-1 flex flex-col relative bg-[#f9f9f9] min-w-0 ml-0 md:ml-6">
+      {/* FIXED: Added w-full and proper flex properties to ensure ChatInterface renders on mobile */}
+      <main className="flex-1 flex flex-col relative bg-[#f9f9f9] min-w-0 w-full ml-0 md:ml-6">
         {/* Desktop Header */}
         <header className="hidden md:flex h-16 border-b-2 border-black items-center justify-between px-8 bg-white shrink-0 z-20">
           <div className="flex items-center gap-6">
