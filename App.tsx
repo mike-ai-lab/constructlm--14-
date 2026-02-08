@@ -118,6 +118,13 @@ const App: React.FC = () => {
     setFiles(prev => prev.filter(f => f.id !== id));
   };
 
+  const handleToggleFile = async (id: string, isEnabled: boolean) => {
+    await VectorDB.updateFileEnabled(id, isEnabled);
+    setFiles(prev => prev.map(f => 
+      f.id === id ? { ...f, isEnabled } : f
+    ));
+  };
+
   const handleSaveKeys = (gemini: string, cerebras: string) => {
     localStorage.setItem('gemini_api_key', gemini);
     localStorage.setItem('cerebras_api_key', cerebras);
@@ -217,9 +224,17 @@ const App: React.FC = () => {
     setMessages(prev => [...prev, userMsg]);
     setIsStreaming(true);
 
+    console.log('→ Input:', text);
+
     try {
       // 1. RAG Search - get more chunks to ensure coverage
       const citations = await VectorDB.searchVectors(text, 8);
+      
+      console.log('→ Citations:', citations.map(c => ({
+        doc: c.docName,
+        score: c.similarity.toFixed(3),
+        preview: c.text.substring(0, 60) + '...'
+      })));
       
       // 2. Prepare Placeholder Model Message
       const modelMsgId = crypto.randomUUID();
@@ -260,6 +275,8 @@ const App: React.FC = () => {
           : msg
       ));
 
+      console.log('← Output:', accumulatedText.substring(0, 100) + (accumulatedText.length > 100 ? '...' : ''));
+
       // Save chat after successful response
       setTimeout(() => saveCurrentChat(), 100);
 
@@ -299,6 +316,7 @@ const App: React.FC = () => {
           files={files} 
           onUpload={handleUpload} 
           onDelete={handleDelete}
+          onToggleFile={handleToggleFile}
           isUploading={isUploading}
           uploadStatus={uploadStatus}
           width={sidebarWidth}
@@ -335,13 +353,22 @@ const App: React.FC = () => {
       <main className="flex-1 flex flex-col h-full relative overflow-hidden">
         {/* Mobile Header */}
         <header className="md:hidden p-3 border-b-2 border-black flex justify-between items-center bg-white z-10 flex-shrink-0">
-          <button 
-            onClick={() => setIsMobileSidebarOpen(true)}
-            className="font-mono font-bold text-sm hover:bg-gray-100 px-2 py-1 flex items-center gap-2"
-          >
-            ☰ CONSTRUCT_LM
-            <span className="text-[8px] text-gray-400">SWIPE →</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsSettingsOpen(true)}
+              className="text-lg hover:bg-gray-100 px-2 py-1 rounded"
+              title="Settings"
+            >
+              ⚙️
+            </button>
+            <button 
+              onClick={() => setIsMobileSidebarOpen(true)}
+              className="font-mono font-bold text-sm hover:bg-gray-100 px-2 py-1 flex items-center gap-2"
+            >
+              ☰ CONSTRUCT_LM
+              <span className="text-[8px] text-gray-400">SWIPE →</span>
+            </button>
+          </div>
           <div className="flex items-center gap-3">
             <span className="text-[10px] font-mono">{files.length} FILES</span>
             <select 
@@ -356,8 +383,15 @@ const App: React.FC = () => {
         </header>
 
         {/* Desktop Header */}
-        <header className="hidden md:flex p-4 border-b-2 border-black justify-between items-center bg-white z-10 flex-shrink-0">
+        <header className="hidden md:flex h-16 px-4 border-b-2 border-black justify-between items-center bg-white z-10 flex-shrink-0">
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => setIsSettingsOpen(true)}
+              className="text-lg hover:bg-gray-100 px-2 py-1 rounded"
+              title="Settings"
+            >
+              ⚙️
+            </button>
             <h1 className="font-mono text-lg font-bold">CONSTRUCT_LM</h1>
             <span className="text-xs font-mono text-gray-500">{files.length} FILES INDEXED</span>
           </div>

@@ -91,39 +91,37 @@ export const processFile = async (
       
       onProgress(`Embedding ${rawChunks.length} chunks...`);
       const vectors = await embeddingService.getEmbeddings(rawChunks);
-        
-        const chunks: TextChunk[] = rawChunks.map((chunk, i) => ({
-          id: crypto.randomUUID(),
-          docId: fileId,
-          text: chunk,
-          vector: vectors[i],
-          startIndex: i * (CHUNK_SIZE - OVERLAP),
-          endIndex: i * (CHUNK_SIZE - OVERLAP) + chunk.length
-        }));
+      
+      const chunks: TextChunk[] = rawChunks.map((chunk, i) => ({
+        id: crypto.randomUUID(),
+        docId: fileId,
+        text: chunk,
+        vector: vectors[i],
+        startIndex: i * (CHUNK_SIZE - OVERLAP),
+        endIndex: i * (CHUNK_SIZE - OVERLAP) + chunk.length
+      }));
 
-        onProgress("Indexing...");
-        const db = await openDB();
-        const tx = db.transaction(['files', 'chunks'], 'readwrite');
-        
-        const docData: FileDocument = {
-          id: fileId,
-          name: file.name,
-          type: file.type,
-          size: file.size,
-          uploadDate: Date.now(),
-          status: 'ready',
-          tokenCount: text.length / 4 // Rough estimate
-        };
+      onProgress("Indexing...");
+      const db = await openDB();
+      const tx = db.transaction(['files', 'chunks'], 'readwrite');
+      
+      const docData: FileDocument = {
+        id: fileId,
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        uploadDate: Date.now(),
+        status: 'ready',
+        tokenCount: text.length / 4, // Rough estimate
+        isEnabled: true // Default to enabled
+      };
 
-        tx.objectStore('files').add(docData);
-        chunks.forEach(chunk => tx.objectStore('chunks').add(chunk));
+      tx.objectStore('files').add(docData);
+      chunks.forEach(chunk => tx.objectStore('chunks').add(chunk));
 
-        tx.oncomplete = () => resolve(docData);
-        tx.onerror = () => reject(tx.error);
-        
-      } catch (err) {
-        reject(err);
-      }
+      tx.oncomplete = () => resolve(docData);
+      tx.onerror = () => reject(tx.error);
+      
     } catch (err) {
       reject(err);
     }
@@ -150,12 +148,22 @@ export const searchVectors = async (query: string, limit = 5): Promise<Citation[
     request.onerror = () => reject(request.error);
   });
   
-  console.log(`Searching across ${allChunks.length} chunks from ${allFiles.length} files`);
+  // Filter to only enabled files (default to true for backward compatibility)
+  const enabledFileIds = new Set(
+    allFiles
+      .filter(f => f.isEnabled !== false)
+      .map(f => f.id)
+  );
+  
+  // Filter chunks to only include those from enabled files
+  const enabledChunks = allChunks.filter(chunk => enabledFileIds.has(chunk.docId));
+  
+  console.log(`Searching across ${enabledChunks.length} chunks from ${enabledFileIds.size} enabled files (${allFiles.length} total)`);
   
   const fileMap = new Map(allFiles.map(f => [f.id, f.name]));
 
-  // 3. Calculate Sim
-  const scored = allChunks.map(chunk => ({
+  // 3. Calculate Sim (only on enabled chunks)
+  const scored = enabledChunks.map(chunk => ({
     ...chunk,
     score: cosineSimilarity(queryVector, chunk.vector)
   }));
@@ -166,7 +174,7 @@ export const searchVectors = async (query: string, limit = 5): Promise<Citation[
   // 5. Diversify results - ensure we get chunks from different files
   const topK: typeof scored = [];
   const filesUsed = new Set<string>();
-  const maxPerFile = Math.ceil(limit / Math.min(allFiles.length, 3)); // Max 2-3 chunks per file
+  const maxPerFile = Math.ceil(limit / Math.min(enabledFileIds.size, 3)); // Max 2-3 chunks per file
   
   // First pass: get best chunk from each file
   for (const item of scored) {
@@ -232,6 +240,27 @@ export const deleteFile = async (id: string): Promise<void> => {
   };
   
   return new Promise((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+};
+
+export const updateFileEnabled = async (id: string, isEnabled: boolean): Promise<void> => {
+  const db = await openDB();
+  const tx = db.transaction('files', 'readwrite');
+  const store = tx.objectStore('files');
+  
+  return new Promise((resolve, reject) => {
+    const getRequest = store.get(id);
+    
+    getRequest.onsuccess = () => {
+      const file = getRequest.result;
+      if (file) {
+        file.isEnabled = isEnabled;
+        store.put(file);
+      }
+    };
+    
     tx.oncomplete = () => resolve();
     tx.onerror = () => reject(tx.error);
   });

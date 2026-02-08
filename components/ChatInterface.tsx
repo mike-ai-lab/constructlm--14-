@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { ChatMessage, Citation } from '../types';
-import { Button } from './ui/Button';
 
 interface ChatInterfaceProps {
   messages: ChatMessage[];
@@ -49,7 +48,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 {msg.role === 'user' ? 'YOU' : 'CONSTRUCT_LM'}
               </div>
               
-              <div className={`p-3 border ${msg.role === 'user' ? 'bg-black text-white border-black' : 'bg-white text-black border-gray-300'} overflow-hidden`}>
+              <div className={`p-3.5 border-2 ${msg.role === 'user' ? 'bg-black text-white border-black' : 'bg-white text-black border-gray-300'} overflow-hidden`}>
                 <div className={`leading-relaxed text-sm font-mono ${msg.role === 'user' ? 'whitespace-pre-wrap' : 'overflow-x-auto'}`}>
                   {msg.role === 'user' ? (
                     msg.content
@@ -113,10 +112,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
               {/* Citations Section */}
               {msg.role === 'model' && msg.citations && msg.citations.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1.5 justify-start">
+                <div className="mt-2.5 flex flex-wrap gap-2 justify-start">
                    {msg.citations.map((cite, i) => (
                      <div key={i} className="group relative">
-                       <span className="cursor-help inline-block px-2 py-0.5 bg-gray-100 border border-gray-300 text-[10px] font-mono hover:bg-black hover:text-white transition-colors">
+                       <span className="cursor-help inline-block px-2 py-1 bg-gray-100 border border-gray-300 text-[9px] font-mono font-semibold hover:bg-black hover:text-white transition-colors whitespace-nowrap">
                          SRC {i + 1}: {cite.docName}
                        </span>
                        {/* Tooltip for Citation Content */}
@@ -160,30 +159,30 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       </div>
 
       {/* Input Area */}
-      <div className="p-4 bg-white border-t-2 border-black flex-shrink-0">
-        <form onSubmit={handleSubmit} className="flex gap-3 max-w-4xl mx-auto">
+      <div className="h-[80px] p-4 bg-white border-t-2 border-black flex items-center flex-shrink-0">
+        <form onSubmit={handleSubmit} className="flex gap-2 max-w-4xl mx-auto w-full">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask a question based on your sources..."
-            className="flex-1 px-3 py-2 bg-gray-50 border border-gray-300 focus:border-black outline-none font-mono text-sm transition-all"
+            className="flex-1 px-3 py-2.5 bg-gray-50 border-2 border-gray-300 focus:border-black outline-none font-mono text-sm transition-all"
             disabled={isStreaming}
           />
-          <Button 
+          <button 
             type="submit" 
             disabled={!input.trim() || isStreaming}
-            className="h-auto w-10 flex items-center justify-center"
+            className="px-3 py-2.5 bg-black text-white hover:bg-gray-800 disabled:opacity-50 disabled:cursor-not-allowed border-2 border-black transition-colors flex items-center justify-center flex-shrink-0"
           >
             {isStreaming ? (
                <div className="w-3.5 h-3.5 border-2 border-t-transparent border-white rounded-full animate-spin" />
             ) : (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M22 2L11 13" stroke="currentColor" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter"/>
                 <path d="M22 2L15 22L11 13L2 9L22 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="square" strokeLinejoin="miter"/>
               </svg>
             )}
-          </Button>
+          </button>
         </form>
       </div>
     </div>
