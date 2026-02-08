@@ -188,7 +188,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col md:flex-row h-screen w-full bg-white text-black font-sans overflow-hidden">
+    <div className="flex flex-col md:flex-row h-screen w-full bg-white text-black font-sans overflow-hidden" style={{ height: '100vh', height: '100dvh' }}>
       {/* Mobile Sidebar Overlay */}
       {isMobileSidebarOpen && (
         <div 
@@ -222,7 +222,7 @@ const App: React.FC = () => {
       </div>
       
       <main className="flex-1 flex flex-col h-full relative overflow-hidden">
-        <header className="md:hidden p-3 border-b-2 border-black flex justify-between items-center bg-white z-10">
+        <header className="md:hidden p-3 border-b-2 border-black flex justify-between items-center bg-white z-10 flex-shrink-0">
           <button 
             onClick={() => setIsMobileSidebarOpen(true)}
             className="font-mono font-bold text-sm hover:bg-gray-100 px-2 py-1"
