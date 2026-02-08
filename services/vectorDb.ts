@@ -1,5 +1,6 @@
 import { TextChunk, FileDocument, Citation } from "../types";
 import { embeddingService } from "./embeddingService";
+import { parsePDF } from "./pdfParser";
 
 // --- Constants ---
 const DB_NAME = "ConstructLM_DB";
@@ -66,18 +67,30 @@ export const processFile = async (
   onProgress: (status: string) => void
 ): Promise<FileDocument> => {
   const fileId = crypto.randomUUID();
-  const reader = new FileReader();
 
-  return new Promise((resolve, reject) => {
-    reader.onload = async (e) => {
-      try {
-        const text = e.target?.result as string;
-        
-        onProgress("Chunking content...");
-        const rawChunks = chunkText(text);
-        
-        onProgress(`Embedding ${rawChunks.length} chunks...`);
-        const vectors = await embeddingService.getEmbeddings(rawChunks);
+  return new Promise(async (resolve, reject) => {
+    try {
+      let text: string;
+      
+      // Handle different file types
+      if (file.type === 'application/pdf') {
+        onProgress("Parsing PDF...");
+        text = await parsePDF(file);
+      } else {
+        // Handle text-based files
+        const reader = new FileReader();
+        text = await new Promise<string>((resolveText, rejectText) => {
+          reader.onload = (e) => resolveText(e.target?.result as string);
+          reader.onerror = () => rejectText(new Error('Failed to read file'));
+          reader.readAsText(file);
+        });
+      }
+      
+      onProgress("Chunking content...");
+      const rawChunks = chunkText(text);
+      
+      onProgress(`Embedding ${rawChunks.length} chunks...`);
+      const vectors = await embeddingService.getEmbeddings(rawChunks);
         
         const chunks: TextChunk[] = rawChunks.map((chunk, i) => ({
           id: crypto.randomUUID(),
@@ -111,11 +124,9 @@ export const processFile = async (
       } catch (err) {
         reject(err);
       }
-    };
-    
-    // Naive text handling for demo. 
-    // In production, we'd use pdf.js for PDFs, etc.
-    reader.readAsText(file);
+    } catch (err) {
+      reject(err);
+    }
   });
 };
 

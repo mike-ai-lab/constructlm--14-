@@ -151,7 +151,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <input 
                 type="file" 
                 multiple 
-                accept=".txt,.md,.json,.csv" 
+                accept=".txt,.md,.json,.csv,.pdf" 
                 className="hidden" 
                 onChange={handleFileChange}
                 disabled={isUploading}
