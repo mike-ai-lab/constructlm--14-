@@ -346,7 +346,7 @@ const App: React.FC = () => {
             onClick={() => setIsMobileSidebarOpen(true)}
             className="font-mono font-bold text-sm hover:bg-gray-100 px-2 py-1 flex items-center gap-2"
           >
-            Ôÿ░ CONSTRUCT_LM
+            CONSTRUCT_LM
           </button>
         </div>
         <div className="flex items-center gap-3">
@@ -370,7 +370,7 @@ const App: React.FC = () => {
         <div 
           className="md:hidden fixed bg-black bg-opacity-50 z-40"
           style={{ 
-            top: MOBILE_HEADER_HEIGHT_WITH_SAFE_AREA, 
+            top: 0,
             left: 0, 
             right: 0, 
             bottom: 0 
@@ -387,17 +387,18 @@ const App: React.FC = () => {
           width: isMobileSidebarOpen 
             ? '100vw' 
             : (isSidebarCollapsed ? 0 : sidebarWidth),
-          // FIXED: Top offset now strictly matches the header height constant
-          top: isMobileSidebarOpen ? MOBILE_HEADER_HEIGHT_WITH_SAFE_AREA : '0',
-          // FIXED: Height calculation accounts for the fixed header
-          height: isMobileSidebarOpen ? `calc(100dvh - ${MOBILE_HEADER_HEIGHT_WITH_SAFE_AREA})` : '100%'
+          // FIXED: Mobile sidebar starts at top:0, desktop at top:0
+          top: 0,
+          // FIXED: Mobile sidebar is full height
+          height: isMobileSidebarOpen ? '100dvh' : '100%'
         }}
       >
-        {/* Collapse/Expand Rail */}
-        <div 
-          onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-          className={`hidden md:flex absolute -right-[26px] top-0 w-6 h-full border-r-2 border-black bg-[#f0f0f0] cursor-pointer group hover:bg-[#e0e0e0] z-50 flex-col items-center ${transitionStyle}`}
-        >
+        {/* Collapse/Expand Rail - Desktop Only */}
+        {!isMobileSidebarOpen && (
+          <div 
+            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+            className={`hidden md:flex absolute -right-[26px] top-0 w-6 h-full border-r-2 border-black bg-[#f0f0f0] cursor-pointer group hover:bg-[#e0e0e0] z-50 flex-col items-center ${transitionStyle}`}
+          >
           <div className={`mt-8 [writing-mode:vertical-lr] text-[8px] font-black tracking-[0.3em] uppercase opacity-30 group-hover:opacity-100 transition-opacity ${transitionStyle}`}>
             {isSidebarCollapsed ? 'EXPAND' : 'COLLAPSE'}
           </div>
@@ -414,6 +415,7 @@ const App: React.FC = () => {
             SYSTEM_RAIL_V1
           </div>
         </div>
+        )}
 
         <div 
           style={{ 
@@ -451,7 +453,7 @@ const App: React.FC = () => {
 
       {/* MAIN */}
       {/* FIXED: Added w-full and proper flex properties to ensure ChatInterface renders on mobile */}
-      <main className="flex-1 flex flex-col relative bg-[#f9f9f9] min-w-0 w-full ml-0 md:ml-6">
+      <main className="flex-1 flex flex-col relative bg-white md:bg-[#f9f9f9] min-w-0 w-full ml-0 md:ml-6">
         {/* Desktop Header */}
         <header className="hidden md:flex h-16 border-b-2 border-black items-center justify-between px-8 bg-white shrink-0 z-20">
           <div className="flex items-center gap-6">
