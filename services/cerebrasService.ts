@@ -7,11 +7,12 @@ export const streamChatResponse = async (
   message: string,
   history: ChatMessage[],
   context: Citation[],
-  onChunk: (text: string) => void
+  onChunk: (text: string) => void,
+  apiKey?: string
 ) => {
-  const apiKey = import.meta.env.VITE_CEREBRAS_API_KEY;
+  const key = apiKey || import.meta.env.VITE_CEREBRAS_API_KEY;
   
-  if (!apiKey) {
+  if (!key) {
     throw new Error("Cerebras API key not configured");
   }
 
@@ -55,7 +56,7 @@ ${contextString}`;
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`
+      "Authorization": `Bearer ${key}`
     },
     body: JSON.stringify({
       model: CEREBRAS_MODEL,

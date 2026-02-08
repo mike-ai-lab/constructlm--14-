@@ -5,6 +5,7 @@ A privacy-first RAG (Retrieval-Augmented Generation) workspace built with React,
 ## Features
 
 - **🔒 Privacy-First Embeddings** - Uses Transformers.js (Xenova/all-MiniLM-L6-v2) for 100% local, browser-based embeddings
+- **🔑 In-App API Key Management** - Configure and test API keys directly in the UI, stored securely in localStorage
 - **🤖 Dual AI Models** - Switch between Gemini and Cerebras AI for chat responses
 - **📚 Multi-Document RAG** - Upload multiple files (TXT, MD, CSV, JSON) and query across all sources
 - **🎯 Smart Retrieval** - Diversified search results ensure coverage from all uploaded documents
@@ -42,31 +43,31 @@ cd constructlm
 npm install
 ```
 
-3. Create a `.env.local` file in the root directory:
-```env
-GEMINI_API_KEY=your_gemini_api_key_here
-VITE_CEREBRAS_API_KEY=your_cerebras_api_key_here
-```
-
-4. Start the development server:
+3. Start the development server:
 ```bash
 npm run dev
 ```
 
-5. Open your browser to `http://localhost:3001`
+4. Open your browser to `http://localhost:3001`
 
-### Getting API Keys
+5. **Configure API Keys** (First-time setup):
+   - Click the ⚙️ settings icon in the sidebar
+   - Enter your API keys:
+     - **Cerebras API** (required for default model): Get from [Cerebras Cloud](https://cloud.cerebras.ai/)
+     - **Gemini API** (optional): Get from [Google AI Studio](https://makersuite.google.com/app/apikey)
+   - Test each key to verify it works
+   - Click "SAVE"
 
-- **Gemini API**: Get your key from [Google AI Studio](https://makersuite.google.com/app/apikey)
-- **Cerebras API**: Get your key from [Cerebras Cloud](https://cloud.cerebras.ai/)
+**Note:** API keys are stored securely in your browser's localStorage and never leave your device.
 
 ## Usage
 
-1. **Upload Documents**: Click "+ ADD SOURCE" to upload TXT, MD, CSV, or JSON files
-2. **Select AI Model**: Toggle between Gemini and Cerebras in the sidebar
-3. **Ask Questions**: Type your question in the input field and press Enter
-4. **View Citations**: Hover over source badges to see the exact text used for the answer
-5. **Resize Sidebar**: Drag the handle between sidebar and chat area (desktop only)
+1. **Configure API Keys** (first time): Click ⚙️ in sidebar to enter and test your API keys
+2. **Upload Documents**: Click "+ ADD SOURCE" to upload TXT, MD, CSV, or JSON files
+3. **Select AI Model**: Toggle between Gemini and Cerebras in the sidebar
+4. **Ask Questions**: Type your question in the input field and press Enter
+5. **View Citations**: Hover over source badges to see the exact text used for the answer
+6. **Resize Sidebar**: Drag the handle between sidebar and chat area (desktop only)
 
 ## Project Structure
 

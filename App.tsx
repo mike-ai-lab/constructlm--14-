@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { ChatInterface } from './components/ChatInterface';
+import { SettingsModal } from './components/SettingsModal';
 import { FileDocument, ChatMessage, Citation } from './types';
 import * as VectorDB from './services/vectorDb';
 import * as GeminiService from './services/geminiService';
@@ -16,8 +17,11 @@ const App: React.FC = () => {
   const [sidebarWidth, setSidebarWidth] = useState(400);
   const [isResizing, setIsResizing] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [geminiApiKey, setGeminiApiKey] = useState('');
+  const [cerebrasApiKey, setCerebrasApiKey] = useState('');
 
-  // Load files on mount
+  // Load files and API keys on mount
   useEffect(() => {
     const loadFiles = async () => {
       try {
@@ -28,6 +32,17 @@ const App: React.FC = () => {
       }
     };
     loadFiles();
+
+    // Load API keys from localStorage
+    const storedGeminiKey = localStorage.getItem('gemini_api_key') || '';
+    const storedCerebrasKey = localStorage.getItem('cerebras_api_key') || '';
+    setGeminiApiKey(storedGeminiKey);
+    setCerebrasApiKey(storedCerebrasKey);
+
+    // Show settings if no keys are configured
+    if (!storedGeminiKey && !storedCerebrasKey) {
+      setIsSettingsOpen(true);
+    }
   }, []);
 
   // Handle sidebar resize
@@ -86,7 +101,25 @@ const App: React.FC = () => {
     setFiles(prev => prev.filter(f => f.id !== id));
   };
 
+  const handleSaveKeys = (gemini: string, cerebras: string) => {
+    localStorage.setItem('gemini_api_key', gemini);
+    localStorage.setItem('cerebras_api_key', cerebras);
+    setGeminiApiKey(gemini);
+    setCerebrasApiKey(cerebras);
+  };
+
   const handleSendMessage = async (text: string) => {
+    // Check if API key is configured for selected model
+    if (aiModel === 'gemini' && !geminiApiKey) {
+      alert('Please configure your Gemini API key in Settings');
+      setIsSettingsOpen(true);
+      return;
+    }
+    if (aiModel === 'cerebras' && !cerebrasApiKey) {
+      alert('Please configure your Cerebras API key in Settings');
+      setIsSettingsOpen(true);
+      return;
+    }
     // Add user message
     const userMsg: ChatMessage = {
       id: crypto.randomUUID(),
@@ -116,6 +149,7 @@ const App: React.FC = () => {
       let accumulatedText = '';
       
       const streamService = aiModel === 'gemini' ? GeminiService : CerebrasService;
+      const apiKey = aiModel === 'gemini' ? geminiApiKey : cerebrasApiKey;
       
       await streamService.streamChatResponse(
         text, 
@@ -128,7 +162,8 @@ const App: React.FC = () => {
               ? { ...msg, content: accumulatedText }
               : msg
           ));
-        }
+        },
+        apiKey
       );
 
       // 4. Finalize
@@ -174,6 +209,7 @@ const App: React.FC = () => {
           onModelChange={setAiModel}
           width={sidebarWidth}
           onClose={() => setIsMobileSidebarOpen(false)}
+          onOpenSettings={() => setIsSettingsOpen(true)}
         />
       </div>
       
@@ -212,6 +248,15 @@ const App: React.FC = () => {
           isStreaming={isStreaming}
         />
       </main>
+
+      {/* Settings Modal */}
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        geminiKey={geminiApiKey}
+        cerebrasKey={cerebrasApiKey}
+        onSaveKeys={handleSaveKeys}
+      />
     </div>
   );
 };
