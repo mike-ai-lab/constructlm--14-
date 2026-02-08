@@ -285,6 +285,7 @@ const App: React.FC = () => {
       </div>
       
       <main className="flex-1 flex flex-col h-full relative overflow-hidden">
+        {/* Mobile Header */}
         <header className="md:hidden p-3 border-b-2 border-black flex justify-between items-center bg-white z-10 flex-shrink-0">
           <button 
             onClick={() => setIsMobileSidebarOpen(true)}
@@ -302,6 +303,39 @@ const App: React.FC = () => {
               <option value="gemini">GEMINI</option>
               <option value="cerebras">CEREBRAS</option>
             </select>
+          </div>
+        </header>
+
+        {/* Desktop Header */}
+        <header className="hidden md:flex p-4 border-b-2 border-black justify-between items-center bg-white z-10 flex-shrink-0">
+          <div className="flex items-center gap-4">
+            <h1 className="font-mono text-lg font-bold">CONSTRUCT_LM</h1>
+            <span className="text-xs font-mono text-gray-500">{files.length} FILES INDEXED</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-mono text-gray-500">AI MODEL:</span>
+            <div className="flex gap-1 border-2 border-black">
+              <button
+                onClick={() => setAiModel('gemini')}
+                className={`px-3 py-1 text-xs font-mono font-bold transition-all ${
+                  aiModel === 'gemini'
+                    ? 'bg-black text-white'
+                    : 'bg-white text-black hover:bg-gray-100'
+                }`}
+              >
+                GEMINI
+              </button>
+              <button
+                onClick={() => setAiModel('cerebras')}
+                className={`px-3 py-1 text-xs font-mono font-bold transition-all ${
+                  aiModel === 'cerebras'
+                    ? 'bg-black text-white'
+                    : 'bg-white text-black hover:bg-gray-100'
+                }`}
+              >
+                CEREBRAS
+              </button>
+            </div>
           </div>
         </header>
         
