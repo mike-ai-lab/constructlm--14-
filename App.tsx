@@ -325,7 +325,7 @@ const App: React.FC = () => {
       `}</style>
 
       {/* Mobile Header - Always visible on mobile */}
-      <header className="md:hidden p-3 border-b-2 border-black flex justify-between items-center bg-white z-50 flex-shrink-0">
+      <header className="block md:hidden p-3 border-b-2 border-black flex justify-between items-center bg-white z-50 flex-shrink-0 sticky top-0">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setIsSettingsOpen(true)}
