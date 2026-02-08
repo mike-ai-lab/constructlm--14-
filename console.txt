@@ -1,0 +1,9 @@
+20:49:47.314 index-BuaQgVrn.js:2017 PDF.js worker configured: https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.624/build/pdf.worker.min.mjs
+20:52:19.893 index-BuaQgVrn.js:2019 ✅ PDF parsed: 8 pages, 20244 characters
+20:52:19.894 index-BuaQgVrn.js:2017 🔄 Loading embedding model (Xenova/all-MiniLM-L6-v2)...
+20:52:23.120 index-BuaQgVrn.js:2017 ✅ Embedding model loaded successfully
+20:53:26.936 index-BuaQgVrn.js:2060 ÔåÆ Input: Q1: What is the purpose of metal doors in a building?  
+20:53:27.028 index-BuaQgVrn.js:2019 Searching across 73 chunks from 2 enabled files (2 total)
+20:53:27.030 index-BuaQgVrn.js:2019 Top results (diversified): Array(8)
+20:53:27.030 index-BuaQgVrn.js:2060 ÔåÆ Citations: Array(8)
+20:53:27.748 index-BuaQgVrn.js:2060 ÔåÉ Output: According to Source 1 (DG-NCD-400-0000-AYS-SPC-AR-000004 - KSU - Metal Doors.pdf), metal doors are u...

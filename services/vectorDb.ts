@@ -5,8 +5,8 @@ import { parsePDF } from "./pdfParser";
 // --- Constants ---
 const DB_NAME = "ConstructLM_DB";
 const DB_VERSION = 1;
-const CHUNK_SIZE = 500; // characters approx, simple chunking
-const OVERLAP = 50;
+const CHUNK_SIZE = 1000; // Increased from 500 to 1000 characters for better context
+const OVERLAP = 200; // Increased from 50 to 200 characters for better continuity
 
 // --- IDB Helper ---
 const openDB = (): Promise<IDBDatabase> => {
@@ -171,13 +171,37 @@ export const searchVectors = async (query: string, limit = 5): Promise<Citation[
   // 4. Sort by score
   scored.sort((a, b) => b.score - a.score);
   
-  // 5. Diversify results - ensure we get chunks from different files
+  // Debug: Show top scores before filtering with full text preview
+  console.log('Top 10 scores before filtering:');
+  scored.slice(0, 10).forEach((c, i) => {
+    console.log(`  ${i+1}. ${fileMap.get(c.docId)} (score: ${c.score.toFixed(3)})`);
+    console.log(`     Text: "${c.text.substring(0, 150)}${c.text.length > 150 ? '...' : ''}"`);
+  });
+  
+  // 5. Filter by minimum relevance threshold first
+  const RELEVANCE_THRESHOLD = 0.15; // Lowered from 0.25 - embedding models can have lower scores
+  const relevantChunks = scored.filter(chunk => chunk.score >= RELEVANCE_THRESHOLD);
+  
+  console.log(`Found ${relevantChunks.length} relevant chunks (threshold: ${RELEVANCE_THRESHOLD})`);
+  
+  // If no relevant chunks found, return top results anyway (fallback)
+  if (relevantChunks.length === 0) {
+    console.warn('No chunks above threshold - returning top results as fallback');
+    return scored.slice(0, Math.min(limit, scored.length)).map(chunk => ({
+      docId: chunk.docId,
+      docName: fileMap.get(chunk.docId) || 'Unknown',
+      text: chunk.text,
+      similarity: chunk.score
+    }));
+  }
+  
+  // 6. Diversify among relevant results only
   const topK: typeof scored = [];
   const filesUsed = new Set<string>();
-  const maxPerFile = Math.ceil(limit / Math.min(enabledFileIds.size, 3)); // Max 2-3 chunks per file
+  const maxPerFile = 3; // Allow up to 3 chunks from same file if highly relevant
   
-  // First pass: get best chunk from each file
-  for (const item of scored) {
+  // First pass: get best chunk from each file (only if relevant)
+  for (const item of relevantChunks) {
     if (topK.length >= limit) break;
     if (!filesUsed.has(item.docId)) {
       topK.push(item);
@@ -185,8 +209,8 @@ export const searchVectors = async (query: string, limit = 5): Promise<Citation[
     }
   }
   
-  // Second pass: fill remaining slots with best scores
-  for (const item of scored) {
+  // Second pass: fill remaining slots with best scores (prioritize quality over diversity)
+  for (const item of relevantChunks) {
     if (topK.length >= limit) break;
     if (!topK.includes(item)) {
       const fileCount = topK.filter(t => t.docId === item.docId).length;

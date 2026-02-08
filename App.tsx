@@ -231,17 +231,17 @@ const App: React.FC = () => {
     setMessages(prev => [...prev, userMsg]);
     setIsStreaming(true);
 
-    console.log('ÔåÆ Input:', text);
+    console.log('[RAG Query]', text);
 
     try {
       // 1. RAG Search - get more chunks to ensure coverage
       const citations = await VectorDB.searchVectors(text, 8);
       
-      console.log('ÔåÆ Citations:', citations.map(c => ({
-        doc: c.docName,
-        score: c.similarity.toFixed(3),
-        preview: c.text.substring(0, 60) + '...'
-      })));
+      console.log('[Citations Found]', citations.length, 'sources:');
+      citations.forEach((c, i) => {
+        console.log(`  ${i+1}. ${c.docName} (score: ${c.similarity.toFixed(3)})`);
+        console.log(`     "${c.text.substring(0, 80)}..."`);
+      });
       
       // 2. Prepare Placeholder Model Message
       const modelMsgId = crypto.randomUUID();
@@ -282,7 +282,7 @@ const App: React.FC = () => {
           : msg
       ));
 
-      console.log('ÔåÉ Output:', accumulatedText.substring(0, 100) + (accumulatedText.length > 100 ? '...' : ''));
+      console.log('[AI Response]', accumulatedText.substring(0, 150) + (accumulatedText.length > 150 ? '...' : ''));
 
       // Save chat after successful response
       setTimeout(() => saveCurrentChat(), 100);
