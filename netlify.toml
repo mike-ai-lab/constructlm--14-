@@ -1,6 +1,7 @@
 [build]
   command = "npm run build"
   publish = "dist"
+  environment = { SECRETS_SCAN_OMIT_KEYS = "PAYPAL_MODE,PAYPAL_CLIENT_ID,PAYPAL_CLIENT_SECRET,DATABASE_URL,JWT_SECRET" }
 
 [[redirects]]
   from = "/*"
