@@ -16,6 +16,8 @@ const App: React.FC = () => {
   const [uploadStatus, setUploadStatus] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [aiModel, setAiModel] = useState<'gemini' | 'cerebras'>('cerebras');
+  const [selectedModel, setSelectedModel] = useState('llama-3.3-70b');
+  const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(320);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -272,7 +274,8 @@ const App: React.FC = () => {
               : msg
           ));
         },
-        apiKey
+        apiKey,
+        selectedModel
       );
 
       // 4. Finalize
@@ -467,6 +470,54 @@ const App: React.FC = () => {
               onClick={() => setIsSettingsOpen(true)}
             />
             <h1 className="text-lg font-black uppercase tracking-tighter">Construct_LM</h1>
+            
+            {/* Model Dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
+                className="h-9 px-4 text-[10px] font-black uppercase border-2 border-black bg-white hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all flex items-center gap-2"
+              >
+                {selectedModel}
+                <span className="text-[8px]">▼</span>
+              </button>
+              
+              {isModelDropdownOpen && (
+                <div className="absolute top-full left-0 mt-1 bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] z-50 min-w-[200px]">
+                  <div className="p-2 border-b border-gray-200 text-[8px] font-bold text-gray-500">CEREBRAS</div>
+                  {['llama-3.3-70b', 'llama-3.1-70b', 'llama-3.1-8b'].map(model => (
+                    <button
+                      key={model}
+                      onClick={() => {
+                        setSelectedModel(model);
+                        setAiModel('cerebras');
+                        setIsModelDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-[10px] font-mono hover:bg-gray-100 ${
+                        selectedModel === model ? 'bg-gray-100 font-bold' : ''
+                      }`}
+                    >
+                      {model}
+                    </button>
+                  ))}
+                  <div className="p-2 border-b border-t border-gray-200 text-[8px] font-bold text-gray-500">GEMINI</div>
+                  {['gemini-1.5-flash', 'gemini-1.5-pro'].map(model => (
+                    <button
+                      key={model}
+                      onClick={() => {
+                        setSelectedModel(model);
+                        setAiModel('gemini');
+                        setIsModelDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2 text-[10px] font-mono hover:bg-gray-100 ${
+                        selectedModel === model ? 'bg-gray-100 font-bold' : ''
+                      }`}
+                    >
+                      {model}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           
           <div className="flex items-center gap-4">

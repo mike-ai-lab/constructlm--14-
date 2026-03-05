@@ -64,7 +64,8 @@ export const streamChatResponse = async (
   history: ChatMessage[],
   context: Citation[],
   onChunk: (text: string) => void,
-  apiKey?: string
+  apiKey?: string,
+  model: string = "gemini-1.5-flash"
 ) => {
   const key = apiKey || import.meta.env.VITE_GEMINI_API_KEY || process.env.API_KEY;
   
@@ -113,7 +114,7 @@ User Question: ${message}
     }));
 
   const chat = ai.chats.create({
-    model: CHAT_MODEL,
+    model: model,
     config: {
       systemInstruction: systemInstruction,
     },

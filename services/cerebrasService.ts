@@ -8,7 +8,8 @@ export const streamChatResponse = async (
   history: ChatMessage[],
   context: Citation[],
   onChunk: (text: string) => void,
-  apiKey?: string
+  apiKey?: string,
+  model: string = "llama-3.3-70b"
 ) => {
   const key = apiKey || import.meta.env.VITE_CEREBRAS_API_KEY;
   
@@ -59,7 +60,7 @@ ${contextString}`;
       "Authorization": `Bearer ${key}`
     },
     body: JSON.stringify({
-      model: CEREBRAS_MODEL,
+      model: model,
       messages,
       stream: true,
       max_tokens: 2000,
