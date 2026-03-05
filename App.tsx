@@ -382,41 +382,26 @@ const App: React.FC = () => {
       
       {/* SIDEBAR */}
       <aside 
-        className={`bg-white shrink-0 flex flex-col border-r-2 border-black ${
-          isMobileSidebarOpen ? 'fixed md:relative left-0 z-50' : 'fixed md:relative left-0 -translate-x-full md:translate-x-0 md:flex'
-        } ${isSidebarCollapsed ? 'md:hidden' : ''}`}
+        className={`bg-white shrink-0 flex flex-col border-r-2 border-black shadow-[4px_0_0_0_rgba(0,0,0,1)] fixed md:relative left-0 z-50 ${
+          isMobileSidebarOpen ? '' : '-translate-x-full md:translate-x-0'
+        }`}
         style={{ 
           width: isMobileSidebarOpen 
             ? '100vw' 
             : (isSidebarCollapsed ? 0 : sidebarWidth),
           top: 0,
           height: isMobileSidebarOpen ? '100dvh' : '100%',
-          transform: isMobileSidebarOpen ? 'translateX(0)' : (window.innerWidth < 768 ? 'translateX(-100%)' : 'translateX(0)'),
-          transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+          transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
         }}
       >
-        {/* Collapse/Expand Rail - Desktop Only */}
+        {/* Collapse/Expand Button - Desktop Only */}
         {!isMobileSidebarOpen && (
           <div 
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className={`hidden md:flex absolute -right-[26px] top-0 w-6 h-full border-r-2 border-black bg-[#f0f0f0] cursor-pointer group hover:bg-[#e0e0e0] z-50 flex-col items-center ${transitionStyle}`}
+            className="hidden md:flex absolute -right-[12px] top-1/2 -translate-y-1/2 w-6 h-16 bg-white border-2 border-black items-center justify-center cursor-pointer z-[70] transition-all hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px]"
           >
-          <div className={`mt-8 [writing-mode:vertical-lr] text-[8px] font-black tracking-[0.3em] uppercase opacity-30 group-hover:opacity-100 transition-opacity ${transitionStyle}`}>
-            {isSidebarCollapsed ? 'EXPAND' : 'COLLAPSE'}
+            {isSidebarCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
           </div>
-
-          <div className="absolute top-1/2 -translate-y-1/2 w-full flex flex-col items-center gap-1">
-            <div className="w-1 h-8 bg-black/10 group-hover:bg-black/20" />
-            <div className={`w-full h-12 bg-black flex items-center justify-center text-white shadow-[2px_0_10px_rgba(0,0,0,0.1)] transition-transform group-hover:scale-x-110`}>
-              {isSidebarCollapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
-            </div>
-            <div className="w-1 h-8 bg-black/10 group-hover:bg-black/20" />
-          </div>
-
-          <div className="absolute bottom-8 [writing-mode:vertical-lr] text-[7px] font-bold tracking-widest text-black/20">
-            SYSTEM_RAIL_V1
-          </div>
-        </div>
         )}
 
         <div 
@@ -472,7 +457,7 @@ const App: React.FC = () => {
 
       {/* MAIN */}
       {/* FIXED: Added w-full and proper flex properties to ensure ChatInterface renders on mobile */}
-      <main className="flex-1 flex flex-col relative bg-white md:bg-[#f9f9f9] min-w-0 w-full ml-0 md:ml-6">
+      <main className="flex-1 flex flex-col relative bg-white md:bg-[#f9f9f9] min-w-0 w-full">
         {/* Desktop Header */}
         <header className="hidden md:flex h-16 border-b-2 border-black items-center justify-between px-8 bg-white shrink-0 z-20">
           <div className="flex items-center gap-6">

@@ -109,6 +109,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
           stroke-dashoffset: 0;
           opacity: 1;
         }
+
+        /* Sidebar Scrollbar Styling */
+        .sidebar-scroll::-webkit-scrollbar {
+          width: 12px;
+        }
+        .sidebar-scroll::-webkit-scrollbar-track {
+          background: #f0f0f0;
+          border-left: 1px solid black;
+        }
+        .sidebar-scroll::-webkit-scrollbar-thumb {
+          background: black;
+          border-radius: 0px;
+          border: 2px solid #f0f0f0;
+        }
+        .sidebar-scroll::-webkit-scrollbar-thumb:hover {
+          background: #333;
+        }
       `}</style>
 
       <div className="flex border-b-2 border-black shrink-0 h-16 items-center px-4 gap-4 bg-white">
@@ -135,7 +152,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
       </div>
 
-      <div className="p-6 pr-4 flex-1 overflow-y-auto overflow-x-hidden">
+      <div className="p-6 pr-4 flex-1 overflow-y-auto overflow-x-hidden sidebar-scroll">
         {activeTab === 'chats' ? (
           <>
             {/* New Chat Button */}

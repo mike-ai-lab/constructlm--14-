@@ -1,0 +1,121 @@
+6:44:16 AM: build-image version: 996f0ea96f97c0291387fbccd9b699238a7384e2 (noble-new-builds)
+6:44:16 AM: buildbot version: 82ffec010ece33e26e6ae786dec2fca533ea1141
+6:44:16 AM: Building with cache
+6:44:16 AM: Starting to prepare the repo for build
+6:44:16 AM: Preparing Git Reference refs/heads/main
+6:44:17 AM: Custom publish path detected. Proceeding with the specified path: 'dist/public'
+6:44:17 AM: Custom build command detected. Proceeding with the specified command: 'pnpm build:netlify'
+6:44:17 AM: Starting to install dependencies
+6:44:18 AM: mise ~/.config/mise/config.toml tools: python@3.14.3
+6:44:18 AM: mise ~/.config/mise/config.toml tools: ruby@3.4.8
+6:44:18 AM: mise ~/.config/mise/config.toml tools: go@1.25.6
+6:44:18 AM: v22.22.0 is already installed.
+6:44:18 AM: Now using node v22.22.0 (npm v10.9.4)
+6:44:19 AM: Enabling Node.js Corepack
+6:44:19 AM: No pnpm workspaces detected
+6:44:19 AM: Installing npm packages using pnpm version 10.4.1
+6:44:20 AM: Lockfile is up to date, resolution step is skipped
+6:44:20 AM: Already up to date
+6:44:22 AM: Done in 2s using pnpm v10.4.1
+6:44:22 AM: npm packages installed using pnpm
+6:44:22 AM: Successfully installed dependencies
+6:44:22 AM: Detected 1 framework(s)
+6:44:22 AM: "vite" at version "5.4.20"
+6:44:22 AM: Starting build script
+6:44:23 AM: Section completed: initializing
+6:44:25 AM: ​
+6:44:25 AM: Netlify Build                                                 
+6:44:25 AM: ────────────────────────────────────────────────────────────────
+6:44:25 AM: ​
+6:44:25 AM: ❯ Version
+6:44:25 AM:   @netlify/build 35.6.2
+6:44:25 AM: ​
+6:44:25 AM: ❯ Flags
+6:44:25 AM:   accountId: 691506364510bc542d361b7f
+6:44:25 AM:   baseRelDir: true
+6:44:25 AM:   buildId: 6989580f942bb4534fbcaaf9
+6:44:25 AM:   deployId: 6989580f942bb4534fbcaafb
+6:44:25 AM: ​
+6:44:25 AM: ❯ Current directory
+6:44:25 AM:   /opt/build/repo
+6:44:25 AM: ​
+6:44:25 AM: ❯ Config file
+6:44:25 AM:   /opt/build/repo/netlify.toml
+6:44:25 AM: ​
+6:44:25 AM: ❯ Context
+6:44:25 AM:   production
+6:44:25 AM: ​
+6:44:25 AM: build.command from netlify.toml                               
+6:44:25 AM: ────────────────────────────────────────────────────────────────
+6:44:25 AM: ​
+6:44:25 AM: $ pnpm build:netlify
+6:44:26 AM: > sketchup_extensions@1.0.0 build:netlify /opt/build/repo
+6:44:26 AM: > cross-env NODE_ENV=production vite build
+6:44:26 AM: vite v5.4.20 building for production...
+6:44:26 AM: (!) %VITE_APP_TITLE% is not defined in env variables found in /index.html. Is the variable mistyped?
+6:44:26 AM: transforming...
+6:44:31 AM: Failed during stage 'building site': Build script returned non-zero exit code: 2 (https://ntl.fyi/exit-code-2)
+6:44:30 AM: ✓ 2162 modules transformed.
+6:44:30 AM: rendering chunks...
+6:44:30 AM: computing gzip size...
+6:44:30 AM: ../dist/public/index.html                 367.71 kB │ gzip: 105.57 kB
+6:44:30 AM: ../dist/public/assets/index-DtEv47dY.css  128.12 kB │ gzip:  19.60 kB
+6:44:30 AM: ../dist/public/assets/index-Cko2ghKA.js   671.53 kB │ gzip: 189.52 kB
+6:44:30 AM: 
+6:44:30 AM: (!) Some chunks are larger than 500 kB after minification. Consider:
+6:44:30 AM: - Using dynamic import() to code-split the application
+6:44:30 AM: - Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+6:44:30 AM: - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+6:44:30 AM: ✓ built in 3.72s
+6:44:30 AM: ​
+6:44:30 AM: (build.command completed in 5.2s)
+6:44:30 AM: ​
+6:44:30 AM: Scanning for secrets in code and build output.                
+6:44:30 AM: ────────────────────────────────────────────────────────────────
+6:44:30 AM: ​
+6:44:30 AM: ​
+6:44:30 AM: ❯ Scanning complete. 156 file(s) scanned. Secrets scanning found 2 instance(s) of secrets in build output or repo code.
+6:44:30 AM: ​
+6:44:30 AM: Secret env var "VITE_FRONTEND_FORGE_API_URL"'s value detected:
+  found value at line 79 in DEPLOYMENT_GUIDE.md
+6:44:30 AM: Secret env var "PAYPAL_MODE"'s value detected:
+  found value at line 91 in SketchUp Extensions Website - Local Development Setup Guide.md
+6:44:30 AM:   found value at line 404 in SketchUp Extensions Website - Local Development Setup Guide.md
+6:44:30 AM:   found value at line 214 in dist/index.js
+6:44:30 AM:   found value at line 131 in guide.md
+6:44:30 AM:   found value at line 444 in guide.md
+6:44:30 AM:   found value at line 8 in server/paypal.ts
+6:44:30 AM: ​
+6:44:30 AM: To prevent exposing secrets, the build will fail until these secret values are not found in build output or repo files.
+6:44:30 AM: ​
+6:44:30 AM: If these are expected, use SECRETS_SCAN_OMIT_PATHS, SECRETS_SCAN_OMIT_KEYS, or SECRETS_SCAN_ENABLED to prevent detecting.
+6:44:30 AM: ​
+6:44:30 AM: For more information on secrets scanning, see the Netlify Docs: https://ntl.fyi/configure-secrets-scanning
+6:44:30 AM: ​
+6:44:30 AM: Secrets scanning detected secrets in files during build.      
+6:44:30 AM: ────────────────────────────────────────────────────────────────
+6:44:30 AM: ​
+6:44:30 AM:   Error message
+6:44:30 AM:   Secrets scanning found secrets in build.
+6:44:30 AM: ​
+6:44:30 AM:   Resolved config
+6:44:30 AM:   build:
+6:44:30 AM:     command: pnpm build:netlify
+6:44:30 AM:     commandOrigin: config
+6:44:30 AM:     environment:
+6:44:30 AM:       - DATABASE_URL
+6:44:30 AM:       - JWT_SECRET
+6:44:30 AM:       - PAYPAL_CLIENT_ID
+6:44:30 AM:       - PAYPAL_CLIENT_SECRET
+6:44:30 AM:       - PAYPAL_MODE
+6:44:30 AM:       - VITE_FRONTEND_FORGE_API_URL
+6:44:30 AM:     publish: /opt/build/repo/dist/public
+6:44:30 AM:     publishOrigin: config
+6:44:30 AM:   redirects:
+6:44:31 AM:     - from: /*
+      status: 200
+      to: /index.html
+  redirectsOrigin: config
+6:44:31 AM: Build failed due to a user error: Build script returned non-zero exit code: 2
+6:44:31 AM: Failing build: Failed to build site
+6:44:31 AM: Finished processing build request in 15.065s
