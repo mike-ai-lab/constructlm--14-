@@ -9,7 +9,7 @@ export const streamChatResponse = async (
   context: Citation[],
   onChunk: (text: string) => void,
   apiKey?: string,
-  model: string = "llama-3.3-70b"
+  model: string = "llama3.1-8b"
 ) => {
   const key = apiKey || import.meta.env.VITE_CEREBRAS_API_KEY;
   

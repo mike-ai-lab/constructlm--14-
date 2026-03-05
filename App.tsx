@@ -16,7 +16,7 @@ const App: React.FC = () => {
   const [uploadStatus, setUploadStatus] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [aiModel, setAiModel] = useState<'gemini' | 'cerebras'>('cerebras');
-  const [selectedModel, setSelectedModel] = useState('llama-3.3-70b');
+  const [selectedModel, setSelectedModel] = useState('llama3.1-8b');
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(320);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -484,7 +484,7 @@ const App: React.FC = () => {
               {isModelDropdownOpen && (
                 <div className="absolute top-full left-0 mt-1 bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] z-50 min-w-[200px]">
                   <div className="p-2 border-b border-gray-200 text-[8px] font-bold text-gray-500">CEREBRAS</div>
-                  {['llama-3.3-70b', 'llama-3.1-70b', 'llama-3.1-8b'].map(model => (
+                  {['llama3.1-8b', 'gpt-oss-120b'].map(model => (
                     <button
                       key={model}
                       onClick={() => {

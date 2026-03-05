@@ -17,6 +17,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 }) => {
   const [input, setInput] = useState('');
   const [isInputFocused, setIsInputFocused] = useState(false);
+  const [pinnedCitation, setPinnedCitation] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -99,46 +100,83 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     {/* Citations Section */}
                     {msg.citations && msg.citations.length > 0 && (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-8 pt-6 border-t-2 border-black">
-                        {msg.citations.map((cite, i) => (
-                          <div key={i} className="group relative">
-                            <div className="bg-white border-2 border-gray-100 p-2.5 flex items-center gap-3 cursor-pointer hover:border-black hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all">
-                              <div className="w-1.5 h-1.5 bg-black" />
-                              <span className="text-[9px] font-bold uppercase text-gray-500 truncate">
-                                SRC {i + 1}: {cite.docName}
-                              </span>
-                            </div>
-                            {/* Tooltip for Citation Content */}
-                            <div className="absolute bottom-full left-0 mb-2 w-80 md:w-96 bg-white border-2 border-black p-3 text-xs opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] max-h-96 overflow-y-auto">
-                              <div className="font-bold mb-2 border-b border-gray-200 pb-1">{cite.docName}</div>
-                              <div className="text-gray-700 prose prose-sm max-w-none">
-                                <ReactMarkdown
-                                  remarkPlugins={[remarkGfm]}
-                                  components={{
-                                    p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />,
-                                    code: ({node, inline, ...props}: any) => 
-                                      inline ? (
-                                        <code className="bg-gray-100 text-red-600 px-1 py-0.5 rounded text-[10px] font-mono" {...props} />
-                                      ) : (
-                                        <code className="block bg-gray-100 p-2 rounded my-1 text-[10px] font-mono overflow-x-auto" {...props} />
-                                      ),
-                                    ul: ({node, ...props}) => <ul className="list-disc list-inside mb-2 space-y-0.5" {...props} />,
-                                    ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-2 space-y-0.5" {...props} />,
-                                    strong: ({node, ...props}) => <strong className="font-bold" {...props} />,
-                                    em: ({node, ...props}) => <em className="italic" {...props} />,
-                                    h1: ({node, ...props}) => <h1 className="text-sm font-bold mt-2 mb-1" {...props} />,
-                                    h2: ({node, ...props}) => <h2 className="text-xs font-bold mt-1 mb-1" {...props} />,
-                                    h3: ({node, ...props}) => <h3 className="text-xs font-bold mt-1 mb-0.5" {...props} />,
-                                  }}
-                                >
-                                  {cite.text}
-                                </ReactMarkdown>
+                        {msg.citations.map((cite, i) => {
+                          // Extract sentences and find most relevant ones based on query keywords
+                          const sentences = cite.text.split(/[.!?]+\s+/).filter(s => s.trim().length > 20);
+                          
+                          // Get first 2-3 sentences as preview (more context than just 1)
+                          const preview = sentences.slice(0, 2).join('. ') + (sentences.length > 2 ? '.' : '');
+                          const displayPreview = preview.length > 200 ? preview.substring(0, 200) + '...' : preview;
+                          
+                          const citationId = `${msg.id}-${i}`;
+                          const isPinned = pinnedCitation === citationId;
+                          
+                          return (
+                            <div key={i} className="group relative">
+                              <div 
+                                onClick={() => setPinnedCitation(isPinned ? null : citationId)}
+                                className="bg-white border-2 border-gray-100 p-2.5 flex items-center gap-3 cursor-pointer hover:border-black hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all">
+                                <div className="w-1.5 h-1.5 bg-black" />
+                                <span className="text-[9px] font-bold uppercase text-gray-500 truncate">
+                                  SRC {i + 1}: {cite.docName}
+                                </span>
                               </div>
-                              <div className="mt-2 text-right text-[10px] text-gray-400 border-t border-gray-200 pt-1">
-                                Similarity: {cite.similarity.toFixed(3)}
+                              {/* Tooltip with Preview + Full Text */}
+                              <div className={`fixed left-1/2 -translate-x-1/2 top-20 w-80 md:w-96 bg-white border-2 border-black p-3 text-xs transition-all z-[100] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] max-h-96 overflow-y-auto ${
+                                isPinned ? 'opacity-100 visible' : 'opacity-0 invisible group-hover:opacity-100 group-hover:visible'
+                              }`}>
+                                <div className="flex justify-between items-start mb-2 border-b border-gray-200 pb-1">
+                                  <div className="font-bold">{cite.docName}</div>
+                                  {isPinned && (
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setPinnedCitation(null);
+                                      }}
+                                      className="text-lg font-bold hover:bg-gray-100 px-1 leading-none"
+                                    >
+                                      ×
+                                    </button>
+                                  )}
+                                </div>
+                                
+                                {/* Highlighted Preview */}
+                                <div className="bg-yellow-100 border-l-4 border-yellow-400 pl-2 py-1 mb-3 text-gray-800 font-medium text-[11px] leading-relaxed">
+                                  {displayPreview}
+                                </div>
+                                
+                                {/* Full Context */}
+                                <div className="text-[10px] text-gray-500 mb-2 font-bold uppercase">Full Context:</div>
+                                <div className="text-gray-700 prose prose-sm max-w-none">
+                                  <ReactMarkdown
+                                    remarkPlugins={[remarkGfm]}
+                                    components={{
+                                      p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />,
+                                      code: ({node, inline, ...props}: any) => 
+                                        inline ? (
+                                          <code className="bg-gray-100 text-red-600 px-1 py-0.5 rounded text-[10px] font-mono" {...props} />
+                                        ) : (
+                                          <code className="block bg-gray-100 p-2 rounded my-1 text-[10px] font-mono overflow-x-auto" {...props} />
+                                        ),
+                                      ul: ({node, ...props}) => <ul className="list-disc list-inside mb-2 space-y-0.5" {...props} />,
+                                      ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-2 space-y-0.5" {...props} />,
+                                      strong: ({node, ...props}) => <strong className="font-bold" {...props} />,
+                                      em: ({node, ...props}) => <em className="italic" {...props} />,
+                                      h1: ({node, ...props}) => <h1 className="text-sm font-bold mt-2 mb-1" {...props} />,
+                                      h2: ({node, ...props}) => <h2 className="text-xs font-bold mt-1 mb-1" {...props} />,
+                                      h3: ({node, ...props}) => <h3 className="text-xs font-bold mt-1 mb-0.5" {...props} />,
+                                    }}
+                                  >
+                                    {cite.text}
+                                  </ReactMarkdown>
+                                </div>
+                                <div className="mt-2 text-right text-[10px] text-gray-400 border-t border-gray-200 pt-1">
+                                  Similarity: {cite.similarity.toFixed(3)}
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </div>
