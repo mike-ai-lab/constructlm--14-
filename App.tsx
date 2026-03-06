@@ -37,6 +37,13 @@ const App: React.FC = () => {
   // Transition constant for synchronized animations
   const transitionStyle = "transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]";
 
+  // Auto-save messages when they change
+  useEffect(() => {
+    if (messages.length > 0 && currentChatId && !isStreaming) {
+      saveCurrentChat();
+    }
+  }, [messages, isStreaming]);
+
   // Load files and API keys on mount
   useEffect(() => {
     const loadFiles = async () => {
@@ -343,8 +350,8 @@ const App: React.FC = () => {
 
       console.log('[AI Response]', accumulatedText.substring(0, 150) + (accumulatedText.length > 150 ? '...' : ''));
 
-      // Save chat after successful response
-      setTimeout(() => saveCurrentChat(), 100);
+      // Save chat immediately after response completes
+      saveCurrentChat();
 
     } catch (error) {
       console.error("Chat Error", error);

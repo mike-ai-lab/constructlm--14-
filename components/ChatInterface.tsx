@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Send, Image as ImageIcon, X, FileText } from 'lucide-react';
+import { Send, Image as ImageIcon, X, FileText, Play, Code, Download, Copy, Check } from 'lucide-react';
 import { ChatMessage, Citation } from '../types';
 import * as GeminiService from '../services/geminiService';
 
@@ -24,14 +24,57 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [isImagesExpanded, setIsImagesExpanded] = useState(true);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [codeBlockStates, setCodeBlockStates] = useState<{[key: string]: {showRendered: boolean}}>({});
+  const [copiedBlocks, setCopiedBlocks] = useState<{[key: string]: boolean}>({});
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
+
+  const getFileExtension = (lang: string) => {
+    const extensions: {[key: string]: string} = {
+      javascript: 'js', typescript: 'ts', python: 'py', java: 'java',
+      html: 'html', htm: 'html', css: 'css', json: 'json', xml: 'xml',
+      markdown: 'md', md: 'md', yaml: 'yml', yml: 'yml', sql: 'sql',
+      bash: 'sh', sh: 'sh', cpp: 'cpp', c: 'c', csharp: 'cs', go: 'go',
+      rust: 'rs', php: 'php', ruby: 'rb', swift: 'swift', kotlin: 'kt'
+    };
+    return extensions[lang.toLowerCase()] || 'txt';
+  };
+
+  const downloadCode = (code: string, language: string) => {
+    const ext = getFileExtension(language);
+    const blob = new Blob([code], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `code_${Date.now()}.${ext}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const copyCode = (code: string, blockId: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedBlocks(prev => ({...prev, [blockId]: true}));
+    setTimeout(() => {
+      setCopiedBlocks(prev => ({...prev, [blockId]: false}));
+    }, 2000);
+  };
 
   useEffect(() => {
     const imageTokens = selectedImages.reduce((sum, img) => sum + img.tokens, 0);
     const textTokens = GeminiService.estimateTokens(input);
     setEstimatedTokens(textTokens + imageTokens);
+    
+    if (textareaRef.current) {
+      const textarea = textareaRef.current;
+      textarea.style.height = '48px';
+      if (input) {
+        textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+      }
+    }
   }, [input, selectedImages]);
 
   const processImageFile = (file: File) => {
@@ -185,12 +228,80 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                           ul: ({node, ...props}) => <ul className="list-disc list-inside mb-3 space-y-1 font-mono" {...props} />,
                           ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-3 space-y-1 font-mono" {...props} />,
                           li: ({node, ...props}) => <li className="ml-2 font-mono" {...props} />,
-                          code: ({node, inline, ...props}: any) => 
-                            inline ? (
-                              <code className="bg-gray-100 text-red-600 px-1.5 py-0.5 rounded text-xs font-mono" {...props} />
-                            ) : (
-                              <code className="block bg-gray-100 p-3 rounded my-2 text-xs font-mono overflow-x-auto border border-gray-300" {...props} />
-                            ),
+                          code: ({node, inline, className, children, ...props}: any) => {
+                            if (inline) {
+                              return <code className="bg-gray-100 text-red-600 px-1.5 py-0.5 rounded text-xs font-mono" {...props}>{children}</code>;
+                            }
+                            
+                            const match = /language-(\w+)/.exec(className || '');
+                            const language = match ? match[1] : 'text';
+                            const code = String(children).replace(/\n$/, '');
+                            const isHtml = language === 'html' || language === 'htm';
+                            const blockId = `${msg.id}-${code.substring(0, 20)}`;
+                            const blockState = codeBlockStates[blockId] || {showRendered: false};
+                            const isCopied = copiedBlocks[blockId];
+                            
+                            return (
+                              <div className="relative my-2">
+                                <div className="absolute left-2 top-2 z-10">
+                                  <span className="text-[9px] font-bold uppercase bg-black text-white px-2 py-1">
+                                    {language}
+                                  </span>
+                                </div>
+                                <div className="absolute right-2 top-2 flex gap-1 z-10">
+                                  <button
+                                    onClick={() => copyCode(code, blockId)}
+                                    className="p-1 bg-white border border-black hover:bg-gray-100 text-[10px] font-mono flex items-center gap-1"
+                                    title="Copy Code"
+                                  >
+                                    {isCopied ? <Check size={12} /> : <Copy size={12} />}
+                                  </button>
+                                  <button
+                                    onClick={() => downloadCode(code, language)}
+                                    className="p-1 bg-white border border-black hover:bg-gray-100 text-[10px] font-mono flex items-center gap-1"
+                                    title="Download"
+                                  >
+                                    <Download size={12} />
+                                  </button>
+                                  {isHtml && (
+                                    <button
+                                      onClick={() => setCodeBlockStates(prev => ({
+                                        ...prev,
+                                        [blockId]: {showRendered: !blockState.showRendered}
+                                      }))}
+                                      className="p-1 bg-white border border-black hover:bg-gray-100 text-[10px] font-mono flex items-center gap-1"
+                                      title="Toggle View"
+                                    >
+                                      <Code size={12} />
+                                      {blockState.showRendered ? 'CODE' : 'PREVIEW'}
+                                    </button>
+                                  )}
+                                </div>
+                                {blockState.showRendered ? (
+                                  <div className="border border-gray-300 bg-white mt-8">
+                                    <iframe
+                                      srcDoc={code}
+                                      className="w-full border-0"
+                                      style={{ minHeight: '400px', height: 'auto' }}
+                                      sandbox="allow-scripts"
+                                      title="HTML Preview"
+                                      onLoad={(e) => {
+                                        const iframe = e.target as HTMLIFrameElement;
+                                        if (iframe.contentWindow) {
+                                          const height = iframe.contentWindow.document.body.scrollHeight;
+                                          iframe.style.height = height + 'px';
+                                        }
+                                      }}
+                                    />
+                                  </div>
+                                ) : (
+                                  <code className="block bg-gray-100 p-3 pt-10 rounded text-xs font-mono overflow-x-auto border border-gray-300" {...props}>
+                                    {children}
+                                  </code>
+                                )}
+                              </div>
+                            );
+                          },
                           pre: ({node, ...props}) => <pre className="my-2" {...props} />,
                           a: ({node, ...props}) => <a className="text-blue-600 hover:underline font-medium" target="_blank" rel="noopener noreferrer" {...props} />,
                           blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-gray-300 pl-4 italic my-3 text-gray-700" {...props} />,
@@ -392,16 +503,17 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         <div className="w-full max-w-3xl relative">
           <form onSubmit={handleSubmit} className="relative">
             <div className={`relative transition-all duration-100 ${isInputFocused ? 'translate-x-[-2px] translate-y-[-2px]' : ''}`}>
-              <input
-                type="text"
+              <textarea
+                ref={textareaRef}
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onFocus={() => setIsInputFocused(true)}
                 onBlur={() => setIsInputFocused(false)}
                 placeholder={selectedImages.length > 0 ? "ADD DESCRIPTION (OPTIONAL)..." : "ASK A QUESTION..."}
-                className={`w-full border-2 border-black p-3 pr-20 text-[11px] font-bold focus:outline-none uppercase placeholder:text-gray-300 bg-white transition-all duration-100 ${
+                className={`w-full border-2 border-black p-3 pr-20 text-[11px] font-bold focus:outline-none uppercase placeholder:text-gray-300 bg-white transition-all duration-100 resize-none overflow-y-auto ${
                   isInputFocused ? 'shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : ''
                 }`}
+                style={{ height: '48px' }}
                 disabled={isStreaming}
               />
               <input
