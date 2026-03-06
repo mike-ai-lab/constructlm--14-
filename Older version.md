@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Send, Image as ImageIcon, X, FileText, Play, Code, Download, Copy, Check, Maximize2, Undo, Redo } from 'lucide-react';
+import { Send, Image as ImageIcon, X, FileText, Play, Code, Download, Copy, Check, Maximize2 } from 'lucide-react';
 import { ChatMessage, Citation } from '../types';
 import * as GeminiService from '../services/geminiService';
 
@@ -27,12 +27,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [codeBlockStates, setCodeBlockStates] = useState<{[key: string]: {showRendered: boolean}}>({});
   const [copiedBlocks, setCopiedBlocks] = useState<{[key: string]: boolean}>({});
   const [canvasOpen, setCanvasOpen] = useState(false);
-  const [canvasContent, setCanvasContent] = useState<{html: string, code: string, language: string, blockId: string} | null>(null);
+  const [canvasContent, setCanvasContent] = useState<{html: string, code: string, language: string} | null>(null);
   const [canvasShowCode, setCanvasShowCode] = useState(false);
   const [canvasEditedCode, setCanvasEditedCode] = useState('');
-  const [editedCodeBlocks, setEditedCodeBlocks] = useState<{[blockId: string]: string}>({});
-  const [iframeKey, setIframeKey] = useState(0);
-  const [codeVersionHistory, setCodeVersionHistory] = useState<{[blockId: string]: {versions: string[], currentIndex: number}}>({});
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -44,228 +41,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       html: 'html', htm: 'html', css: 'css', json: 'json', xml: 'xml',
       markdown: 'md', md: 'md', yaml: 'yml', yml: 'yml', sql: 'sql',
       bash: 'sh', sh: 'sh', cpp: 'cpp', c: 'c', csharp: 'cs', go: 'go',
-      rust: 'rs', php: 'php', ruby: 'rb', swift: 'swift', kotlin: 'kt',
-      tsx: 'tsx', jsx: 'jsx'
+      rust: 'rs', php: 'php', ruby: 'rb', swift: 'swift', kotlin: 'kt'
     };
     return extensions[lang.toLowerCase()] || 'txt';
-  };
-
-  const generateReactPreviewHtml = (code: string) => {
-    // Robust multiline-safe import removal regex
-    // Matches: import ... from '...'; or import ... from "..."; (with optional semicolon)
-    // Handles multiline imports with proper grouping
-    const cleanedCode = code
-      .replace(/import\s+(?:(?:\{[^}]*\}|\*\s+as\s+\w+|\w+)(?:\s*,\s*(?:\{[^}]*\}|\w+))*\s+from\s+)?['"][^'"]+['"];?/gm, '')
-      .replace(/import\s+['"][^'"]+['"];?/gm, '') // Side-effect imports
-      .trim();
-    
-    // Improved React component detection
-    // Check for: function/const/class component patterns, JSX syntax, or export default
-    const isLikelyReactComponent = 
-      /(?:function|const|class)\s+\w+.*(?:=>|{)[\s\S]*(?:<[A-Z]|jsx|tsx)/m.test(cleanedCode) ||
-      /export\s+default\s+(?:function|class|\w+)/m.test(cleanedCode) ||
-      /<[A-Z]\w*[\s>]/m.test(cleanedCode); // JSX with capital letter (component)
-    
-    if (!isLikelyReactComponent) {
-      return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body { margin: 20px; font-family: monospace; }
-  </style>
-</head>
-<body>
-  <div style="padding:20px;color:orange;border:2px solid orange;">
-    <strong>Not a React Component</strong><br/>
-    This code doesn't appear to be a React component. Expected patterns:<br/>
-    - Function/const/class component with JSX<br/>
-    - export default statement<br/>
-    - JSX elements (e.g., &lt;Component /&gt;)
-  </div>
-</body>
-</html>`;
-    }
-    
-    // Transform export default to const Component
-    const transformedCode = cleanedCode
-      .replace(/export\s+default\s+function\s+(\w+)/m, 'const Component = function $1')
-      .replace(/export\s+default\s+/m, 'const Component = ');
-    
-    return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio"></script>
-  <style>
-    body { margin: 0; padding: 0; }
-    #root { min-height: 100vh; }
-  </style>
-</head>
-<body>
-  <div id="root"></div>
-  <script>
-    // Wait for DOM and all core libraries to be ready
-    window.addEventListener('DOMContentLoaded', function() {
-      // Ensure React and ReactDOM are loaded
-      if (!window.React || !window.ReactDOM || !window.Babel) {
-        document.body.innerHTML = '<div style="padding:20px;color:red;font-family:monospace;">Failed to load required libraries (React, ReactDOM, Babel)</div>';
-        return;
-      }
-      
-      // Load Framer Motion
-      const motionScript = document.createElement('script');
-      motionScript.src = 'https://unpkg.com/framer-motion@11/dist/framer-motion.js';
-      motionScript.onerror = function() { console.warn('Framer Motion failed to load'); };
-      document.head.appendChild(motionScript);
-      
-      // Load Lucide React (needs React to be available)
-      const lucideScript = document.createElement('script');
-      lucideScript.src = 'https://unpkg.com/lucide-react@0.263.1/dist/umd/lucide-react.js';
-      lucideScript.onerror = function() { console.warn('Lucide React failed to load'); };
-      document.head.appendChild(lucideScript);
-      
-      // Wait for optional libraries to load (with timeout)
-      let checkCount = 0;
-      const maxChecks = 30; // 3 seconds max
-      const checkInterval = setInterval(function() {
-        checkCount++;
-        if ((window.Motion || checkCount > 15) && (window.lucideReact || checkCount > 15) || checkCount >= maxChecks) {
-          clearInterval(checkInterval);
-          initializeComponent();
-        }
-      }, 100);
-    });
-    
-    function initializeComponent() {
-      try {
-        // Validate root element exists
-        const rootElement = document.getElementById('root');
-        if (!rootElement) {
-          throw new Error('Root element not found');
-        }
-        
-        // Make libraries available globally
-        const motion = window.Motion || {};
-        const lucide = window.lucideReact || {};
-        
-        // Source code to compile
-        const sourceCode = ${JSON.stringify(transformedCode)};
-        
-        // Compile with Babel
-        const compiled = window.Babel.transform(sourceCode, {
-          presets: ['react', 'typescript'],
-          filename: 'component.tsx'
-        });
-        
-        // Execute compiled code and extract Component
-        // Destructure React hooks and utilities for direct access
-        const {
-          useState, useEffect, useRef, useCallback, useMemo, useContext,
-          useReducer, useLayoutEffect, useImperativeHandle, useDebugValue,
-          createContext, forwardRef, memo, lazy, Suspense, Fragment,
-          createElement, cloneElement, isValidElement, Children
-        } = window.React;
-        
-        // Destructure Framer Motion hooks and utilities
-        const {
-          useScroll, useTransform, useSpring, useMotionValue, useAnimation,
-          useInView, useAnimationControls, useDragControls, useMotionTemplate,
-          useVelocity, useTime, useWillChange, AnimatePresence
-        } = motion || {};
-        
-        let Component = null;
-        const executeCode = new Function(
-          'React', 'ReactDOM', 'motion', 'lucide',
-          'useState', 'useEffect', 'useRef', 'useCallback', 'useMemo', 'useContext',
-          'useReducer', 'useLayoutEffect', 'useImperativeHandle', 'useDebugValue',
-          'createContext', 'forwardRef', 'memo', 'lazy', 'Suspense', 'Fragment',
-          'createElement', 'cloneElement', 'isValidElement', 'Children',
-          'useScroll', 'useTransform', 'useSpring', 'useMotionValue', 'useAnimation',
-          'useInView', 'useAnimationControls', 'useDragControls', 'useMotionTemplate',
-          'useVelocity', 'useTime', 'useWillChange', 'AnimatePresence',
-          compiled.code + '\\nreturn typeof Component !== "undefined" ? Component : null;'
-        );
-        
-        Component = executeCode(
-          window.React,
-          window.ReactDOM,
-          motion,
-          lucide,
-          useState, useEffect, useRef, useCallback, useMemo, useContext,
-          useReducer, useLayoutEffect, useImperativeHandle, useDebugValue,
-          createContext, forwardRef, memo, lazy, Suspense, Fragment,
-          createElement, cloneElement, isValidElement, Children,
-          useScroll, useTransform, useSpring, useMotionValue, useAnimation,
-          useInView, useAnimationControls, useDragControls, useMotionTemplate,
-          useVelocity, useTime, useWillChange, AnimatePresence
-        );
-        
-        if (!Component || typeof Component !== 'function') {
-          throw new Error('No valid component found. Make sure to define "const Component" or use "export default".');
-        }
-        
-        // Render the component
-        const root = window.ReactDOM.createRoot(rootElement);
-        root.render(window.React.createElement(Component));
-        
-      } catch (err) {
-        console.error('Compilation/Runtime Error:', err);
-        const rootElement = document.getElementById('root');
-        if (rootElement) {
-          rootElement.innerHTML = 
-            '<div style="padding:20px;color:red;font-family:monospace;white-space:pre-wrap;border:2px solid red;margin:20px;">' +
-            '<strong>Error:</strong><br/><br/>' +
-            (err.message || String(err)) +
-            (err.stack ? '<br/><br/><strong>Stack:</strong><br/>' + err.stack.substring(0, 500) : '') +
-            '</div>';
-        }
-      }
-    }
-  </script>
-  <script>
-    // Global error handler for runtime errors
-    window.onerror = function(msg, url, line, col, error) {
-      if (msg === 'Script error.' && !error) {
-        // Ignore generic script errors from cross-origin scripts
-        return true;
-      }
-      console.error('Runtime Error:', msg, error);
-      const rootElement = document.getElementById('root');
-      if (rootElement && rootElement.innerHTML.indexOf('Error:') === -1) {
-        rootElement.innerHTML = 
-          '<div style="padding:20px;color:red;font-family:monospace;white-space:pre-wrap;border:2px solid red;margin:20px;">' +
-          '<strong>Runtime Error:</strong><br/><br/>' +
-          msg + '<br/><br/>' +
-          'Line: ' + line + ', Column: ' + col +
-          (error && error.stack ? '<br/><br/><strong>Stack:</strong><br/>' + error.stack.substring(0, 500) : '') +
-          '</div>';
-      }
-      return true;
-    };
-    
-    // Unhandled promise rejection handler
-    window.onunhandledrejection = function(event) {
-      console.error('Unhandled Promise Rejection:', event.reason);
-      const rootElement = document.getElementById('root');
-      if (rootElement && rootElement.innerHTML.indexOf('Error:') === -1) {
-        rootElement.innerHTML = 
-          '<div style="padding:20px;color:red;font-family:monospace;white-space:pre-wrap;border:2px solid red;margin:20px;">' +
-          '<strong>Unhandled Promise Rejection:</strong><br/><br/>' +
-          (event.reason?.message || String(event.reason)) +
-          (event.reason?.stack ? '<br/><br/><strong>Stack:</strong><br/>' + event.reason.stack.substring(0, 500) : '') +
-          '</div>';
-      }
-      return true;
-    };
-  </script>
-</body>
-</html>`;
   };
 
   const downloadCode = (code: string, language: string) => {
@@ -381,66 +159,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
-  const handleVersionUndo = () => {
-    if (!canvasContent) return;
-    const history = codeVersionHistory[canvasContent.blockId];
-    if (!history || history.currentIndex <= 0) return;
-    
-    const newIndex = history.currentIndex - 1;
-    const previousCode = history.versions[newIndex];
-    
-    // Regenerate HTML for preview
-    let newHtml = previousCode;
-    const isTsx = canvasContent.language === 'tsx' || canvasContent.language === 'jsx' || 
-                  canvasContent.language === 'typescript' || canvasContent.language === 'javascript' || canvasContent.language === 'ts';
-    const isReactComponent = isTsx && (previousCode.includes('export default') || previousCode.includes('function'));
-    
-    if (isReactComponent) {
-      newHtml = generateReactPreviewHtml(previousCode);
-    } else if (canvasContent.language !== 'html' && canvasContent.language !== 'htm') {
-      newHtml = previousCode;
-    }
-    
-    setCodeVersionHistory(prev => ({
-      ...prev,
-      [canvasContent.blockId]: {...history, currentIndex: newIndex}
-    }));
-    setCanvasEditedCode(previousCode);
-    setEditedCodeBlocks(prev => ({...prev, [canvasContent.blockId]: previousCode}));
-    setCanvasContent({html: newHtml, code: previousCode, language: canvasContent.language, blockId: canvasContent.blockId});
-    setIframeKey(prev => prev + 1);
-  };
-
-  const handleVersionRedo = () => {
-    if (!canvasContent) return;
-    const history = codeVersionHistory[canvasContent.blockId];
-    if (!history || history.currentIndex >= history.versions.length - 1) return;
-    
-    const newIndex = history.currentIndex + 1;
-    const nextCode = history.versions[newIndex];
-    
-    // Regenerate HTML for preview
-    let newHtml = nextCode;
-    const isTsx = canvasContent.language === 'tsx' || canvasContent.language === 'jsx' || 
-                  canvasContent.language === 'typescript' || canvasContent.language === 'javascript' || canvasContent.language === 'ts';
-    const isReactComponent = isTsx && (nextCode.includes('export default') || nextCode.includes('function'));
-    
-    if (isReactComponent) {
-      newHtml = generateReactPreviewHtml(nextCode);
-    } else if (canvasContent.language !== 'html' && canvasContent.language !== 'htm') {
-      newHtml = nextCode;
-    }
-    
-    setCodeVersionHistory(prev => ({
-      ...prev,
-      [canvasContent.blockId]: {...history, currentIndex: newIndex}
-    }));
-    setCanvasEditedCode(nextCode);
-    setEditedCodeBlocks(prev => ({...prev, [canvasContent.blockId]: nextCode}));
-    setCanvasContent({html: newHtml, code: nextCode, language: canvasContent.language, blockId: canvasContent.blockId});
-    setIframeKey(prev => prev + 1);
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if ((!input.trim() && selectedImages.length === 0) || isStreaming) return;
@@ -512,7 +230,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                           h1: ({node, ...props}) => <h1 className="text-xl font-bold mt-4 mb-2 font-mono" {...props} />,
                           h2: ({node, ...props}) => <h2 className="text-lg font-bold mt-3 mb-2 font-mono" {...props} />,
                           h3: ({node, ...props}) => <h3 className="text-base font-bold mt-2 mb-1 font-mono" {...props} />,
-                          p: ({node, ...props}) => <div className="mb-3 last:mb-0 font-mono text-[13px] text-gray-800" {...props} />,
+                          p: ({node, ...props}) => <p className="mb-3 last:mb-0 font-mono text-[13px] text-gray-800" {...props} />,
                           ul: ({node, ...props}) => <ul className="list-disc list-inside mb-3 space-y-1 font-mono" {...props} />,
                           ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-3 space-y-1 font-mono" {...props} />,
                           li: ({node, ...props}) => <li className="ml-2 font-mono" {...props} />,
@@ -523,19 +241,49 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                             
                             const match = /language-(\w+)/.exec(className || '');
                             const language = match ? match[1] : 'text';
-                            const codeRaw = String(children).replace(/\n$/, '');
-                            const blockId = `${msg.id}-${codeRaw.substring(0, 20)}`;
-                            const code = editedCodeBlocks[blockId] || codeRaw;
+                            const code = String(children).replace(/\n$/, '');
                             const isHtml = language === 'html' || language === 'htm';
-                            const isTsx = language === 'tsx' || language === 'typescript' || language === 'ts' || language === 'jsx' || language === 'javascript';
-                            const isReactComponent = isTsx && (code.includes('export default') || code.includes('function'));
-                            const isPreviewable = isHtml || isReactComponent;
+                            const isTsx = language === 'tsx' || language === 'typescript' || language === 'ts';
+                            const isPreviewable = isHtml || (isTsx && (code.includes('export default') || code.includes('function')));
+                            const blockId = `${msg.id}-${code.substring(0, 20)}`;
                             const blockState = codeBlockStates[blockId] || {showRendered: false};
                             const isCopied = copiedBlocks[blockId];
                             
                             const generatePreviewHtml = () => {
                               if (isHtml) return code;
-                              if (isReactComponent) return generateReactPreviewHtml(code);
+                              
+                              if (isTsx) {
+                                return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/framer-motion@11/dist/framer-motion.js"></script>
+  <script src="https://unpkg.com/lucide-react@0.263.1/dist/umd/lucide-react.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" data-presets="react,typescript">
+    const { motion } = window.Motion || {};
+    const lucide = window.lucideReact || {};
+    
+    ${code.replace(/export default/g, 'const Component =')}
+    
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(React.createElement(Component));
+  </script>
+  <script>
+    window.onerror = function(msg, url, line, col, error) {
+      document.body.innerHTML = '<div style="padding:20px;color:red;font-family:monospace;white-space:pre-wrap;">Error: ' + msg + '\n\nLine: ' + line + '</div>';
+      return true;
+    };
+  </script>
+</body>
+</html>`;
+                              }
                               return code;
                             };
                             
@@ -565,18 +313,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                     <>
                                       <button
                                         onClick={() => {
-                                          setCanvasContent({html: generatePreviewHtml(), code, language, blockId});
+                                          setCanvasContent({html: generatePreviewHtml(), code, language});
                                           setCanvasEditedCode(code);
                                           setCanvasOpen(true);
                                           setCanvasShowCode(false);
-                                          
-                                          // Initialize version history if not exists
-                                          if (!codeVersionHistory[blockId]) {
-                                            setCodeVersionHistory(prev => ({
-                                              ...prev,
-                                              [blockId]: {versions: [code], currentIndex: 0}
-                                            }));
-                                          }
                                         }}
                                         className="p-1 bg-white border border-black hover:bg-gray-100 text-[10px] font-mono flex items-center gap-1"
                                         title="Open in Canvas"
@@ -697,7 +437,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                   <ReactMarkdown
                                     remarkPlugins={[remarkGfm]}
                                     components={{
-                                      p: ({node, ...props}) => <div className="mb-2 last:mb-0" {...props} />,
+                                      p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />,
                                       code: ({node, inline, ...props}: any) => 
                                         inline ? (
                                           <code className="bg-gray-100 text-red-600 px-1 py-0.5 rounded text-[10px] font-mono" {...props} />
@@ -886,63 +626,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 {canvasContent.language}
               </span>
               <span className="text-xs font-mono">CANVAS</span>
-              {codeVersionHistory[canvasContent.blockId] && (
-                <span className="text-[9px] font-mono text-gray-500">
-                  v{codeVersionHistory[canvasContent.blockId].currentIndex + 1}/{codeVersionHistory[canvasContent.blockId].versions.length}
-                </span>
-              )}
             </div>
             <div className="flex gap-2">
-              <button
-                onClick={handleVersionUndo}
-                disabled={!codeVersionHistory[canvasContent.blockId] || codeVersionHistory[canvasContent.blockId].currentIndex <= 0}
-                className="p-1 border border-black hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-[10px] font-mono flex items-center gap-1"
-                title="Undo (Previous Version)"
-              >
-                <Undo size={14} />
-              </button>
-              <button
-                onClick={handleVersionRedo}
-                disabled={!codeVersionHistory[canvasContent.blockId] || codeVersionHistory[canvasContent.blockId].currentIndex >= codeVersionHistory[canvasContent.blockId].versions.length - 1}
-                className="p-1 border border-black hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-[10px] font-mono flex items-center gap-1"
-                title="Redo (Next Version)"
-              >
-                <Redo size={14} />
-              </button>
-              <button
-                onClick={() => {
-                  const newCode = canvasEditedCode;
-                  let newHtml = newCode;
-                  
-                  // Generate preview HTML based on language
-                  const isTsx = canvasContent.language === 'tsx' || canvasContent.language === 'jsx' || 
-                                canvasContent.language === 'typescript' || canvasContent.language === 'javascript' || canvasContent.language === 'ts';
-                  const isReactComponent = isTsx && (newCode.includes('export default') || newCode.includes('function'));
-                  
-                  if (isReactComponent) {
-                    newHtml = generateReactPreviewHtml(newCode);
-                  } else if (canvasContent.language !== 'html' && canvasContent.language !== 'htm') {
-                    newHtml = newCode;
-                  }
-                  
-                  // Save to version history
-                  const history = codeVersionHistory[canvasContent.blockId] || {versions: [canvasContent.code], currentIndex: 0};
-                  const newVersions = [...history.versions.slice(0, history.currentIndex + 1), newCode];
-                  setCodeVersionHistory(prev => ({
-                    ...prev,
-                    [canvasContent.blockId]: {versions: newVersions, currentIndex: newVersions.length - 1}
-                  }));
-                  
-                  // Save edited code to state so chat preview updates
-                  setEditedCodeBlocks(prev => ({...prev, [canvasContent.blockId]: newCode}));
-                  setCanvasContent({html: newHtml, code: newCode, language: canvasContent.language, blockId: canvasContent.blockId});
-                  setIframeKey(prev => prev + 1);
-                  setCanvasShowCode(false);
-                }}
-                className="px-2 py-1 border border-black hover:bg-gray-100 text-[10px] font-mono font-bold"
-              >
-                UPDATE
-              </button>
               <button
                 onClick={() => setCanvasShowCode(!canvasShowCode)}
                 className="p-1 border border-black hover:bg-gray-100 text-[10px] font-mono flex items-center gap-1"
@@ -965,13 +650,66 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             {canvasShowCode ? (
               <textarea
                 value={canvasEditedCode}
-                onChange={(e) => setCanvasEditedCode(e.target.value)}
+                onChange={(e) => {
+                  const newCode = e.target.value;
+                  setCanvasEditedCode(newCode);
+                  
+                  // Generate new preview HTML
+                  let newHtml = '';
+                  if (canvasContent.language === 'html' || canvasContent.language === 'htm') {
+                    newHtml = newCode;
+                  } else {
+                    newHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/framer-motion@11/dist/framer-motion.js"></script>
+  <script src="https://unpkg.com/lucide-react@0.263.1/dist/umd/lucide-react.js"></script>
+  <style>
+    body { margin: 0; padding: 20px; font-family: system-ui, -apple-system, sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" data-presets="react,typescript">
+    try {
+      const { motion } = window.Motion || {};
+      const { createElement: h } = React;
+      const lucide = window.lucideReact || {};
+      
+      ${newCode.replace(/export default/g, 'const Component =').replace(/import .+ from .+;?/g, '')}
+      
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(React.createElement(Component));
+    } catch (err) {
+      document.body.innerHTML = '<div style="padding:20px;color:red;font-family:monospace;white-space:pre-wrap;">Compilation Error:\n\n' + err.message + '</div>';
+    }
+  </script>
+  <script>
+    window.onerror = function(msg, url, line, col, error) {
+      if (msg === 'Script error.' && line === 0) {
+        document.body.innerHTML = '<div style="padding:20px;color:orange;font-family:monospace;white-space:pre-wrap;">Cross-origin error detected.\n\nThis usually means:\n- External imports are not supported\n- Remove any import statements\n- Use only React, Tailwind, Framer Motion, and Lucide icons</div>';
+      } else {
+        document.body.innerHTML = '<div style="padding:20px;color:red;font-family:monospace;white-space:pre-wrap;">Runtime Error:\n\n' + msg + '\n\nLine: ' + line + '</div>';
+      }
+      return true;
+    };
+  </script>
+</body>
+</html>`;
+                  }
+                  
+                  setCanvasContent(prev => prev ? {...prev, html: newHtml, code: newCode} : null);
+                }}
                 className="w-full h-full p-4 text-xs font-mono bg-gray-50 border-0 resize-none focus:outline-none"
                 spellCheck={false}
               />
             ) : (
               <iframe
-                key={iframeKey}
                 srcDoc={canvasContent.html}
                 className="w-full h-full border-0"
                 sandbox="allow-scripts"
