@@ -37,19 +37,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     setGeminiError('');
     
     try {
-      // Test with a simple embedding request
+      // Test with a simple chat request (NOT embeddings)
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${localGeminiKey}`,
+        `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${localGeminiKey}`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'models/text-embedding-004',
-            content: {
+            contents: [{
               parts: [{ text: 'test' }]
-            }
+            }]
           })
         }
       );

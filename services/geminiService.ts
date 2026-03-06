@@ -6,10 +6,15 @@ const DEFAULT_CHAT_MODEL = "gemini-2.5-flash"; // Updated to working model
 
 // Model options available to users
 export const GEMINI_MODELS = [
-  { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", vision: true, speed: "Very Fast" },
-  { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", vision: true, speed: "Fast" },
-  { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash Lite", vision: true, speed: "Fastest" },
-  { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash", vision: true, speed: "Very Fast" },
+  { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", vision: true, text: true, multimodal: true, context: "1M tokens", tags: ["VISION", "TEXT", "MULTIMODAL"] },
+  { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", vision: true, text: true, multimodal: true, context: "2M tokens", tags: ["VISION", "TEXT", "MULTIMODAL", "ADVANCED"] },
+  { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash Lite", vision: true, text: true, multimodal: true, context: "1M tokens", tags: ["VISION", "TEXT", "FAST"] },
+  { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash", vision: true, text: true, multimodal: true, context: "1M tokens", tags: ["VISION", "TEXT", "MULTIMODAL"] },
+];
+
+export const CEREBRAS_MODELS = [
+  { id: "llama3.1-8b", name: "Llama 3.1 8B", vision: false, text: true, multimodal: false, context: "128K tokens", tags: ["TEXT", "FAST"] },
+  { id: "gpt-oss-120b", name: "GPT OSS 120B", vision: false, text: true, multimodal: false, context: "128K tokens", tags: ["TEXT", "ADVANCED"] },
 ];
 
 // Lazy load GoogleGenAI to avoid initialization errors
@@ -143,10 +148,19 @@ Keep responses professional, objective, and detailed for construction context.`;
   const data = await response.json();
   const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
   
-  // Simulate streaming by chunking the response
-  const words = text.split(' ');
-  for (const word of words) {
-    onChunk(word + ' ');
-    await new Promise(resolve => setTimeout(resolve, 20));
+  // Stream character by character without delays
+  for (let i = 0; i < text.length; i += 3) {
+    onChunk(text.slice(i, i + 3));
   }
+};
+
+// Token estimation utility
+export const estimateTokens = (text: string, imageBase64?: string): number => {
+  // Text: ~4 chars per token
+  const textTokens = Math.ceil(text.length / 4);
+  
+  // Image: base64 length / 1.33 to get bytes, then ~258 tokens per image
+  const imageTokens = imageBase64 ? Math.ceil((imageBase64.length / 1.33) / 1024 * 258 / 1024) : 0;
+  
+  return textTokens + imageTokens;
 };

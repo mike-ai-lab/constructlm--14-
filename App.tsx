@@ -228,7 +228,8 @@ const App: React.FC = () => {
       id: crypto.randomUUID(),
       role: 'user',
       content: text,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      inputTokens: GeminiService.estimateTokens(text, imageBase64)
     };
     setMessages(prev => [...prev, userMsg]);
     setIsStreaming(true);
@@ -276,13 +277,14 @@ const App: React.FC = () => {
         },
         apiKey,
         selectedModel,
-        imageBase64 // Pass image to service
+        imageBase64
       );
 
-      // 4. Finalize
+      // 4. Finalize with token count
+      const outputTokens = GeminiService.estimateTokens(accumulatedText);
       setMessages(prev => prev.map(msg => 
         msg.id === modelMsgId 
-          ? { ...msg, isStreaming: false }
+          ? { ...msg, isStreaming: false, outputTokens, inputTokens: userMsg.inputTokens }
           : msg
       ));
 
@@ -497,37 +499,53 @@ const App: React.FC = () => {
               </button>
               
               {isModelDropdownOpen && (
-                <div className="absolute top-full left-0 mt-1 bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] z-50 min-w-[200px]">
+                <div className="absolute top-full left-0 mt-1 bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] z-50 min-w-[280px]">
                   <div className="p-2 border-b border-gray-200 text-[8px] font-bold text-gray-500">CEREBRAS</div>
-                  {['llama3.1-8b', 'gpt-oss-120b'].map(model => (
+                  {GeminiService.CEREBRAS_MODELS.map(model => (
                     <button
-                      key={model}
+                      key={model.id}
                       onClick={() => {
-                        setSelectedModel(model);
+                        setSelectedModel(model.id);
                         setAiModel('cerebras');
                         setIsModelDropdownOpen(false);
                       }}
                       className={`w-full text-left px-4 py-2 text-[10px] font-mono hover:bg-gray-100 ${
-                        selectedModel === model ? 'bg-gray-100 font-bold' : ''
+                        selectedModel === model.id ? 'bg-gray-100 font-bold' : ''
                       }`}
                     >
-                      {model}
+                      <div className="flex justify-between items-start">
+                        <span>{model.id}</span>
+                        <span className="text-[8px] text-gray-500">{model.context}</span>
+                      </div>
+                      <div className="flex gap-1 mt-1">
+                        {model.tags.map(tag => (
+                          <span key={tag} className="text-[7px] px-1 py-0.5 bg-gray-200 text-gray-700">{tag}</span>
+                        ))}
+                      </div>
                     </button>
                   ))}
                   <div className="p-2 border-b border-t border-gray-200 text-[8px] font-bold text-gray-500">GEMINI</div>
-                  {['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.5-flash-lite', 'gemini-2.0-flash'].map(model => (
+                  {GeminiService.GEMINI_MODELS.map(model => (
                     <button
-                      key={model}
+                      key={model.id}
                       onClick={() => {
-                        setSelectedModel(model);
+                        setSelectedModel(model.id);
                         setAiModel('gemini');
                         setIsModelDropdownOpen(false);
                       }}
                       className={`w-full text-left px-4 py-2 text-[10px] font-mono hover:bg-gray-100 ${
-                        selectedModel === model ? 'bg-gray-100 font-bold' : ''
+                        selectedModel === model.id ? 'bg-gray-100 font-bold' : ''
                       }`}
                     >
-                      {model}
+                      <div className="flex justify-between items-start">
+                        <span>{model.id}</span>
+                        <span className="text-[8px] text-gray-500">{model.context}</span>
+                      </div>
+                      <div className="flex gap-1 mt-1">
+                        {model.tags.map(tag => (
+                          <span key={tag} className="text-[7px] px-1 py-0.5 bg-gray-200 text-gray-700">{tag}</span>
+                        ))}
+                      </div>
                     </button>
                   ))}
                 </div>

@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Send, Image as ImageIcon, X } from 'lucide-react';
 import { ChatMessage, Citation } from '../types';
+import * as GeminiService from '../services/geminiService';
 
 interface ChatInterfaceProps {
   messages: ChatMessage[];
@@ -18,45 +19,105 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [input, setInput] = useState('');
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [pinnedCitation, setPinnedCitation] = useState<string | null>(null);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedImages, setSelectedImages] = useState<Array<{base64: string, preview: string, name: string, size: number, tokens: number}>>([]);
+  const [estimatedTokens, setEstimatedTokens] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isImagesExpanded, setIsImagesExpanded] = useState(true);
   const endRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const dropZoneRef = useRef<HTMLDivElement>(null);
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  useEffect(() => {
+    const imageTokens = selectedImages.reduce((sum, img) => sum + img.tokens, 0);
+    const textTokens = GeminiService.estimateTokens(input);
+    setEstimatedTokens(textTokens + imageTokens);
+  }, [input, selectedImages]);
 
-    // Check if image
+  const processImageFile = (file: File) => {
     if (!file.type.startsWith('image/')) {
       alert('Please select an image file');
       return;
     }
-
-    // Convert to base64
     const reader = new FileReader();
     reader.onload = (event) => {
       const base64 = event.target?.result as string;
-      setImagePreview(base64);
-      // Remove data:image/...;base64, prefix for API
       const base64Data = base64.split(',')[1];
-      setSelectedImage(base64Data);
+      const tokens = GeminiService.estimateTokens('', base64Data);
+      
+      let finalName = file.name;
+      const existingNames = selectedImages.map(img => img.name);
+      if (existingNames.includes(finalName)) {
+        const nameParts = file.name.split('.');
+        const ext = nameParts.pop();
+        const baseName = nameParts.join('.');
+        let counter = 1;
+        while (existingNames.includes(`${baseName}_(${counter}).${ext}`)) {
+          counter++;
+        }
+        finalName = `${baseName}_(${counter}).${ext}`;
+      }
+      
+      setSelectedImages(prev => [...prev, {
+        base64: base64Data,
+        preview: base64,
+        name: finalName,
+        size: file.size,
+        tokens
+      }]);
     };
     reader.readAsDataURL(file);
   };
 
-  const clearImage = () => {
-    setSelectedImage(null);
-    setImagePreview(null);
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      Array.from(files).forEach(file => processImageFile(file));
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setSelectedImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const clearAllImages = () => {
+    setSelectedImages([]);
     if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.currentTarget === dropZoneRef.current) setIsDragging(false);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    const files = e.dataTransfer.files;
+    if (files) {
+      Array.from(files).forEach(file => processImageFile(file));
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if ((!input.trim() && !selectedImage) || isStreaming) return;
-    onSendMessage(input || 'Analyze this image', selectedImage || undefined);
+    if ((!input.trim() && selectedImages.length === 0) || isStreaming) return;
+    const imagesBase64 = selectedImages.map(img => img.base64).join(',');
+    onSendMessage(input || 'Analyze these images', imagesBase64 || undefined);
     setInput('');
-    clearImage();
+    clearAllImages();
   };
 
   useEffect(() => {
@@ -65,7 +126,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   return (
     <div className="flex flex-col h-full bg-white relative overflow-hidden">
-      {/* Messages Area */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-12 flex flex-col items-center" style={{ WebkitOverflowScrolling: 'touch' }}>
         <div className="w-full max-w-3xl space-y-6">
           {messages.length === 0 && (
@@ -129,17 +189,19 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                       </ReactMarkdown>
                     </div>
 
-                    {/* Citations Section */}
+                    {!msg.isStreaming && msg.outputTokens && (
+                      <div className="mt-4 pt-3 border-t border-gray-200 text-[10px] text-gray-500 italic font-mono">
+                        {msg.inputTokens && `Input: ${msg.inputTokens} tokens • `}
+                        Output: {msg.outputTokens} tokens
+                      </div>
+                    )}
+
                     {msg.citations && msg.citations.length > 0 && (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-8 pt-6 border-t-2 border-black">
                         {msg.citations.map((cite, i) => {
-                          // Extract sentences and find most relevant ones based on query keywords
                           const sentences = cite.text.split(/[.!?]+\s+/).filter(s => s.trim().length > 20);
-                          
-                          // Get first 2-3 sentences as preview (more context than just 1)
                           const preview = sentences.slice(0, 2).join('. ') + (sentences.length > 2 ? '.' : '');
                           const displayPreview = preview.length > 200 ? preview.substring(0, 200) + '...' : preview;
-                          
                           const citationId = `${msg.id}-${i}`;
                           const isPinned = pinnedCitation === citationId;
                           
@@ -153,7 +215,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                   SRC {i + 1}: {cite.docName}
                                 </span>
                               </div>
-                              {/* Tooltip with Preview + Full Text */}
                               <div className={`fixed left-1/2 -translate-x-1/2 top-20 w-80 md:w-96 bg-white border-2 border-black p-3 text-xs transition-all z-[100] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] max-h-96 overflow-y-auto ${
                                 isPinned ? 'opacity-100 visible' : 'opacity-0 invisible group-hover:opacity-100 group-hover:visible'
                               }`}>
@@ -171,13 +232,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                     </button>
                                   )}
                                 </div>
-                                
-                                {/* Highlighted Preview */}
                                 <div className="bg-yellow-100 border-l-4 border-yellow-400 pl-2 py-1 mb-3 text-gray-800 font-medium text-[11px] leading-relaxed">
                                   {displayPreview}
                                 </div>
-                                
-                                {/* Full Context */}
                                 <div className="text-[10px] text-gray-500 mb-2 font-bold uppercase">Full Context:</div>
                                 <div className="text-gray-700 prose prose-sm max-w-none">
                                   <ReactMarkdown
@@ -220,21 +277,72 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         <div ref={endRef} />
       </div>
 
-      {/* Input Area */}
-      <div className="border-t-2 border-black bg-white shrink-0 flex flex-col items-center px-6 py-3">
-        {/* Image Preview */}
-        {imagePreview && (
-          <div className="w-full max-w-3xl mb-2 relative">
-            <div className="border-2 border-black p-2 bg-gray-50 flex items-center gap-3">
-              <img src={imagePreview} alt="Preview" className="h-16 w-16 object-cover border border-black" />
-              <span className="text-xs font-mono flex-1">Image attached</span>
-              <button
-                onClick={clearImage}
-                className="p-1 hover:bg-gray-200 border border-black"
-                type="button"
-              >
-                <X size={16} />
-              </button>
+      <div 
+        ref={dropZoneRef}
+        onDragEnter={handleDragEnter}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        className={`border-t-2 border-black bg-white shrink-0 flex flex-col items-center px-6 py-3 relative ${isDragging ? 'bg-gray-100' : ''}`}
+      >
+        {isDragging && (
+          <div className="absolute inset-0 bg-black/10 border-4 border-dashed border-black flex items-center justify-center z-10 pointer-events-none">
+            <div className="text-center font-mono font-bold">
+              <ImageIcon size={32} className="mx-auto mb-2" />
+              DROP IMAGE HERE
+            </div>
+          </div>
+        )}
+        {(input || selectedImages.length > 0) && (
+          <div className="w-full max-w-3xl mb-2 flex justify-end">
+            <div className="text-[10px] font-mono text-gray-500">
+              EST. TOKENS: <span className="font-bold text-black">{estimatedTokens}</span>
+            </div>
+          </div>
+        )}
+        
+        {selectedImages.length > 0 && (
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 w-full max-w-3xl mb-1 px-6">
+            <div className="border-2 border-black bg-gray-50">
+              <div className="flex justify-between items-center p-2 border-b border-gray-300">
+                <span className="text-[10px] font-mono font-bold">{selectedImages.length} IMAGE{selectedImages.length > 1 ? 'S' : ''} ATTACHED</span>
+                <div className="flex gap-2">
+                  {selectedImages.length > 2 && (
+                    <button
+                      onClick={() => setIsImagesExpanded(!isImagesExpanded)}
+                      className="text-[10px] font-mono hover:bg-gray-200 px-2 py-1"
+                      type="button"
+                    >
+                      {isImagesExpanded ? '▼ COLLAPSE' : '▲ EXPAND'}
+                    </button>
+                  )}
+                  <button
+                    onClick={clearAllImages}
+                    className="text-[10px] font-mono hover:bg-gray-200 px-2 py-1"
+                    type="button"
+                  >
+                    CLEAR ALL
+                  </button>
+                </div>
+              </div>
+              <div className="p-2 space-y-2 max-h-[280px] overflow-y-auto">
+                {(isImagesExpanded ? selectedImages : selectedImages.slice(0, 2)).map((img, idx) => (
+                  <div key={idx} className="flex items-center gap-3 bg-white border border-gray-300 p-2">
+                    <img src={img.preview} alt={img.name} className="h-12 w-12 object-cover border border-black" />
+                    <div className="flex-1 text-[10px] font-mono">
+                      <div className="font-bold truncate">{img.name}</div>
+                      <div className="text-gray-500">{img.tokens} tokens • {(img.size / 1024 / 1024).toFixed(2)} MB</div>
+                    </div>
+                    <button
+                      onClick={() => removeImage(idx)}
+                      className="p-1 hover:bg-gray-200 border border-black"
+                      type="button"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -248,7 +356,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 onChange={(e) => setInput(e.target.value)}
                 onFocus={() => setIsInputFocused(true)}
                 onBlur={() => setIsInputFocused(false)}
-                placeholder={selectedImage ? "ADD DESCRIPTION (OPTIONAL)..." : "ASK A QUESTION..."}
+                placeholder={selectedImages.length > 0 ? "ADD DESCRIPTION (OPTIONAL)..." : "ASK A QUESTION..."}
                 className={`w-full border-2 border-black p-3 pr-20 text-[11px] font-bold focus:outline-none uppercase placeholder:text-gray-300 bg-white transition-all duration-100 ${
                   isInputFocused ? 'shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : ''
                 }`}
@@ -258,6 +366,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
+                multiple
                 onChange={handleImageSelect}
                 className="hidden"
               />
@@ -273,7 +382,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 </button>
                 <button 
                   type="submit"
-                  disabled={(!input.trim() && !selectedImage) || isStreaming}
+                  disabled={(!input.trim() && selectedImages.length === 0) || isStreaming}
                   className="text-black hover:text-gray-600 transition-colors disabled:opacity-50"
                 >
                   {isStreaming ? (

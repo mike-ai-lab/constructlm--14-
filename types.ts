@@ -25,6 +25,8 @@ export interface ChatMessage {
   timestamp: number;
   isStreaming?: boolean;
   citations?: Citation[];
+  inputTokens?: number;
+  outputTokens?: number;
 }
 
 export interface ChatSession {
