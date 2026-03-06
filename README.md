@@ -1,155 +1,381 @@
 # ConstructLM
 
-A privacy-first RAG (Retrieval-Augmented Generation) workspace built with React, TypeScript, and local embeddings. Upload documents, ask questions, and get AI-powered answers with source citations.
+A privacy-first, browser-based RAG (Retrieval-Augmented Generation) workspace for construction professionals and technical documentation. Upload documents, ask questions, and get AI-powered responses with source citations—all running locally in your browser.
 
-## Features
+## Core Features
 
-- **Privacy-First Embeddings** - Uses Transformers.js (Xenova/all-MiniLM-L6-v2) for 100% local, browser-based embeddings
-- **In-App API Key Management** - Configure and test API keys directly in the UI, stored securely in localStorage
-- **Dual AI Models** - Switch between Gemini and Cerebras AI for chat responses
-- **Multi-Document RAG** - Upload multiple files (TXT, MD, CSV, JSON, PDF) and query across all sources
-- **Smart Retrieval** - Diversified search results ensure coverage from all uploaded documents
-- **Markdown Support** - Rich formatting in AI responses with tables, lists, code blocks, and more
-- **Responsive Design** - Resizable sidebar on desktop, mobile-friendly overlay menu
-- **Source Citations** - Hover over citation badges to see the exact source text with markdown rendering
-- **IndexedDB Storage** - All documents and embeddings stored locally in your browser
-- **Comprehensive Documentation** - Built-in documentation accessible via the Documentation button in the header
+### 🔒 Privacy-First Architecture
+- **Local embeddings**: All document vectorization happens in-browser using Transformers.js (Xenova/all-MiniLM-L6-v2)
+- **No data leakage**: Documents and embeddings stored in browser IndexedDB
+- **API keys stored locally**: Keys never leave your device
+
+### 🤖 Multi-Model AI Support
+- **Gemini 2.5 Flash/Pro**: Google's latest models with vision and multimodal support
+- **Cerebras Llama 3.1**: Ultra-fast inference for text-only queries
+- **Model switching**: Toggle between providers in real-time
+- **Vision support**: Upload images for analysis (Gemini only)
+
+### 📚 Document Management
+- **Supported formats**: TXT, MD, CSV, JSON, PDF
+- **Smart chunking**: 1000-character chunks with 200-character overlap
+- **Selective indexing**: Enable/disable sources per query
+- **Token tracking**: Real-time context usage monitoring (up to 1M tokens)
+
+### 💬 Advanced Chat Interface
+- **Session management**: Create, save, and switch between multiple chat sessions
+- **Auto-save**: Conversations persist automatically in localStorage
+- **Export chats**: Download sessions as formatted Markdown
+- **Streaming responses**: Real-time token-by-token output
+- **Token estimation**: Preview input/output token usage
+
+### 🎨 Interactive Code Canvas (Production-Grade Runtime Bundler)
+- **Import resolution**: Automatic NPM package loading via ESM CDN (esm.sh)
+- **TSX/JSX compilation**: Full Babel transpilation with TypeScript support
+- **Path alias support**: Handles `@/components/...` imports with intelligent mocking
+- **Dependency injection**: Auto-loads React, Framer Motion, Wouter, Lucide React
+- **Smart mocking**: Missing imports replaced with functional fallback components
+- **Live preview**: Render HTML and React components in isolated sandbox
+- **Code editing**: Edit and re-render code blocks with instant updates
+- **Version history**: Full undo/redo with version tracking
+- **Error boundaries**: Readable error overlays with stack traces
+- **Multi-language**: HTML, JSX, TSX, JavaScript, TypeScript
+- **React sandbox**: Full React 18 + Babel + Tailwind environment
+- **Library ecosystem**: Framer Motion, Lucide React, Wouter routing auto-loaded
+
+### 📖 Source Citations
+- **Inline citations**: Every response includes source references
+- **Hover tooltips**: Preview source text without leaving chat
+- **Pin citations**: Keep important sources visible
+- **Similarity scores**: See relevance ranking for each source
+- **Multi-source synthesis**: AI combines information from multiple documents
+
+### 📱 Responsive Design
+- **Mobile-optimized**: Touch gestures, swipe navigation
+- **Collapsible sidebar**: Maximize chat space on desktop
+- **Resizable panels**: Drag to adjust sidebar width
+- **Safe area support**: iOS notch/island compatibility
 
 ## Tech Stack
 
-- **Frontend**: React 19, TypeScript, Vite
-- **Styling**: Tailwind CSS (utility-first)
-- **Embeddings**: Transformers.js (@xenova/transformers)
-- **AI Models**: Google Gemini API, Cerebras AI API
-- **Storage**: IndexedDB for vector database
-- **Markdown**: react-markdown with GitHub Flavored Markdown support
+### Frontend
+- **React 19** with TypeScript
+- **Vite 6** for blazing-fast builds
+- **Tailwind CSS 4** for utility-first styling
+- **Lucide React** for icons
+- **Framer Motion** for animations
 
-## Getting Started
+### AI & ML
+- **@xenova/transformers**: Local browser-based embeddings (25MB model, cached)
+- **@google/genai**: Google Gemini API integration
+- **Cerebras API**: Fast inference for text generation
 
-### Prerequisites
+### Data & Storage
+- **IndexedDB**: Document and vector storage
+- **localStorage**: API keys and chat sessions
+- **pdfjs-dist**: PDF parsing and text extraction
 
-- Node.js (v16 or higher)
-- npm or yarn
-
-### Installation
-
-1. Clone the repository:
-```bash
-git clone <your-repo-url>
-cd constructlm
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Start the development server:
-```bash
-npm run dev
-```
-
-4. Open your browser to `http://localhost:3001`
-
-5. **Configure API Keys** (First-time setup):
-   - Click the Settings icon in the header
-   - Enter your API keys:
-     - **Cerebras API** (required for default model): Get from [Cerebras Cloud](https://cloud.cerebras.ai/)
-     - **Gemini API** (optional): Get from [Google AI Studio](https://makersuite.google.com/app/apikey)
-   - Test each key to verify it works
-   - Click "SAVE"
-
-**Note:** API keys are stored securely in your browser's localStorage and never leave your device.
-
-## Usage
-
-1. **Access Documentation**: Click the Documentation icon in the header to open the comprehensive documentation
-2. **Configure API Keys** (first time): Click Settings icon in header to enter and test your API keys
-3. **Upload Documents**: Click "+ ADD SOURCE" to upload TXT, MD, CSV, JSON, or PDF files
-4. **Select AI Model**: Toggle between Gemini and Cerebras in the header
-5. **Ask Questions**: Type your question in the input field and press Enter
-6. **View Citations**: Hover over source badges to see the exact text used for the answer
-7. **Resize Sidebar**: Drag the handle between sidebar and chat area (desktop only)
+### Rendering & Markdown
+- **react-markdown**: GitHub Flavored Markdown support
+- **remark-gfm**: Tables, strikethrough, task lists
+- **rehype-raw**: HTML in markdown
+- **Babel Standalone**: In-browser JSX/TSX compilation
 
 ## Project Structure
 
 ```
 constructlm/
 ├── components/
-│   ├── ChatInterface.tsx    # Main chat UI with markdown rendering
-│   ├── Sidebar.tsx           # File management and model selection
-│   ├── SettingsModal.tsx     # API key configuration
+│   ├── ChatInterface.tsx      # Main chat UI with canvas
+│   ├── Sidebar.tsx             # File/chat session management
+│   ├── SettingsModal.tsx       # API key configuration
 │   └── ui/
-│       └── Button.tsx        # Reusable button component
+│       └── Button.tsx          # Reusable button component
 ├── services/
-│   ├── embeddingService.ts   # Local Transformers.js embeddings
-│   ├── geminiService.ts      # Gemini API integration
-│   ├── cerebrasService.ts    # Cerebras API integration
-│   ├── chatStorage.ts        # Chat session management
-│   ├── pdfParser.ts          # PDF text extraction
-│   └── vectorDb.ts           # IndexedDB vector storage
-├── docs/                     # Comprehensive documentation
-│   ├── index.html            # Documentation home
-│   ├── quick-start.html      # Setup guide
-│   ├── interface.html        # UI reference
-│   ├── local-embeddings.html # Embedding system
-│   ├── architecture.html     # Technical details
-│   ├── troubleshooting.html  # Problem solving
-│   ├── tips.html             # Best practices
-│   ├── styles.css            # Documentation styling
-│   └── docs.js               # Documentation interactivity
-├── App.tsx                   # Main app component
-├── types.ts                  # TypeScript type definitions
-└── index.tsx                 # App entry point
+│   ├── embeddingService.ts     # Local Transformers.js embeddings
+│   ├── vectorDb.ts             # IndexedDB vector operations
+│   ├── geminiService.ts        # Gemini API integration
+│   ├── cerebrasService.ts      # Cerebras API integration
+│   ├── chatStorage.ts          # Chat session persistence
+│   ├── pdfParser.ts            # PDF text extraction
+│   └── runtimeBundler.ts       # Canvas TSX/JSX compilation & import resolution
+├── App.tsx                     # Root component & state management
+├── types.ts                    # TypeScript definitions
+├── index.tsx                   # React entry point
+├── vite.config.ts              # Build configuration
+└── docs/                       # User documentation
 ```
 
-## Key Features Explained
+## Installation & Setup
 
-### Local Embeddings
-Documents are chunked and embedded using Transformers.js, which runs entirely in your browser. No data is sent to external servers for embeddings, ensuring complete privacy.
+### Prerequisites
+- Node.js 18+ (for development)
+- Modern browser (Chrome, Firefox, Safari, Edge)
 
-### Diversified RAG Search
-The search algorithm ensures results come from multiple documents when available, preventing bias toward a single source.
-
-### Markdown Rendering
-Both AI responses and citation tooltips support full markdown formatting including:
-- Headings, bold, italic
-- Code blocks (inline and block)
-- Tables with proper styling
-- Lists (ordered and unordered)
-- Links and blockquotes
-
-## Build for Production
+### Development
 
 ```bash
+# Install dependencies
+npm install
+
+# Start dev server (http://localhost:3000)
+npm run dev
+
+# Build for production
 npm run build
+
+# Preview production build
+npm run preview
 ```
 
-The built files will be in the `dist/` directory, ready for deployment.
+### Environment Variables
+
+Create `.env.local` (optional, keys can be set in UI):
+
+```env
+VITE_GEMINI_API_KEY=your_gemini_key_here
+VITE_CEREBRAS_API_KEY=your_cerebras_key_here
+```
+
+## Architecture Deep Dive
+
+### RAG Pipeline
+
+1. **Document Upload** → `vectorDb.processFile()`
+   - Parse file (text or PDF)
+   - Chunk into 1000-char segments with 200-char overlap
+   - Generate embeddings using local Transformers.js model
+   - Store in IndexedDB with metadata
+
+2. **Query Processing** → `vectorDb.searchVectors()`
+   - Generate query embedding locally
+   - Calculate cosine similarity across all chunks
+   - Filter by relevance threshold (0.15)
+   - Diversify results across multiple sources
+   - Return top 8 chunks with similarity scores
+
+3. **AI Response** → `geminiService.streamChatResponse()`
+   - Format context with source markers
+   - Build system instruction with RAG context
+   - Stream response token-by-token
+   - Display citations with hover tooltips
+
+### State Management
+
+- **App.tsx**: Central state container
+  - Files, messages, chat sessions
+  - API keys, model selection
+  - Sidebar width, mobile state
+- **Components**: Presentational, receive props
+- **Services**: Pure functions, no state
+
+### Storage Strategy
+
+- **IndexedDB**: Documents, chunks, embeddings (persistent)
+- **localStorage**: API keys, chat sessions (persistent)
+- **React state**: UI state, current session (ephemeral)
+
+### Code Canvas Implementation
+
+The canvas feature provides a production-grade runtime bundler for AI-generated React components:
+
+1. **Import Parsing**: Extracts all import statements using regex patterns
+2. **Dependency Resolution**: Maps imports to ESM CDN URLs (esm.sh) or mocks
+3. **Code Transformation**: Removes imports, injects dependencies as globals
+4. **Compilation**: Babel transpiles TSX/JSX to executable JavaScript
+5. **Sandbox Execution**: Runs in isolated iframe with error boundaries
+6. **Rendering**: React 18 with full hooks and library support
+7. **Error Handling**: Catches compilation, runtime, and async errors
+
+**Import Resolution Strategy**:
+- NPM packages → `https://esm.sh/package-name`
+- Path aliases (`@/...`) → Mock components
+- React ecosystem → Preloaded globals (`window.React`)
+- Missing deps → Intelligent fallbacks (Link → `<a>`, Button → styled `<button>`)
+
+**Supported Libraries** (auto-loaded):
+- React 18 (production build)
+- ReactDOM 18
+- Babel Standalone (TSX compilation)
+- Tailwind CSS (full framework)
+- Framer Motion (animations)
+- Lucide React (icons)
+- Wouter (routing)
+
+**Example**: AI generates code with `import { Link } from "wouter"` → Bundler loads Wouter from CDN, component renders with full routing functionality.
+
+See `CANVAS_RUNTIME_BUNDLER.md` for complete technical documentation.
+
+### Vision Support
+
+Gemini models support image analysis:
+
+1. **Upload**: Drag-and-drop or file picker
+2. **Preview**: Thumbnail grid with token estimation
+3. **Encoding**: Base64 conversion for API
+4. **Multi-image**: Support for multiple images per query
+5. **Token tracking**: Accurate token estimation for images
+
+## API Integration
+
+### Gemini API
+
+```typescript
+// Text + RAG context
+streamChatResponse(message, history, citations, onChunk, apiKey, model)
+
+// With vision
+streamChatResponse(message, history, citations, onChunk, apiKey, model, imageBase64)
+```
+
+Models:
+- `gemini-2.5-flash`: Fast, 1M context, vision
+- `gemini-2.5-pro`: Advanced, 2M context, vision
+- `gemini-2.0-flash`: Legacy, 1M context, vision
+
+### Cerebras API
+
+```typescript
+// Text-only (no vision)
+streamChatResponse(message, history, citations, onChunk, apiKey, model)
+```
+
+Models:
+- `llama3.1-8b`: Fast, 128K context
+- `gpt-oss-120b`: Advanced, 128K context
+
+## Performance Optimizations
+
+- **Lazy loading**: GoogleGenAI SDK loaded on-demand
+- **Batch embeddings**: Process 5 chunks in parallel
+- **Chunk caching**: Embeddings persist in IndexedDB
+- **Streaming**: Token-by-token rendering for perceived speed
+- **Code splitting**: PDF.js in separate chunk
+- **Worker threads**: Transformers.js runs in Web Worker
 
 ## Browser Compatibility
 
-- Chrome/Edge: Full support
-- Firefox: Full support
-- Safari: Full support (iOS 15+)
+| Browser | Support | Notes |
+|---------|---------|-------|
+| Chrome 90+ | ✅ Full | Recommended |
+| Edge 90+ | ✅ Full | Chromium-based |
+| Firefox 88+ | ✅ Full | IndexedDB support |
+| Safari 15+ | ✅ Full | iOS 15+ required |
 
-Note: First-time model download (~25MB) is cached for offline use.
+First-time load: ~25MB model download (cached for offline use)
 
-## Documentation
+## Security Considerations
 
-Comprehensive documentation is available in the `docs/` folder and accessible via the Documentation button in the application header. The documentation covers:
+- **API keys**: Stored in localStorage, never transmitted except to official APIs
+- **Sandboxed iframes**: Code execution isolated with `sandbox="allow-scripts"`
+- **CORS**: Proper headers for cross-origin requests
+- **Input validation**: File type checking, size limits
+- **XSS protection**: React's built-in escaping, markdown sanitization
 
-- **Getting Started**: Introduction, Quick Start, Interface Overview
-- **Core Features**: Local Embeddings, RAG System, AI Models, Chat Management
-- **Advanced Features**: API Configuration, Document Management, Citations
-- **Reference**: Architecture, Troubleshooting, Tips & Best Practices
+## Deployment
 
-To view documentation locally, open `docs/index.html` in your browser.
+### Netlify (Recommended)
 
-## License
+```bash
+# Build command
+npm run build
 
-MIT
+# Publish directory
+dist
+
+# Environment variables (optional)
+VITE_GEMINI_API_KEY=xxx
+VITE_CEREBRAS_API_KEY=xxx
+```
+
+### Vercel
+
+```bash
+# Build command
+npm run build
+
+# Output directory
+dist
+
+# Framework preset
+Vite
+```
+
+### Static Hosting
+
+Build outputs to `dist/` - deploy to any static host:
+- GitHub Pages
+- Cloudflare Pages
+- AWS S3 + CloudFront
+- Firebase Hosting
+
+## Development Guidelines
+
+### Adding a New AI Provider
+
+1. Create service file: `services/newProviderService.ts`
+2. Implement `streamChatResponse()` interface
+3. Add model definitions to `geminiService.ts` exports
+4. Update `App.tsx` model dropdown
+5. Add provider toggle in header
+
+### Adding File Type Support
+
+1. Update `vectorDb.processFile()` parser logic
+2. Add MIME type to file input accept attribute
+3. Test chunking strategy for new format
+4. Update documentation
+
+### Customizing RAG Behavior
+
+Key parameters in `vectorDb.ts`:
+- `CHUNK_SIZE`: 1000 (characters per chunk)
+- `OVERLAP`: 200 (overlap between chunks)
+- `RELEVANCE_THRESHOLD`: 0.15 (minimum similarity score)
+- `limit`: 8 (max chunks returned per query)
+
+## Troubleshooting
+
+### Model fails to load
+- Check browser console for CORS errors
+- Ensure 25MB+ available storage
+- Try clearing IndexedDB cache
+
+### API errors
+- Verify API keys in Settings
+- Check API quota/billing
+- Test keys with "TEST" button
+
+### Poor RAG results
+- Lower `RELEVANCE_THRESHOLD` in `vectorDb.ts`
+- Increase `limit` for more context
+- Adjust `CHUNK_SIZE` for your content
+
+### Canvas rendering issues
+- Check browser console for compilation errors
+- Ensure code has valid React component structure
+- Verify `export default` or `const Component` pattern
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+This is a reference implementation. Key areas for contribution:
+- Additional AI providers (OpenAI, Anthropic, etc.)
+- More file format support (DOCX, XLSX, etc.)
+- Advanced RAG strategies (hybrid search, reranking)
+- Collaborative features (shared sessions)
+- Mobile app (React Native port)
+
+## License
+
+MIT License - see LICENSE file for details
+
+## Acknowledgments
+
+- **Xenova/transformers.js**: Making ML accessible in browsers
+- **Google Gemini**: Powerful multimodal AI
+- **Cerebras**: Ultra-fast inference
+- **Tailwind CSS**: Utility-first styling
+- **React Team**: Amazing framework
+
+---
+
+Built with ❤️ for construction professionals and technical documentation workflows.

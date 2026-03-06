@@ -1,3 +1,5 @@
+## Failed test
+```typescript
 import React, { useState } from "react";
 import { Link } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
@@ -272,3 +274,125 @@ export default function Tools() {
     </div>
   );
 }
+```
+
+## the console:
+
+```
+02:26:59.076 about:srcdoc:50 [Canvas] Libraries loaded successfully
+02:26:59.077 about:srcdoc:85 [Canvas] Compiling component...
+02:26:59.118 about:srcdoc:117 [Canvas] Error: SyntaxError: /component.tsx: Identifier 'ModernCard' has already been declared. (16:6) (at parse-error.ts:95:45)
+
+  14 |  * @param {function} props.onButton2Click - The click handler for the second button.
+  15 |  */
+> 16 | const ModernCard = ({
+     |       ^
+  17 |   title,
+  18 |   description,
+  19 |   button1Text,
+    at e (parse-error.ts:95:45)
+    at r.raise (index.ts:1504:19)
+    at t.checkRedeclarationInScope (scope.ts:164:19)
+    at t.declareName (scope.ts:118:12)
+    at r.declareName (scope.ts:89:22)
+    at r.declareNameFromIdentifier (lval.ts:876:16)
+    at r.checkIdentifier (lval.ts:871:12)
+    at r.checkLVal (lval.ts:763:12)
+    at r.parseVarId (statement.ts:1633:10)
+    at r.parseVarId (index.ts:3700:23)
+    at r.parseVar (statement.ts:1582:12)
+    at r.parseVarStatement (statement.ts:1251:10)
+    at r.parseVarStatement (index.ts:3085:50)
+    at r.parseStatementContent (statement.ts:612:21)
+    at r.parseStatementContent (index.ts:3220:41)
+    at r.parseStatementLike (statement.ts:482:17)
+    at r.parseModuleItem (statement.ts:419:17)
+    at r.parseBlockOrModuleBlockBody (statement.ts:1443:16)
+    at r.parseBlockBody (statement.ts:1417:10)
+    at r.parseProgram (statement.ts:229:10)
+    at r.parseTopLevel (statement.ts:203:25)
+    at r.parse (index.ts:83:25)
+    at r.parse (index.ts:4354:25)
+    at aR (index.ts:86:38)
+    at index.ts:29:14
+    at Generator.<anonymous> (babel.min.js:3:1068)
+    at Generator.next (babel.min.js:3:1898)
+    at Generator.<anonymous> (babel.min.js:3:826)
+    at Generator.next (babel.min.js:3:1898)
+    at Generator.<anonymous> (babel.min.js:3:826)
+    at Generator.next (babel.min.js:3:1898)
+    at Generator.<anonymous> (babel.min.js:3:826)
+    at Generator.next (babel.min.js:3:1898)
+    at iF (index.js:251:28)
+    at sync (index.js:89:14)
+    at stopHiding - secret - don't use this - v1 (rewrite-stack-trace.ts:99:16)
+    at SV (transform.ts:66:52)
+    at Object.FEe [as transform] (index.ts:179:10)
+    at initComponent (about:srcdoc:87:41)
+    at HTMLDocument.checkLibrariesLoaded (about:srcdoc:51:11)
+initComponent @ about:srcdoc:117
+checkLibrariesLoaded @ about:srcdoc:51
+02:26:59.119 about:srcdoc:35 [Canvas] Component Error /component.tsx: Identifier 'ModernCard' has already been declared. (16:6)
+
+  14 |  * @param {function} props.onButton2Click - The click handler for the second button.
+  15 |  */
+> 16 | const ModernCard = ({
+     |       ^
+  17 |   title,
+  18 |   description,
+  19 |   button1Text,
+
+SyntaxError: /component.tsx: Identifier 'ModernCard' has already been declared. (16:6)
+
+  14 |  * @param {function} props.onButton2Click - The click handler for the second button.
+  15 |  */
+> 16 | const ModernCard = ({
+     |       ^
+  17 |   title,
+  18 |   description,
+  19 |   button1Text,
+    at e (https://unpkg.com/@babel/standalone/babel.min.js:3:260002)
+    at r.raise (https://unpkg.com/@babel/standalone/babel.min.js:3:312098)
+    at t.checkRedeclarationInScope (https://unpkg.com/@babel/standalone/babel.min.js:3:270664)
+    at t.declareName (https://unpkg.com/@babel/standalone/babel.min.js:3:270028)
+    at r.declareName (https://unpkg.com/@babel/standalone/babel.min.js:3:285969)
+    at r.declareNameFromIdentifier (https://unpkg.com/@babel/standalone/babel.min.js:3:330125)
+    at r.checkIdentifier (https://unpkg.com/@babel/standalone/babel.min.js:3:330040)
+    at r.checkLVal (https://unpkg.com/@babel/standalone/babel.min.js:3:329634)
+    at r.parseVarId (https://unpkg.com/@babel/standalone/babel.min.js:3:525843)
+    at r.parseVarId (https://unpkg.com/@babel/standalone/babel.min.js:3:451109)
+    at r.parseVar (https://unpkg.com/@babel/standalone/babel.min.js:3:525032)
+    at r.parseVarStatement (https://unpkg.com/@babel/standalone/babel.min.js:3:521347)
+    at r.parseVarStatement (https://unpkg.com/@babel/standalone/babel.min.js:3:443139)
+    at r.parseStatementContent (https://unpkg.com/@babel/standalone/babel.min.js:3:513480)
+    at r.parseStatementContent (https://unpkg.com/@babel/standalone/babel.min.js:3:444971)
+    at r.parseStatementLike (https://unpkg.com/@babel/standalone/babel.min.js:3:511686)
+    at r.parseModuleItem (https://unpkg.com/@babel/standalone/babel.min.js:3:511181)
+    at r.parseBlockOrModuleBlockBody (https://unpkg.com/@babel/standalone/babel.min.js:3:523506)
+    at r.parseBlockBody (https://unpkg.com/@babel/standalone/babel.min.js:3:523339)
+    at r.parseProgram (https://unpkg.com/@babel/standalone/babel.min.js:3:508590)
+    at r.parseTopLevel (https://unpkg.com/@babel/standalone/babel.min.js:3:507296)
+    at r.parse (https://unpkg.com/@babel/standalone/babel.min.js:3:550298)
+    at r.parse (https://unpkg.com/@babel/standalone/babel.min.js:3:459572)
+    at aR (https://unpkg.com/@babel/standalone/babel.min.js:3:550496)
+    at https://unpkg.com/@babel/standalone/babel.min.js:3:1117839
+    at Generator.<anonymous> (https://unpkg.com/@babel/standalone/babel.min.js:3:1068)
+    at Generator.next (https://unpkg.com/@babel/standalone/babel.min.js:3:1898)
+    at Generator.<anonymous> (https://unpkg.com/@babel/standalone/babel.min.js:3:826)
+    at Generator.next (https://unpkg.com/@babel/standalone/babel.min.js:3:1898)
+    at Generator.<anonymous> (https://unpkg.com/@babel/standalone/babel.min.js:3:826)
+    at Generator.next (https://unpkg.com/@babel/standalone/babel.min.js:3:1898)
+    at Generator.<anonymous> (https://unpkg.com/@babel/standalone/babel.min.js:3:826)
+    at Generator.next (https://unpkg.com/@babel/standalone/babel.min.js:3:1898)
+    at iF (https://unpkg.com/@babel/standalone/babel.min.js:3:945724)
+    at sync (https://unpkg.com/@babel/standalone/babel.min.js:3:943815)
+    at stopHiding - secret - don't use this - v1 (https://unpkg.com/@babel/standalone/babel.min.js:3:1069524)
+    at SV (https://unpkg.com/@babel/standalone/babel.min.js:3:1126276)
+    at Object.FEe [as transform] (https://unpkg.com/@babel/standalone/babel.min.js:3:3132171)
+    at initComponent (about:srcdoc:87:41)
+    at HTMLDocument.checkLibrariesLoaded (about:srcdoc:51:11)
+showError @ about:srcdoc:35
+initComponent @ about:srcdoc:118
+checkLibrariesLoaded @ about:srcdoc:51
+
+```

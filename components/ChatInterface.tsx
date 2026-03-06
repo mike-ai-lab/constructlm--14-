@@ -4,6 +4,7 @@ import remarkGfm from 'remark-gfm';
 import { Send, Image as ImageIcon, X, FileText, Play, Code, Download, Copy, Check, Maximize2, Undo, Redo } from 'lucide-react';
 import { ChatMessage, Citation } from '../types';
 import * as GeminiService from '../services/geminiService';
+import { generateBundledPreview } from '../services/runtimeBundler';
 
 interface ChatInterfaceProps {
   messages: ChatMessage[];
@@ -50,220 +51,22 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     return extensions[lang.toLowerCase()] || 'txt';
   };
 
-  const generateReactPreviewHtml = (code: string) => {
-    // Robust multiline-safe import removal regex
-    // Matches: import ... from '...'; or import ... from "..."; (with optional semicolon)
-    // Handles multiline imports with proper grouping
-    const cleanedCode = code
-      .replace(/import\s+(?:(?:\{[^}]*\}|\*\s+as\s+\w+|\w+)(?:\s*,\s*(?:\{[^}]*\}|\w+))*\s+from\s+)?['"][^'"]+['"];?/gm, '')
-      .replace(/import\s+['"][^'"]+['"];?/gm, '') // Side-effect imports
-      .trim();
-    
-    // Improved React component detection
-    // Check for: function/const/class component patterns, JSX syntax, or export default
-    const isLikelyReactComponent = 
-      /(?:function|const|class)\s+\w+.*(?:=>|{)[\s\S]*(?:<[A-Z]|jsx|tsx)/m.test(cleanedCode) ||
-      /export\s+default\s+(?:function|class|\w+)/m.test(cleanedCode) ||
-      /<[A-Z]\w*[\s>]/m.test(cleanedCode); // JSX with capital letter (component)
-    
-    if (!isLikelyReactComponent) {
-      return `<!DOCTYPE html>
+  // Use the new runtime bundler for React preview
+  const generateReactPreviewHtml = (code: string, language: string = 'tsx') => {
+    const result = generateBundledPreview(code, language);
+    return result.html || `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body { margin: 20px; font-family: monospace; }
   </style>
 </head>
 <body>
-  <div style="padding:20px;color:orange;border:2px solid orange;">
-    <strong>Not a React Component</strong><br/>
-    This code doesn't appear to be a React component. Expected patterns:<br/>
-    - Function/const/class component with JSX<br/>
-    - export default statement<br/>
-    - JSX elements (e.g., &lt;Component /&gt;)
+  <div style="padding:20px;color:red;border:2px solid red;">
+    <strong>Bundling Error</strong><br/>
+    ${result.error || 'Unknown error occurred'}
   </div>
-</body>
-</html>`;
-    }
-    
-    // Transform export default to const Component
-    const transformedCode = cleanedCode
-      .replace(/export\s+default\s+function\s+(\w+)/m, 'const Component = function $1')
-      .replace(/export\s+default\s+/m, 'const Component = ');
-    
-    return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio"></script>
-  <style>
-    body { margin: 0; padding: 0; }
-    #root { min-height: 100vh; }
-  </style>
-</head>
-<body>
-  <div id="root"></div>
-  <script>
-    // Wait for DOM and all core libraries to be ready
-    window.addEventListener('DOMContentLoaded', function() {
-      // Ensure React and ReactDOM are loaded
-      if (!window.React || !window.ReactDOM || !window.Babel) {
-        document.body.innerHTML = '<div style="padding:20px;color:red;font-family:monospace;">Failed to load required libraries (React, ReactDOM, Babel)</div>';
-        return;
-      }
-      
-      // Load Framer Motion
-      const motionScript = document.createElement('script');
-      motionScript.src = 'https://unpkg.com/framer-motion@11/dist/framer-motion.js';
-      motionScript.onerror = function() { console.warn('Framer Motion failed to load'); };
-      document.head.appendChild(motionScript);
-      
-      // Load Lucide React (needs React to be available)
-      const lucideScript = document.createElement('script');
-      lucideScript.src = 'https://unpkg.com/lucide-react@0.263.1/dist/umd/lucide-react.js';
-      lucideScript.onerror = function() { console.warn('Lucide React failed to load'); };
-      document.head.appendChild(lucideScript);
-      
-      // Wait for optional libraries to load (with timeout)
-      let checkCount = 0;
-      const maxChecks = 30; // 3 seconds max
-      const checkInterval = setInterval(function() {
-        checkCount++;
-        if ((window.Motion || checkCount > 15) && (window.lucideReact || checkCount > 15) || checkCount >= maxChecks) {
-          clearInterval(checkInterval);
-          initializeComponent();
-        }
-      }, 100);
-    });
-    
-    function initializeComponent() {
-      try {
-        // Validate root element exists
-        const rootElement = document.getElementById('root');
-        if (!rootElement) {
-          throw new Error('Root element not found');
-        }
-        
-        // Make libraries available globally
-        const motion = window.Motion || {};
-        const lucide = window.lucideReact || {};
-        
-        // Source code to compile
-        const sourceCode = ${JSON.stringify(transformedCode)};
-        
-        // Compile with Babel
-        const compiled = window.Babel.transform(sourceCode, {
-          presets: ['react', 'typescript'],
-          filename: 'component.tsx'
-        });
-        
-        // Execute compiled code and extract Component
-        // Destructure React hooks and utilities for direct access
-        const {
-          useState, useEffect, useRef, useCallback, useMemo, useContext,
-          useReducer, useLayoutEffect, useImperativeHandle, useDebugValue,
-          createContext, forwardRef, memo, lazy, Suspense, Fragment,
-          createElement, cloneElement, isValidElement, Children
-        } = window.React;
-        
-        // Destructure Framer Motion hooks and utilities
-        const {
-          useScroll, useTransform, useSpring, useMotionValue, useAnimation,
-          useInView, useAnimationControls, useDragControls, useMotionTemplate,
-          useVelocity, useTime, useWillChange, AnimatePresence
-        } = motion || {};
-        
-        let Component = null;
-        const executeCode = new Function(
-          'React', 'ReactDOM', 'motion', 'lucide',
-          'useState', 'useEffect', 'useRef', 'useCallback', 'useMemo', 'useContext',
-          'useReducer', 'useLayoutEffect', 'useImperativeHandle', 'useDebugValue',
-          'createContext', 'forwardRef', 'memo', 'lazy', 'Suspense', 'Fragment',
-          'createElement', 'cloneElement', 'isValidElement', 'Children',
-          'useScroll', 'useTransform', 'useSpring', 'useMotionValue', 'useAnimation',
-          'useInView', 'useAnimationControls', 'useDragControls', 'useMotionTemplate',
-          'useVelocity', 'useTime', 'useWillChange', 'AnimatePresence',
-          compiled.code + '\\nreturn typeof Component !== "undefined" ? Component : null;'
-        );
-        
-        Component = executeCode(
-          window.React,
-          window.ReactDOM,
-          motion,
-          lucide,
-          useState, useEffect, useRef, useCallback, useMemo, useContext,
-          useReducer, useLayoutEffect, useImperativeHandle, useDebugValue,
-          createContext, forwardRef, memo, lazy, Suspense, Fragment,
-          createElement, cloneElement, isValidElement, Children,
-          useScroll, useTransform, useSpring, useMotionValue, useAnimation,
-          useInView, useAnimationControls, useDragControls, useMotionTemplate,
-          useVelocity, useTime, useWillChange, AnimatePresence
-        );
-        
-        if (!Component || typeof Component !== 'function') {
-          throw new Error('No valid component found. Make sure to define "const Component" or use "export default".');
-        }
-        
-        // Render the component
-        const root = window.ReactDOM.createRoot(rootElement);
-        root.render(window.React.createElement(Component));
-        
-      } catch (err) {
-        console.error('Compilation/Runtime Error:', err);
-        const rootElement = document.getElementById('root');
-        if (rootElement) {
-          rootElement.innerHTML = 
-            '<div style="padding:20px;color:red;font-family:monospace;white-space:pre-wrap;border:2px solid red;margin:20px;">' +
-            '<strong>Error:</strong><br/><br/>' +
-            (err.message || String(err)) +
-            (err.stack ? '<br/><br/><strong>Stack:</strong><br/>' + err.stack.substring(0, 500) : '') +
-            '</div>';
-        }
-      }
-    }
-  </script>
-  <script>
-    // Global error handler for runtime errors
-    window.onerror = function(msg, url, line, col, error) {
-      if (msg === 'Script error.' && !error) {
-        // Ignore generic script errors from cross-origin scripts
-        return true;
-      }
-      console.error('Runtime Error:', msg, error);
-      const rootElement = document.getElementById('root');
-      if (rootElement && rootElement.innerHTML.indexOf('Error:') === -1) {
-        rootElement.innerHTML = 
-          '<div style="padding:20px;color:red;font-family:monospace;white-space:pre-wrap;border:2px solid red;margin:20px;">' +
-          '<strong>Runtime Error:</strong><br/><br/>' +
-          msg + '<br/><br/>' +
-          'Line: ' + line + ', Column: ' + col +
-          (error && error.stack ? '<br/><br/><strong>Stack:</strong><br/>' + error.stack.substring(0, 500) : '') +
-          '</div>';
-      }
-      return true;
-    };
-    
-    // Unhandled promise rejection handler
-    window.onunhandledrejection = function(event) {
-      console.error('Unhandled Promise Rejection:', event.reason);
-      const rootElement = document.getElementById('root');
-      if (rootElement && rootElement.innerHTML.indexOf('Error:') === -1) {
-        rootElement.innerHTML = 
-          '<div style="padding:20px;color:red;font-family:monospace;white-space:pre-wrap;border:2px solid red;margin:20px;">' +
-          '<strong>Unhandled Promise Rejection:</strong><br/><br/>' +
-          (event.reason?.message || String(event.reason)) +
-          (event.reason?.stack ? '<br/><br/><strong>Stack:</strong><br/>' + event.reason.stack.substring(0, 500) : '') +
-          '</div>';
-      }
-      return true;
-    };
-  </script>
 </body>
 </html>`;
   };
@@ -396,7 +199,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     const isReactComponent = isTsx && (previousCode.includes('export default') || previousCode.includes('function'));
     
     if (isReactComponent) {
-      newHtml = generateReactPreviewHtml(previousCode);
+      newHtml = generateReactPreviewHtml(previousCode, canvasContent.language);
     } else if (canvasContent.language !== 'html' && canvasContent.language !== 'htm') {
       newHtml = previousCode;
     }
@@ -426,7 +229,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     const isReactComponent = isTsx && (nextCode.includes('export default') || nextCode.includes('function'));
     
     if (isReactComponent) {
-      newHtml = generateReactPreviewHtml(nextCode);
+      newHtml = generateReactPreviewHtml(nextCode, canvasContent.language);
     } else if (canvasContent.language !== 'html' && canvasContent.language !== 'htm') {
       newHtml = nextCode;
     }
@@ -535,7 +338,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                             
                             const generatePreviewHtml = () => {
                               if (isHtml) return code;
-                              if (isReactComponent) return generateReactPreviewHtml(code);
+                              if (isReactComponent) return generateReactPreviewHtml(code, language);
                               return code;
                             };
                             
@@ -920,7 +723,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   const isReactComponent = isTsx && (newCode.includes('export default') || newCode.includes('function'));
                   
                   if (isReactComponent) {
-                    newHtml = generateReactPreviewHtml(newCode);
+                    newHtml = generateReactPreviewHtml(newCode, canvasContent.language);
                   } else if (canvasContent.language !== 'html' && canvasContent.language !== 'htm') {
                     newHtml = newCode;
                   }

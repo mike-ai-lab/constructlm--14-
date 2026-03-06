@@ -43,7 +43,7 @@ const [codeBlockStates, setCodeBlockStates] = useState<{
 
 ## HTML Generation Functions
 
-### React/TypeScript Preview HTML Generator (Refactored)
+### React/TypeScript Preview HTML Generator (Refactored v2)
 
 ```typescript
 const generateReactPreviewHtml = (code: string) => {
@@ -97,9 +97,7 @@ const generateReactPreviewHtml = (code: string) => {
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/framer-motion@11/dist/framer-motion.js"></script>
-  <script src="https://unpkg.com/lucide-react@0.263.1/dist/umd/lucide-react.js"></script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio"></script>
   <style>
     body { margin: 0; padding: 0; }
     #root { min-height: 100vh; }
@@ -108,71 +106,157 @@ const generateReactPreviewHtml = (code: string) => {
 <body>
   <div id="root"></div>
   <script>
-    (function() {
+    // Wait for DOM and all core libraries to be ready
+    window.addEventListener('DOMContentLoaded', function() {
+      // Ensure React and ReactDOM are loaded
+      if (!window.React || !window.ReactDOM || !window.Babel) {
+        document.body.innerHTML = '<div style="padding:20px;color:red;font-family:monospace;">Failed to load required libraries (React, ReactDOM, Babel)</div>';
+        return;
+      }
+      
+      // Load Framer Motion
+      const motionScript = document.createElement('script');
+      motionScript.src = 'https://unpkg.com/framer-motion@11/dist/framer-motion.js';
+      motionScript.onerror = function() { console.warn('Framer Motion failed to load'); };
+      document.head.appendChild(motionScript);
+      
+      // Load Lucide React (needs React to be available)
+      const lucideScript = document.createElement('script');
+      lucideScript.src = 'https://unpkg.com/lucide-react@0.263.1/dist/umd/lucide-react.js';
+      lucideScript.onerror = function() { console.warn('Lucide React failed to load'); };
+      document.head.appendChild(lucideScript);
+      
+      // Wait for optional libraries to load (with timeout)
+      let checkCount = 0;
+      const maxChecks = 30; // 3 seconds max
+      const checkInterval = setInterval(function() {
+        checkCount++;
+        if ((window.Motion || checkCount > 15) && (window.lucideReact || checkCount > 15) || checkCount >= maxChecks) {
+          clearInterval(checkInterval);
+          initializeComponent();
+        }
+      }, 100);
+    });
+    
+    function initializeComponent() {
       try {
+        // Validate root element exists
+        const rootElement = document.getElementById('root');
+        if (!rootElement) {
+          throw new Error('Root element not found');
+        }
+        
         // Make libraries available globally
-        const { motion } = window.Motion || {};
+        const motion = window.Motion || {};
         const lucide = window.lucideReact || {};
         
         // Source code to compile
         const sourceCode = ${JSON.stringify(transformedCode)};
         
         // Compile with Babel
-        const compiled = Babel.transform(sourceCode, {
+        const compiled = window.Babel.transform(sourceCode, {
           presets: ['react', 'typescript'],
           filename: 'component.tsx'
         });
         
-        // Create a function from compiled code
-        const componentModule = {};
-        const componentFunc = new Function('React', 'ReactDOM', 'motion', 'lucide', 'exports', 'module', compiled.code);
-        componentFunc(React, ReactDOM, motion, lucide, componentModule, { exports: componentModule });
+        // Execute compiled code and extract Component
+        // Destructure React hooks and utilities for direct access
+        const {
+          useState, useEffect, useRef, useCallback, useMemo, useContext,
+          useReducer, useLayoutEffect, useImperativeHandle, useDebugValue,
+          createContext, forwardRef, memo, lazy, Suspense, Fragment,
+          createElement, cloneElement, isValidElement, Children
+        } = window.React;
         
-        // Get the component (either from exports or Component variable)
-        const Component = componentModule.Component || componentModule.default || window.Component;
+        // Destructure Framer Motion hooks and utilities
+        const {
+          useScroll, useTransform, useSpring, useMotionValue, useAnimation,
+          useInView, useAnimationControls, useDragControls, useMotionTemplate,
+          useVelocity, useTime, useWillChange, AnimatePresence
+        } = motion || {};
         
-        if (!Component) {
-          throw new Error('No component found. Make sure to export a component or define "const Component".');
+        let Component = null;
+        const executeCode = new Function(
+          'React', 'ReactDOM', 'motion', 'lucide',
+          'useState', 'useEffect', 'useRef', 'useCallback', 'useMemo', 'useContext',
+          'useReducer', 'useLayoutEffect', 'useImperativeHandle', 'useDebugValue',
+          'createContext', 'forwardRef', 'memo', 'lazy', 'Suspense', 'Fragment',
+          'createElement', 'cloneElement', 'isValidElement', 'Children',
+          'useScroll', 'useTransform', 'useSpring', 'useMotionValue', 'useAnimation',
+          'useInView', 'useAnimationControls', 'useDragControls', 'useMotionTemplate',
+          'useVelocity', 'useTime', 'useWillChange', 'AnimatePresence',
+          compiled.code + '\\nreturn typeof Component !== "undefined" ? Component : null;'
+        );
+        
+        Component = executeCode(
+          window.React,
+          window.ReactDOM,
+          motion,
+          lucide,
+          useState, useEffect, useRef, useCallback, useMemo, useContext,
+          useReducer, useLayoutEffect, useImperativeHandle, useDebugValue,
+          createContext, forwardRef, memo, lazy, Suspense, Fragment,
+          createElement, cloneElement, isValidElement, Children,
+          useScroll, useTransform, useSpring, useMotionValue, useAnimation,
+          useInView, useAnimationControls, useDragControls, useMotionTemplate,
+          useVelocity, useTime, useWillChange, AnimatePresence
+        );
+        
+        if (!Component || typeof Component !== 'function') {
+          throw new Error('No valid component found. Make sure to define "const Component" or use "export default".');
         }
         
         // Render the component
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(React.createElement(Component));
+        const root = window.ReactDOM.createRoot(rootElement);
+        root.render(window.React.createElement(Component));
         
       } catch (err) {
         console.error('Compilation/Runtime Error:', err);
-        document.body.innerHTML = 
-          '<div style="padding:20px;color:red;font-family:monospace;white-space:pre-wrap;border:2px solid red;margin:20px;">' +
-          '<strong>Error:</strong><br/><br/>' +
-          (err.message || String(err)) +
-          (err.stack ? '<br/><br/><strong>Stack:</strong><br/>' + err.stack : '') +
-          '</div>';
+        const rootElement = document.getElementById('root');
+        if (rootElement) {
+          rootElement.innerHTML = 
+            '<div style="padding:20px;color:red;font-family:monospace;white-space:pre-wrap;border:2px solid red;margin:20px;">' +
+            '<strong>Error:</strong><br/><br/>' +
+            (err.message || String(err)) +
+            (err.stack ? '<br/><br/><strong>Stack:</strong><br/>' + err.stack.substring(0, 500) : '') +
+            '</div>';
+        }
       }
-    })();
+    }
   </script>
   <script>
-    // Global error handler for runtime errors after initial load
+    // Global error handler for runtime errors
     window.onerror = function(msg, url, line, col, error) {
+      if (msg === 'Script error.' && !error) {
+        // Ignore generic script errors from cross-origin scripts
+        return true;
+      }
       console.error('Runtime Error:', msg, error);
-      document.body.innerHTML = 
-        '<div style="padding:20px;color:red;font-family:monospace;white-space:pre-wrap;border:2px solid red;margin:20px;">' +
-        '<strong>Runtime Error:</strong><br/><br/>' +
-        msg + '<br/><br/>' +
-        'Line: ' + line + ', Column: ' + col +
-        (error && error.stack ? '<br/><br/><strong>Stack:</strong><br/>' + error.stack : '') +
-        '</div>';
+      const rootElement = document.getElementById('root');
+      if (rootElement && rootElement.innerHTML.indexOf('Error:') === -1) {
+        rootElement.innerHTML = 
+          '<div style="padding:20px;color:red;font-family:monospace;white-space:pre-wrap;border:2px solid red;margin:20px;">' +
+          '<strong>Runtime Error:</strong><br/><br/>' +
+          msg + '<br/><br/>' +
+          'Line: ' + line + ', Column: ' + col +
+          (error && error.stack ? '<br/><br/><strong>Stack:</strong><br/>' + error.stack.substring(0, 500) : '') +
+          '</div>';
+      }
       return true;
     };
     
     // Unhandled promise rejection handler
     window.onunhandledrejection = function(event) {
       console.error('Unhandled Promise Rejection:', event.reason);
-      document.body.innerHTML = 
-        '<div style="padding:20px;color:red;font-family:monospace;white-space:pre-wrap;border:2px solid red;margin:20px;">' +
-        '<strong>Unhandled Promise Rejection:</strong><br/><br/>' +
-        (event.reason?.message || String(event.reason)) +
-        (event.reason?.stack ? '<br/><br/><strong>Stack:</strong><br/>' + event.reason.stack : '') +
-        '</div>';
+      const rootElement = document.getElementById('root');
+      if (rootElement && rootElement.innerHTML.indexOf('Error:') === -1) {
+        rootElement.innerHTML = 
+          '<div style="padding:20px;color:red;font-family:monospace;white-space:pre-wrap;border:2px solid red;margin:20px;">' +
+          '<strong>Unhandled Promise Rejection:</strong><br/><br/>' +
+          (event.reason?.message || String(event.reason)) +
+          (event.reason?.stack ? '<br/><br/><strong>Stack:</strong><br/>' + event.reason.stack.substring(0, 500) : '') +
+          '</div>';
+      }
       return true;
     };
   </script>
@@ -181,7 +265,7 @@ const generateReactPreviewHtml = (code: string) => {
 };
 ```
 
-#### Key Improvements:
+#### Key Improvements (v2):
 
 1. **Robust Import Removal**: Multiline-safe regex that handles:
    - Named imports: `import { foo, bar } from 'module'`
@@ -202,12 +286,24 @@ const generateReactPreviewHtml = (code: string) => {
    - Injects compiled code via `new Function()` for better error surfacing
 
 4. **Enhanced Error Handling**:
-   - Compilation errors show full stack traces
+   - Compilation errors show full stack traces (truncated to 500 chars)
    - Runtime errors display line/column information
    - Unhandled promise rejections are caught
    - All errors logged to console for debugging
+   - Ignores generic cross-origin script errors
 
-5. **Sandbox Architecture**: Unchanged - still uses iframe with `sandbox="allow-scripts"`
+5. **React Hooks & Framer Motion Support**:
+   - All React hooks explicitly passed to execution context (useState, useEffect, useRef, etc.)
+   - Framer Motion hooks available (useScroll, useTransform, useSpring, etc.)
+   - Prevents "hook is not defined" errors
+
+6. **Library Loading**:
+   - DOMContentLoaded ensures DOM is ready before initialization
+   - Dynamic loading of Framer Motion and Lucide React after React is available
+   - Polling mechanism waits for libraries with timeout
+   - Validates root element exists before creating React root
+
+7. **Sandbox Architecture**: Unchanged - still uses iframe with `sandbox="allow-scripts"`
 
 ### Preview HTML Generator (Generic)
 
