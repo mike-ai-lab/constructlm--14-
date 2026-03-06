@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multi-Image Layout Test</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8 font-mono">
+  <div class="max-w-4xl mx-auto space-y-6">
+    
+    <!-- User Message with 6 Images -->
+    <div class="flex flex-col items-end">
+      <div class="mb-1 font-mono text-[10px] text-gray-400 uppercase">YOU</div>
+      <div class="max-w-[80%] p-3.5 border-2 bg-black text-white border-black">
+        <div class="leading-relaxed text-sm font-mono whitespace-pre-wrap">
+          Analyze these images and tell me what you see
+        </div>
+        
+        <!-- Images Grid -->
+        <div class="mt-2 pt-2 border-t border-gray-600">
+          <div class="grid grid-cols-3 gap-2">
+            <img src="https://via.placeholder.com/200x150/FF6B6B/FFFFFF?text=Image+1" class="w-full h-24 object-cover border border-gray-500 cursor-pointer hover:opacity-80 transition-opacity" />
+            <img src="https://via.placeholder.com/200x150/4ECDC4/FFFFFF?text=Image+2" class="w-full h-24 object-cover border border-gray-500 cursor-pointer hover:opacity-80 transition-opacity" />
+            <img src="https://via.placeholder.com/200x150/45B7D1/FFFFFF?text=Image+3" class="w-full h-24 object-cover border border-gray-500 cursor-pointer hover:opacity-80 transition-opacity" />
+            <img src="https://via.placeholder.com/200x150/FFA07A/FFFFFF?text=Image+4" class="w-full h-24 object-cover border border-gray-500 cursor-pointer hover:opacity-80 transition-opacity" />
+            <img src="https://via.placeholder.com/200x150/98D8C8/FFFFFF?text=Image+5" class="w-full h-24 object-cover border border-gray-500 cursor-pointer hover:opacity-80 transition-opacity" />
+            <img src="https://via.placeholder.com/200x150/F7DC6F/FFFFFF?text=Image+6" class="w-full h-24 object-cover border border-gray-500 cursor-pointer hover:opacity-80 transition-opacity" />
+          </div>
+        </div>
+        
+        <!-- Sources -->
+        <div class="mt-2 pt-2 border-t border-gray-600 text-[10px] text-gray-300 flex items-center gap-2">
+          <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <span>Sources (3): document1.pdf, notes.txt, data.csv</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Alternative: Horizontal Scroll Layout -->
+    <div class="flex flex-col items-end">
+      <div class="mb-1 font-mono text-[10px] text-gray-400 uppercase">YOU (HORIZONTAL SCROLL)</div>
+      <div class="max-w-[80%] p-3.5 border-2 bg-black text-white border-black">
+        <div class="leading-relaxed text-sm font-mono whitespace-pre-wrap">
+          Compare these screenshots
+        </div>
+        
+        <!-- Images Horizontal Scroll -->
+        <div class="mt-2 pt-2 border-t border-gray-600">
+          <div class="flex gap-2 overflow-x-auto pb-2">
+            <img src="https://via.placeholder.com/150x150/FF6B6B/FFFFFF?text=1" class="w-32 h-32 flex-shrink-0 object-cover border border-gray-500 cursor-pointer hover:opacity-80 transition-opacity" />
+            <img src="https://via.placeholder.com/150x150/4ECDC4/FFFFFF?text=2" class="w-32 h-32 flex-shrink-0 object-cover border border-gray-500 cursor-pointer hover:opacity-80 transition-opacity" />
+            <img src="https://via.placeholder.com/150x150/45B7D1/FFFFFF?text=3" class="w-32 h-32 flex-shrink-0 object-cover border border-gray-500 cursor-pointer hover:opacity-80 transition-opacity" />
+            <img src="https://via.placeholder.com/150x150/FFA07A/FFFFFF?text=4" class="w-32 h-32 flex-shrink-0 object-cover border border-gray-500 cursor-pointer hover:opacity-80 transition-opacity" />
+            <img src="https://via.placeholder.com/150x150/98D8C8/FFFFFF?text=5" class="w-32 h-32 flex-shrink-0 object-cover border border-gray-500 cursor-pointer hover:opacity-80 transition-opacity" />
+            <img src="https://via.placeholder.com/150x150/F7DC6F/FFFFFF?text=6" class="w-32 h-32 flex-shrink-0 object-cover border border-gray-500 cursor-pointer hover:opacity-80 transition-opacity" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

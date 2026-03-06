@@ -184,6 +184,51 @@ const App: React.FC = () => {
     }
   };
 
+  const handleExportChat = (id: string) => {
+    const session = ChatStorage.getChatSession(id);
+    if (!session) return;
+    
+    let markdown = `# ${session.title}\n\n`;
+    markdown += `**Exported:** ${new Date().toLocaleString()}\n\n---\n\n`;
+    
+    session.messages.forEach((msg) => {
+      if (msg.role === 'user') {
+        markdown += `## User\n\n${msg.content}\n\n`;
+        if (msg.metadata) {
+          if (msg.metadata.imageBase64) {
+            markdown += `*[Image attached]*\n\n`;
+          }
+          if (msg.metadata.activeSources && msg.metadata.activeSources.length > 0) {
+            markdown += `*Active sources (${msg.metadata.activeSources.length}): ${msg.metadata.activeSources.join(', ')}*\n\n`;
+          }
+        }
+      } else {
+        markdown += `## Assistant\n\n${msg.content}\n\n`;
+        if (msg.citations && msg.citations.length > 0) {
+          markdown += `### Sources\n\n`;
+          msg.citations.forEach((cite, i) => {
+            markdown += `${i + 1}. **${cite.docName}** (similarity: ${cite.similarity.toFixed(3)})\n`;
+          });
+          markdown += `\n`;
+        }
+        if (msg.inputTokens || msg.outputTokens) {
+          markdown += `*Token Usage: Input ${msg.inputTokens || 0} • Output ${msg.outputTokens || 0}*\n\n`;
+        }
+      }
+      markdown += `---\n\n`;
+    });
+    
+    const blob = new Blob([markdown], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${session.title.replace(/[^a-z0-9]/gi, '_')}_${Date.now()}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   // Swipe gesture handling for mobile
   const minSwipeDistance = 50;
 
@@ -223,13 +268,21 @@ const App: React.FC = () => {
       setIsSettingsOpen(true);
       return;
     }
+    
+    // Get active sources
+    const activeSources = files.filter(f => f.isEnabled !== false).map(f => f.name);
+    
     // Add user message
     const userMsg: ChatMessage = {
       id: crypto.randomUUID(),
       role: 'user',
       content: text,
       timestamp: Date.now(),
-      inputTokens: GeminiService.estimateTokens(text, imageBase64)
+      inputTokens: GeminiService.estimateTokens(text, imageBase64),
+      metadata: {
+        imageBase64: imageBase64,
+        activeSources: activeSources.length > 0 ? activeSources : undefined
+      }
     };
     setMessages(prev => [...prev, userMsg]);
     setIsStreaming(true);
@@ -439,6 +492,7 @@ const App: React.FC = () => {
             onSelectChat={handleSelectChat}
             onNewChat={handleNewChat}
             onDeleteChat={handleDeleteChat}
+            onExportChat={handleExportChat}
             isCollapsed={isSidebarCollapsed}
           />
         </div>

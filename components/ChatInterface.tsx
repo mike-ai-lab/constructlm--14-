@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Send, Image as ImageIcon, X } from 'lucide-react';
+import { Send, Image as ImageIcon, X, FileText } from 'lucide-react';
 import { ChatMessage, Citation } from '../types';
 import * as GeminiService from '../services/geminiService';
 
@@ -14,7 +14,7 @@ interface ChatInterfaceProps {
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({ 
   messages, 
   onSendMessage, 
-  isStreaming 
+  isStreaming
 }) => {
   const [input, setInput] = useState('');
   const [isInputFocused, setIsInputFocused] = useState(false);
@@ -23,6 +23,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [estimatedTokens, setEstimatedTokens] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [isImagesExpanded, setIsImagesExpanded] = useState(true);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
@@ -146,6 +147,27 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     <div className="leading-relaxed text-sm font-mono whitespace-pre-wrap">
                       {msg.content}
                     </div>
+                    {msg.metadata?.imageBase64 && (
+                      <div className="mt-2 pt-2 border-t border-gray-600">
+                        <div className="grid grid-cols-3 gap-2">
+                          {msg.metadata.imageBase64.split(',').map((img, idx) => (
+                            <img 
+                              key={idx}
+                              src={`data:image/jpeg;base64,${img}`}
+                              alt={`Attached ${idx + 1}`}
+                              className="w-full h-24 object-cover border border-gray-500 cursor-pointer hover:opacity-80 transition-opacity"
+                              onClick={() => setImagePreview(`data:image/jpeg;base64,${img}`)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {msg.metadata?.activeSources && msg.metadata.activeSources.length > 0 && (
+                      <div className="mt-2 pt-2 border-t border-gray-600 text-[10px] text-gray-300 flex items-center gap-2">
+                        <FileText size={12} />
+                        <span>Sources ({msg.metadata.activeSources.length}): {msg.metadata.activeSources.join(', ')}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -276,6 +298,26 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
         <div ref={endRef} />
       </div>
+
+      {imagePreview && (
+        <div 
+          className="fixed inset-0 bg-black/80 z-[200] flex items-center justify-center p-4"
+          onClick={() => setImagePreview(null)}
+        >
+          <img 
+            src={imagePreview} 
+            alt="Preview" 
+            className="max-w-full max-h-full object-contain border-4 border-white"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <button 
+            onClick={() => setImagePreview(null)}
+            className="absolute top-4 right-4 text-white text-3xl font-bold hover:bg-white/20 w-10 h-10 flex items-center justify-center"
+          >
+            ×
+          </button>
+        </div>
+      )}
 
       <div 
         ref={dropZoneRef}

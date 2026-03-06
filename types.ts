@@ -27,6 +27,10 @@ export interface ChatMessage {
   citations?: Citation[];
   inputTokens?: number;
   outputTokens?: number;
+  metadata?: {
+    imageBase64?: string;
+    activeSources?: string[];
+  };
 }
 
 export interface ChatSession {

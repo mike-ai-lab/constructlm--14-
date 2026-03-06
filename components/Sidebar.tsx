@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Download } from 'lucide-react';
 import { FileDocument, ChatSession } from '../types';
 import { Button } from './ui/Button';
 
@@ -18,6 +18,7 @@ interface SidebarProps {
   onSelectChat: (id: string) => void;
   onNewChat: () => void;
   onDeleteChat: (id: string) => void;
+  onExportChat: (id: string) => void;
   isCollapsed?: boolean;
 }
 
@@ -36,6 +37,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectChat,
   onNewChat,
   onDeleteChat,
+  onExportChat,
   isCollapsed = false
 }) => {
   const [activeTab, setActiveTab] = useState<'chats' | 'sources'>('sources');
@@ -181,18 +183,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={() => onSelectChat(session.id)}
               >
                 <div className="flex justify-between items-start mb-1">
-                  <span className="font-mono text-xs font-bold truncate max-w-[200px]" title={session.title}>
+                  <span className="font-mono text-xs font-bold truncate max-w-[150px]" title={session.title}>
                     {session.title}
                   </span>
-                  <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDeleteChat(session.id);
-                    }}
-                    className="opacity-0 group-hover:opacity-100 text-[10px] text-red-600 hover:underline font-mono ml-2"
-                  >
-                    DEL
-                  </button>
+                  <div className="flex gap-1">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onExportChat(session.id);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 text-[10px] hover:bg-gray-100 p-1"
+                      title="Export"
+                    >
+                      <Download size={12} />
+                    </button>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteChat(session.id);
+                      }}
+                      className="opacity-0 group-hover:opacity-100 text-[10px] text-red-600 hover:underline font-mono"
+                    >
+                      DEL
+                    </button>
+                  </div>
                 </div>
                 <div className="flex justify-between text-[10px] text-gray-500 font-mono">
                   <span>{session.messages.length} MSGS</span>
