@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tips & Best Practices - ConstructLM Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="docs-layout">
+        <aside class="docs-sidebar">
+            <div class="docs-header">
+                <h1>CONSTRUCTLM</h1>
+                <p class="docs-subtitle">Documentation</p>
+            </div>
+            
+            <nav class="docs-toc">
+                <div class="toc-section">
+                    <button class="toc-parent" data-section="getting-started">
+                        <span class="toc-icon">+</span>
+                        <span class="toc-label">Getting Started</span>
+                    </button>
+                    <div class="toc-children">
+                        <a href="index.html" class="toc-item">Introduction</a>
+                        <a href="quick-start.html" class="toc-item">Quick Start</a>
+                        <a href="interface.html" class="toc-item">Interface Overview</a>
+                    </div>
+                </div>
+                
+                <div class="toc-section">
+                    <button class="toc-parent" data-section="core-features">
+                        <span class="toc-icon">+</span>
+                        <span class="toc-label">Core Features</span>
+                    </button>
+                    <div class="toc-children">
+                        <a href="local-embeddings.html" class="toc-item">Local Embeddings</a>
+                        <a href="rag-system.html" class="toc-item">RAG System</a>
+                        <a href="ai-models.html" class="toc-item">AI Models</a>
+                        <a href="chat-management.html" class="toc-item">Chat Management</a>
+                    </div>
+                </div>
+                
+                <div class="toc-section">
+                    <button class="toc-parent" data-section="advanced">
+                        <span class="toc-icon">+</span>
+                        <span class="toc-label">Advanced Features</span>
+                    </button>
+                    <div class="toc-children">
+                        <a href="api-configuration.html" class="toc-item">API Configuration</a>
+                        <a href="document-management.html" class="toc-item">Document Management</a>
+                        <a href="citations.html" class="toc-item">Source Citations</a>
+                    </div>
+                </div>
+                
+                <div class="toc-section">
+                    <button class="toc-parent" data-section="reference">
+                        <span class="toc-icon">-</span>
+                        <span class="toc-label">Reference</span>
+                    </button>
+                    <div class="toc-children active">
+                        <a href="architecture.html" class="toc-item">Architecture</a>
+                        <a href="troubleshooting.html" class="toc-item">Troubleshooting</a>
+                        <a href="tips.html" class="toc-item active">Tips & Best Practices</a>
+                    </div>
+                </div>
+            </nav>
+        </aside>
+        
+        <main class="docs-content">
+            <div class="ask-more-container">
+                <button class="ask-more-button" id="ask-more-btn">Ask More</button>
+                <div class="ask-more-dropdown">
+                    <button id="copy-markdown-btn">Copy as Markdown</button>
+                    <a href="#" id="ask-chatgpt-btn" target="_blank">Ask ChatGPT</a>
+                </div>
+            </div>
+            
+            <article class="docs-article">
+                <h1 id="tips-best-practices">Tips & Best Practices</h1>
+                
+                <p class="lead">Get the most out of ConstructLM with these proven strategies and optimization techniques.</p>
+                
+                <section class="content-section">
+                    <h2 id="document-management">Document Management</h2>
+                    
+                    <h3 id="choosing-documents">Choosing What to Upload</h3>
+                    <ul>
+                        <li><strong>Quality over quantity:</strong> Upload focused, relevant documents rather than everything</li>
+                        <li><strong>Related content:</strong> Group related documents together for better context</li>
+                        <li><strong>Remove duplicates:</strong> Don't upload the same information multiple times</li>
+                        <li><strong>Clean formatting:</strong> Well-formatted documents yield better results</li>
+                        <li><strong>Text-based:</strong> Ensure PDFs contain actual text, not scanned images</li>
+                    </ul>
+                    
+                    <h3 id="organizing-documents">Organizing Your Knowledge Base</h3>
+                    <ul>
+                        <li><strong>Use descriptive names:</strong> Rename files before uploading for easy identification</li>
+                        <li><strong>Enable/disable strategically:</strong> Toggle documents on/off based on current task</li>
+                        <li><strong>Delete outdated content:</strong> Remove old versions when uploading updates</li>
+                        <li><strong>Monitor token usage:</strong> Keep an eye on the context usage meter</li>
+                        <li><strong>Split large files:</strong> Break documents >1MB into logical sections</li>
+                    </ul>
+                    
+                    <h3 id="optimal-file-sizes">Optimal File Sizes</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>File Size</th>
+                                <th>Recommendation</th>
+                                <th>Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>&lt; 100 KB</td>
+                                <td>Ideal</td>
+                                <td>Fast processing, good results</td>
+                            </tr>
+                            <tr>
+                                <td>100-500 KB</td>
+                                <td>Good</td>
+                                <td>Reasonable processing time</td>
+                            </tr>
+                            <tr>
+                                <td>500 KB - 1 MB</td>
+                                <td>Acceptable</td>
+                                <td>Slower processing, consider splitting</td>
+                            </tr>
+                            <tr>
+                                <td>&gt; 1 MB</td>
+                                <td>Split recommended</td>
+                                <td>Very slow, may cause issues</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="asking-questions">Asking Effective Questions</h2>
+                    
+                    <h3 id="question-formulation">Question Formulation</h3>
+                    <ul>
+                        <li><strong>Be specific:</strong> "How do I configure API keys?" vs "How does this work?"</li>
+                        <li><strong>Include context:</strong> "In the React component, how do I..." vs "How do I..."</li>
+                        <li><strong>Use keywords:</strong> Include terms that appear in your documents</li>
+                        <li><strong>Ask one thing:</strong> Break complex questions into multiple queries</li>
+                        <li><strong>Follow up:</strong> Build on previous answers in the conversation</li>
+                    </ul>
+                    
+                    <h3 id="question-examples">Good vs Bad Questions</h3>
+                    
+                    <p><strong>❌ Too vague:</strong></p>
+                    <ul>
+                        <li>"Tell me about this"</li>
+                        <li>"What does it do?"</li>
+                        <li>"Explain everything"</li>
+                    </ul>
+                    
+                    <p><strong>✅ Specific and clear:</strong></p>
+                    <ul>
+                        <li>"What are the steps to configure Gemini API key?"</li>
+                        <li>"How does the local embedding system ensure privacy?"</li>
+                        <li>"What file formats are supported for upload?"</li>
+                    </ul>
+                    
+                    <h3 id="iterative-refinement">Iterative Refinement</h3>
+                    <ol class="step-list">
+                        <li>
+                            <strong>Start broad</strong>
+                            <p>"What are the main features?"</p>
+                        </li>
+                        <li>
+                            <strong>Narrow down</strong>
+                            <p>"Tell me more about the RAG system"</p>
+                        </li>
+                        <li>
+                            <strong>Get specific</strong>
+                            <p>"How does the similarity threshold work in vector search?"</p>
+                        </li>
+                    </ol>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="using-citations">Using Citations Effectively</h2>
+                    
+                    <h3 id="verifying-information">Verifying Information</h3>
+                    <ul>
+                        <li><strong>Always check citations:</strong> Click badges to see source text</li>
+                        <li><strong>Verify accuracy:</strong> Ensure AI interpretation matches source</li>
+                        <li><strong>Look for context:</strong> Read full citation text, not just preview</li>
+                        <li><strong>Cross-reference:</strong> Check multiple citations for consistency</li>
+                        <li><strong>Note similarity scores:</strong> Higher scores = more relevant</li>
+                    </ul>
+                    
+                    <h3 id="citation-red-flags">Citation Red Flags</h3>
+                    <ul>
+                        <li>Very low similarity scores (< 0.20)</li>
+                        <li>Citations from unexpected documents</li>
+                        <li>Source text doesn't match answer topic</li>
+                        <li>Only one citation when multiple documents exist</li>
+                    </ul>
+                    
+                    <p><strong>Action:</strong> If citations seem off, rephrase your question or disable irrelevant documents.</p>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="model-selection">AI Model Selection</h2>
+                    
+                    <h3 id="gemini-vs-cerebras">Gemini vs Cerebras</h3>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Feature</th>
+                                <th>Gemini</th>
+                                <th>Cerebras</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Speed</td>
+                                <td>Moderate</td>
+                                <td>⚡ Very Fast</td>
+                            </tr>
+                            <tr>
+                                <td>Quality</td>
+                                <td>Excellent</td>
+                                <td>Very Good</td>
+                            </tr>
+                            <tr>
+                                <td>Context Length</td>
+                                <td>Very Large</td>
+                                <td>Large</td>
+                            </tr>
+                            <tr>
+                                <td>Best For</td>
+                                <td>Complex analysis</td>
+                                <td>Quick answers</td>
+                            </tr>
+                            <tr>
+                                <td>Cost</td>
+                                <td>Pay per use</td>
+                                <td>Pay per use</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <h3 id="when-to-use-each">When to Use Each Model</h3>
+                    
+                    <p><strong>Use Cerebras when:</strong></p>
+                    <ul>
+                        <li>You need fast responses</li>
+                        <li>Asking straightforward questions</li>
+                        <li>Iterating quickly through multiple queries</li>
+                        <li>Working with smaller context</li>
+                    </ul>
+                    
+                    <p><strong>Use Gemini when:</strong></p>
+                    <ul>
+                        <li>Asking complex analytical questions</li>
+                        <li>Need detailed explanations</li>
+                        <li>Working with large amounts of context</li>
+                        <li>Require nuanced understanding</li>
+                    </ul>
+                    
+                    <h3 id="model-variants">Model Variants</h3>
+                    <ul>
+                        <li><strong>llama3.1-8b:</strong> Fast, efficient, good for most tasks</li>
+                        <li><strong>gpt-oss-120b:</strong> More capable, slower, better reasoning</li>
+                        <li><strong>gemini-1.5-flash:</strong> Fast Gemini variant</li>
+                        <li><strong>gemini-1.5-pro:</strong> Most capable, best quality</li>
+                    </ul>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="performance-optimization">Performance Optimization</h2>
+                    
+                    <h3 id="speed-up-processing">Speed Up Document Processing</h3>
+                    <ul>
+                        <li><strong>Use modern browser:</strong> Chrome/Edge have best WebAssembly performance</li>
+                        <li><strong>Close other tabs:</strong> Free up RAM and CPU</li>
+                        <li><strong>Upload during off-hours:</strong> Less browser activity = faster processing</li>
+                        <li><strong>Batch uploads:</strong> Upload multiple files at once</li>
+                        <li><strong>Smaller chunks:</strong> Split very large documents</li>
+                    </ul>
+                    
+                    <h3 id="reduce-memory-usage">Reduce Memory Usage</h3>
+                    <ul>
+                        <li>Keep total documents under 500KB combined</li>
+                        <li>Delete old chat sessions regularly</li>
+                        <li>Disable documents not currently needed</li>
+                        <li>Refresh page periodically to clear memory</li>
+                        <li>Use a device with adequate RAM (4GB+ recommended)</li>
+                    </ul>
+                    
+                    <h3 id="improve-search-quality">Improve Search Quality</h3>
+                    <ul>
+                        <li><strong>Disable irrelevant docs:</strong> Reduces noise in search results</li>
+                        <li><strong>Use specific queries:</strong> Better matching with focused questions</li>
+                        <li><strong>Upload related content:</strong> More context = better answers</li>
+                        <li><strong>Check citations:</strong> Verify search is finding right content</li>
+                    </ul>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="chat-management">Chat Management</h2>
+                    
+                    <h3 id="organizing-conversations">Organizing Conversations</h3>
+                    <ul>
+                        <li><strong>Start new chats:</strong> Begin fresh conversation for new topics</li>
+                        <li><strong>Descriptive first message:</strong> Helps with auto-generated titles</li>
+                        <li><strong>Delete old chats:</strong> Keep list manageable</li>
+                        <li><strong>Review history:</strong> Revisit previous conversations for reference</li>
+                    </ul>
+                    
+                    <h3 id="conversation-strategies">Conversation Strategies</h3>
+                    <ul>
+                        <li><strong>Build context:</strong> Reference previous messages in follow-ups</li>
+                        <li><strong>Stay on topic:</strong> Keep conversation focused for best results</li>
+                        <li><strong>Clarify when needed:</strong> Ask AI to explain unclear points</li>
+                        <li><strong>Request examples:</strong> "Can you give an example?" often helps</li>
+                    </ul>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="privacy-security">Privacy & Security</h2>
+                    
+                    <h3 id="protecting-api-keys">Protecting API Keys</h3>
+                    <ul>
+                        <li><strong>Never share keys:</strong> Keep API keys private</li>
+                        <li><strong>Use separate keys:</strong> Don't reuse keys across applications</li>
+                        <li><strong>Monitor usage:</strong> Check API provider dashboards regularly</li>
+                        <li><strong>Rotate keys:</strong> Change keys periodically for security</li>
+                        <li><strong>Revoke if compromised:</strong> Immediately revoke and replace exposed keys</li>
+                    </ul>
+                    
+                    <h3 id="data-privacy">Data Privacy Best Practices</h3>
+                    <ul>
+                        <li><strong>Understand data flow:</strong> Documents stay local, only context sent to AI</li>
+                        <li><strong>Sensitive data:</strong> Be cautious with highly confidential information</li>
+                        <li><strong>Regular browser:</strong> Don't use incognito for regular work (data not saved)</li>
+                        <li><strong>Backup important docs:</strong> Keep originals—browser data can be cleared</li>
+                        <li><strong>Secure device:</strong> Use device-level security (passwords, encryption)</li>
+                    </ul>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="advanced-tips">Advanced Tips</h2>
+                    
+                    <h3 id="browser-devtools">Using Browser DevTools</h3>
+                    <ul>
+                        <li><strong>Console logs:</strong> See RAG search results and citation details</li>
+                        <li><strong>Network tab:</strong> Monitor API requests and responses</li>
+                        <li><strong>Application tab:</strong> Inspect IndexedDB and localStorage</li>
+                        <li><strong>Performance tab:</strong> Identify bottlenecks</li>
+                    </ul>
+                    
+                    <h3 id="keyboard-shortcuts">Keyboard Efficiency</h3>
+                    <ul>
+                        <li><strong>Enter:</strong> Submit message quickly</li>
+                        <li><strong>Tab:</strong> Navigate between UI elements</li>
+                        <li><strong>Esc:</strong> Close modals and dropdowns</li>
+                        <li><strong>F12:</strong> Open DevTools for debugging</li>
+                    </ul>
+                    
+                    <h3 id="mobile-tips">Mobile Usage Tips</h3>
+                    <ul>
+                        <li><strong>Swipe gestures:</strong> Swipe right to open sidebar, left to close</li>
+                        <li><strong>Tap citations:</strong> Pin tooltips for easier reading</li>
+                        <li><strong>Landscape mode:</strong> Better for reading long responses</li>
+                        <li><strong>Zoom:</strong> Pinch to zoom on citation text if needed</li>
+                    </ul>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="common-workflows">Common Workflows</h2>
+                    
+                    <h3 id="research-workflow">Research Workflow</h3>
+                    <ol class="step-list">
+                        <li>
+                            <strong>Upload research papers</strong>
+                            <p>Add all relevant papers and articles</p>
+                        </li>
+                        <li>
+                            <strong>Start with overview</strong>
+                            <p>"Summarize the main findings across all papers"</p>
+                        </li>
+                        <li>
+                            <strong>Dive into specifics</strong>
+                            <p>"What methodology did Paper X use?"</p>
+                        </li>
+                        <li>
+                            <strong>Compare and contrast</strong>
+                            <p>"How do the conclusions differ between papers?"</p>
+                        </li>
+                        <li>
+                            <strong>Verify with citations</strong>
+                            <p>Check source text for accuracy</p>
+                        </li>
+                    </ol>
+                    
+                    <h3 id="documentation-workflow">Documentation Workflow</h3>
+                    <ol class="step-list">
+                        <li>
+                            <strong>Upload all docs</strong>
+                            <p>README, API docs, guides, etc.</p>
+                        </li>
+                        <li>
+                            <strong>Ask setup questions</strong>
+                            <p>"How do I install and configure this?"</p>
+                        </li>
+                        <li>
+                            <strong>Explore features</strong>
+                            <p>"What are the main features?"</p>
+                        </li>
+                        <li>
+                            <strong>Get code examples</strong>
+                            <p>"Show me an example of using feature X"</p>
+                        </li>
+                        <li>
+                            <strong>Troubleshoot issues</strong>
+                            <p>"How do I fix error Y?"</p>
+                        </li>
+                    </ol>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="dos-and-donts">Do's and Don'ts</h2>
+                    
+                    <h3 id="dos">✅ Do</h3>
+                    <ul>
+                        <li>Upload clean, well-formatted documents</li>
+                        <li>Ask specific, focused questions</li>
+                        <li>Verify information using citations</li>
+                        <li>Disable irrelevant documents</li>
+                        <li>Keep total document size reasonable</li>
+                        <li>Use descriptive file names</li>
+                        <li>Test both AI models to find preference</li>
+                        <li>Start new chats for new topics</li>
+                    </ul>
+                    
+                    <h3 id="donts">❌ Don't</h3>
+                    <ul>
+                        <li>Upload duplicate content</li>
+                        <li>Ask vague, open-ended questions</li>
+                        <li>Trust answers without checking citations</li>
+                        <li>Keep all documents enabled always</li>
+                        <li>Upload files larger than 1MB without splitting</li>
+                        <li>Use generic file names like "document1.txt"</li>
+                        <li>Expect perfect answers without good source material</li>
+                        <li>Mix unrelated topics in same chat</li>
+                    </ul>
+                </section>
+            </article>
+        </main>
+        
+        <aside class="docs-index">
+            <div class="index-header">On This Page</div>
+            <nav class="page-index"></nav>
+        </aside>
+    </div>
+    
+    <script src="docs.js"></script>
+</body>
+</html>

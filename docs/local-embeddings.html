@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local Embeddings - ConstructLM Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="docs-layout">
+        <aside class="docs-sidebar">
+            <div class="docs-header">
+                <h1>CONSTRUCTLM</h1>
+                <p class="docs-subtitle">Documentation</p>
+            </div>
+            
+            <nav class="docs-toc">
+                <div class="toc-section">
+                    <button class="toc-parent" data-section="getting-started">
+                        <span class="toc-icon">+</span>
+                        <span class="toc-label">Getting Started</span>
+                    </button>
+                    <div class="toc-children">
+                        <a href="index.html" class="toc-item">Introduction</a>
+                        <a href="quick-start.html" class="toc-item">Quick Start</a>
+                        <a href="interface.html" class="toc-item">Interface Overview</a>
+                    </div>
+                </div>
+                
+                <div class="toc-section">
+                    <button class="toc-parent" data-section="core-features">
+                        <span class="toc-icon">-</span>
+                        <span class="toc-label">Core Features</span>
+                    </button>
+                    <div class="toc-children active">
+                        <a href="local-embeddings.html" class="toc-item active">Local Embeddings</a>
+                        <a href="rag-system.html" class="toc-item">RAG System</a>
+                        <a href="ai-models.html" class="toc-item">AI Models</a>
+                        <a href="chat-management.html" class="toc-item">Chat Management</a>
+                    </div>
+                </div>
+                
+                <div class="toc-section">
+                    <button class="toc-parent" data-section="advanced">
+                        <span class="toc-icon">+</span>
+                        <span class="toc-label">Advanced Features</span>
+                    </button>
+                    <div class="toc-children">
+                        <a href="api-configuration.html" class="toc-item">API Configuration</a>
+                        <a href="document-management.html" class="toc-item">Document Management</a>
+                        <a href="citations.html" class="toc-item">Source Citations</a>
+                    </div>
+                </div>
+                
+                <div class="toc-section">
+                    <button class="toc-parent" data-section="reference">
+                        <span class="toc-icon">+</span>
+                        <span class="toc-label">Reference</span>
+                    </button>
+                    <div class="toc-children">
+                        <a href="architecture.html" class="toc-item">Architecture</a>
+                        <a href="troubleshooting.html" class="toc-item">Troubleshooting</a>
+                        <a href="tips.html" class="toc-item">Tips & Best Practices</a>
+                    </div>
+                </div>
+            </nav>
+        </aside>
+        
+        <main class="docs-content">
+            <div class="ask-more-container">
+                <button class="ask-more-button" id="ask-more-btn">Ask More</button>
+                <div class="ask-more-dropdown">
+                    <button id="copy-markdown-btn">Copy as Markdown</button>
+                    <a href="#" id="ask-chatgpt-btn" target="_blank">Ask ChatGPT</a>
+                </div>
+            </div>
+            
+            <article class="docs-article">
+                <h1 id="local-embeddings">Local Embeddings</h1>
+                
+                <p class="lead">ConstructLM's privacy-first architecture uses Transformers.js to generate embeddings entirely in your browser. Your documents never leave your device during the embedding process.</p>
+                
+                <section class="content-section">
+                    <h2 id="what-are-embeddings">What Are Embeddings?</h2>
+                    <p>Embeddings are numerical representations of text that capture semantic meaning. They allow the system to understand which pieces of text are similar or related, even if they don't use the exact same words.</p>
+                    
+                    <p>For example, these sentences have similar embeddings:</p>
+                    <ul>
+                        <li>"How do I configure the API?"</li>
+                        <li>"What are the API setup steps?"</li>
+                        <li>"API configuration instructions"</li>
+                    </ul>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="transformers-js">Transformers.js</h2>
+                    <p>ConstructLM uses <strong>Transformers.js</strong> by Xenova, which brings state-of-the-art machine learning models to the browser using WebAssembly and ONNX Runtime.</p>
+                    
+                    <h3 id="model-details">Model: Xenova/all-MiniLM-L6-v2</h3>
+                    <ul>
+                        <li><strong>Type:</strong> Sentence transformer</li>
+                        <li><strong>Size:</strong> ~25MB (downloaded once, cached forever)</li>
+                        <li><strong>Dimensions:</strong> 384-dimensional vectors</li>
+                        <li><strong>Speed:</strong> ~50-100 chunks per second (browser-dependent)</li>
+                        <li><strong>Quality:</strong> Excellent for semantic search and RAG applications</li>
+                    </ul>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="how-it-works">How It Works</h2>
+                    
+                    <ol class="step-list">
+                        <li>
+                            <strong>First-Time Setup</strong>
+                            <p>When you upload your first document, the embedding model (~25MB) is downloaded from HuggingFace CDN and cached in your browser.</p>
+                        </li>
+                        <li>
+                            <strong>Text Chunking</strong>
+                            <p>Documents are split into chunks of 1000 characters with 200-character overlap to maintain context across boundaries.</p>
+                        </li>
+                        <li>
+                            <strong>Local Embedding Generation</strong>
+                            <p>Each chunk is processed through the model running in your browser via WebAssembly. This generates a 384-dimensional vector for each chunk.</p>
+                        </li>
+                        <li>
+                            <strong>IndexedDB Storage</strong>
+                            <p>Vectors are stored locally in IndexedDB along with the original text chunks. Nothing is sent to external servers.</p>
+                        </li>
+                        <li>
+                            <strong>Query Embedding</strong>
+                            <p>When you ask a question, it's embedded using the same local model to create a query vector.</p>
+                        </li>
+                        <li>
+                            <strong>Similarity Search</strong>
+                            <p>Cosine similarity is calculated between the query vector and all document chunk vectors to find the most relevant passages.</p>
+                        </li>
+                    </ol>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="privacy-benefits">Privacy Benefits</h2>
+                    
+                    <div class="note-box">
+                        <strong>100% Local Processing</strong>
+                        <p>Your documents are never sent to external servers for embedding. All processing happens in your browser using WebAssembly.</p>
+                    </div>
+                    
+                    <ul>
+                        <li><strong>No Data Leakage:</strong> Documents stay on your device</li>
+                        <li><strong>No API Costs:</strong> Embedding is completely free</li>
+                        <li><strong>Offline Capable:</strong> Once model is cached, embeddings work offline</li>
+                        <li><strong>No Rate Limits:</strong> Process as many documents as you want</li>
+                        <li><strong>Instant Processing:</strong> No network latency for embedding</li>
+                    </ul>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="performance">Performance Characteristics</h2>
+                    
+                    <h3 id="processing-speed">Processing Speed</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Document Size</th>
+                                <th>Chunks</th>
+                                <th>Typical Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Small (1-5 KB)</td>
+                                <td>5-10</td>
+                                <td>2-5 seconds</td>
+                            </tr>
+                            <tr>
+                                <td>Medium (10-50 KB)</td>
+                                <td>10-50</td>
+                                <td>5-15 seconds</td>
+                            </tr>
+                            <tr>
+                                <td>Large (100-500 KB)</td>
+                                <td>100-500</td>
+                                <td>30-90 seconds</td>
+                            </tr>
+                            <tr>
+                                <td>Very Large (1+ MB)</td>
+                                <td>1000+</td>
+                                <td>2-5 minutes</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <p><em>Note: Times vary based on device CPU and browser performance.</em></p>
+                    
+                    <h3 id="memory-usage">Memory Usage</h3>
+                    <ul>
+                        <li><strong>Model:</strong> ~100MB RAM when loaded</li>
+                        <li><strong>Per Document:</strong> ~2-3x original file size in RAM during processing</li>
+                        <li><strong>Storage:</strong> Vectors stored efficiently in IndexedDB</li>
+                    </ul>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="technical-details">Technical Details</h2>
+                    
+                    <h3 id="chunking-strategy">Chunking Strategy</h3>
+                    <pre><code>Chunk Size: 1000 characters
+Overlap: 200 characters
+Strategy: Sliding window
+
+Example:
+Chunk 1: chars 0-1000
+Chunk 2: chars 800-1800 (200 char overlap)
+Chunk 3: chars 1600-2600 (200 char overlap)</code></pre>
+                    
+                    <h3 id="vector-similarity">Vector Similarity</h3>
+                    <p>Cosine similarity is used to compare vectors:</p>
+                    <pre><code>similarity = (A · B) / (||A|| × ||B||)
+
+Where:
+- A · B = dot product of vectors A and B
+- ||A|| = magnitude of vector A
+- ||B|| = magnitude of vector B
+
+Result: Value between -1 and 1
+- 1 = identical meaning
+- 0 = unrelated
+- -1 = opposite meaning</code></pre>
+                    
+                    <h3 id="relevance-threshold">Relevance Threshold</h3>
+                    <p>ConstructLM uses a threshold of <strong>0.15</strong> for cosine similarity. Chunks below this threshold are considered irrelevant and excluded from results.</p>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="limitations">Limitations</h2>
+                    <ul>
+                        <li><strong>Browser Performance:</strong> Slower than server-side embedding on older devices</li>
+                        <li><strong>Model Size:</strong> 25MB initial download required</li>
+                        <li><strong>Context Length:</strong> 512 tokens max per chunk (model limitation)</li>
+                        <li><strong>Language Support:</strong> Optimized for English, works with other languages but may be less accurate</li>
+                        <li><strong>Memory:</strong> Large document sets may consume significant RAM</li>
+                    </ul>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="comparison">Comparison with Cloud Embeddings</h2>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Feature</th>
+                                <th>Local (ConstructLM)</th>
+                                <th>Cloud (OpenAI, etc.)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Privacy</td>
+                                <td>✅ 100% Private</td>
+                                <td>❌ Data sent to servers</td>
+                            </tr>
+                            <tr>
+                                <td>Cost</td>
+                                <td>✅ Free</td>
+                                <td>❌ Pay per token</td>
+                            </tr>
+                            <tr>
+                                <td>Speed</td>
+                                <td>⚠️ Moderate</td>
+                                <td>✅ Very Fast</td>
+                            </tr>
+                            <tr>
+                                <td>Offline</td>
+                                <td>✅ Works offline</td>
+                                <td>❌ Requires internet</td>
+                            </tr>
+                            <tr>
+                                <td>Quality</td>
+                                <td>✅ Excellent</td>
+                                <td>✅ Excellent</td>
+                            </tr>
+                            <tr>
+                                <td>Rate Limits</td>
+                                <td>✅ None</td>
+                                <td>❌ API limits apply</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="best-practices">Best Practices</h2>
+                    <ul>
+                        <li><strong>First Upload:</strong> Be patient during initial model download</li>
+                        <li><strong>Batch Uploads:</strong> Upload multiple files at once for efficiency</li>
+                        <li><strong>Document Size:</strong> Break very large documents (>5MB) into smaller files</li>
+                        <li><strong>Clear Cache:</strong> If model seems corrupted, clear browser cache and re-download</li>
+                        <li><strong>Modern Browser:</strong> Use latest Chrome/Edge for best performance</li>
+                    </ul>
+                </section>
+            </article>
+        </main>
+        
+        <aside class="docs-index">
+            <div class="index-header">On This Page</div>
+            <nav class="page-index"></nav>
+        </aside>
+    </div>
+    
+    <script src="docs.js"></script>
+</body>
+</html>

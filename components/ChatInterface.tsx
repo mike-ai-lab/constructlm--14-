@@ -1,12 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Send } from 'lucide-react';
+import { Send, Image as ImageIcon, X } from 'lucide-react';
 import { ChatMessage, Citation } from '../types';
 
 interface ChatInterfaceProps {
   messages: ChatMessage[];
-  onSendMessage: (msg: string) => void;
+  onSendMessage: (msg: string, imageBase64?: string) => void;
   isStreaming: boolean;
 }
 
@@ -18,13 +18,45 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [input, setInput] = useState('');
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [pinnedCitation, setPinnedCitation] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Check if image
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    // Convert to base64
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64 = event.target?.result as string;
+      setImagePreview(base64);
+      // Remove data:image/...;base64, prefix for API
+      const base64Data = base64.split(',')[1];
+      setSelectedImage(base64Data);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const clearImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isStreaming) return;
-    onSendMessage(input);
+    if ((!input.trim() && !selectedImage) || isStreaming) return;
+    onSendMessage(input || 'Analyze this image', selectedImage || undefined);
     setInput('');
+    clearImage();
   };
 
   useEffect(() => {
@@ -189,7 +221,24 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       </div>
 
       {/* Input Area */}
-      <div className="h-[90px] border-t-2 border-black bg-white shrink-0 flex items-center justify-center px-6">
+      <div className="border-t-2 border-black bg-white shrink-0 flex flex-col items-center px-6 py-3">
+        {/* Image Preview */}
+        {imagePreview && (
+          <div className="w-full max-w-3xl mb-2 relative">
+            <div className="border-2 border-black p-2 bg-gray-50 flex items-center gap-3">
+              <img src={imagePreview} alt="Preview" className="h-16 w-16 object-cover border border-black" />
+              <span className="text-xs font-mono flex-1">Image attached</span>
+              <button
+                onClick={clearImage}
+                className="p-1 hover:bg-gray-200 border border-black"
+                type="button"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        )}
+        
         <div className="w-full max-w-3xl relative">
           <form onSubmit={handleSubmit} className="relative">
             <div className={`relative transition-all duration-100 ${isInputFocused ? 'translate-x-[-2px] translate-y-[-2px]' : ''}`}>
@@ -199,23 +248,41 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 onChange={(e) => setInput(e.target.value)}
                 onFocus={() => setIsInputFocused(true)}
                 onBlur={() => setIsInputFocused(false)}
-                placeholder="ASK A QUESTION..."
-                className={`w-full border-2 border-black p-3 text-[11px] font-bold focus:outline-none uppercase placeholder:text-gray-300 bg-white transition-all duration-100 ${
+                placeholder={selectedImage ? "ADD DESCRIPTION (OPTIONAL)..." : "ASK A QUESTION..."}
+                className={`w-full border-2 border-black p-3 pr-20 text-[11px] font-bold focus:outline-none uppercase placeholder:text-gray-300 bg-white transition-all duration-100 ${
                   isInputFocused ? 'shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : ''
                 }`}
                 disabled={isStreaming}
               />
-              <button 
-                type="submit"
-                disabled={!input.trim() || isStreaming}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-black hover:text-gray-600 transition-colors disabled:opacity-50"
-              >
-                {isStreaming ? (
-                  <div className="w-4 h-4 border-2 border-t-transparent border-black rounded-full animate-spin" />
-                ) : (
-                  <Send size={16} />
-                )}
-              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageSelect}
+                className="hidden"
+              />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isStreaming}
+                  className="text-black hover:text-gray-600 transition-colors disabled:opacity-50"
+                  title="Upload Image"
+                >
+                  <ImageIcon size={16} />
+                </button>
+                <button 
+                  type="submit"
+                  disabled={(!input.trim() && !selectedImage) || isStreaming}
+                  className="text-black hover:text-gray-600 transition-colors disabled:opacity-50"
+                >
+                  {isStreaming ? (
+                    <div className="w-4 h-4 border-2 border-t-transparent border-black rounded-full animate-spin" />
+                  ) : (
+                    <Send size={16} />
+                  )}
+                </button>
+              </div>
             </div>
           </form>
         </div>

@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Architecture - ConstructLM Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="docs-layout">
+        <aside class="docs-sidebar">
+            <div class="docs-header">
+                <h1>CONSTRUCTLM</h1>
+                <p class="docs-subtitle">Documentation</p>
+            </div>
+            
+            <nav class="docs-toc">
+                <div class="toc-section">
+                    <button class="toc-parent" data-section="getting-started">
+                        <span class="toc-icon">+</span>
+                        <span class="toc-label">Getting Started</span>
+                    </button>
+                    <div class="toc-children">
+                        <a href="index.html" class="toc-item">Introduction</a>
+                        <a href="quick-start.html" class="toc-item">Quick Start</a>
+                        <a href="interface.html" class="toc-item">Interface Overview</a>
+                    </div>
+                </div>
+                
+                <div class="toc-section">
+                    <button class="toc-parent" data-section="core-features">
+                        <span class="toc-icon">+</span>
+                        <span class="toc-label">Core Features</span>
+                    </button>
+                    <div class="toc-children">
+                        <a href="local-embeddings.html" class="toc-item">Local Embeddings</a>
+                        <a href="rag-system.html" class="toc-item">RAG System</a>
+                        <a href="ai-models.html" class="toc-item">AI Models</a>
+                        <a href="chat-management.html" class="toc-item">Chat Management</a>
+                    </div>
+                </div>
+                
+                <div class="toc-section">
+                    <button class="toc-parent" data-section="advanced">
+                        <span class="toc-icon">+</span>
+                        <span class="toc-label">Advanced Features</span>
+                    </button>
+                    <div class="toc-children">
+                        <a href="api-configuration.html" class="toc-item">API Configuration</a>
+                        <a href="document-management.html" class="toc-item">Document Management</a>
+                        <a href="citations.html" class="toc-item">Source Citations</a>
+                    </div>
+                </div>
+                
+                <div class="toc-section">
+                    <button class="toc-parent" data-section="reference">
+                        <span class="toc-icon">-</span>
+                        <span class="toc-label">Reference</span>
+                    </button>
+                    <div class="toc-children active">
+                        <a href="architecture.html" class="toc-item active">Architecture</a>
+                        <a href="troubleshooting.html" class="toc-item">Troubleshooting</a>
+                        <a href="tips.html" class="toc-item">Tips & Best Practices</a>
+                    </div>
+                </div>
+            </nav>
+        </aside>
+        
+        <main class="docs-content">
+            <div class="ask-more-container">
+                <button class="ask-more-button" id="ask-more-btn">Ask More</button>
+                <div class="ask-more-dropdown">
+                    <button id="copy-markdown-btn">Copy as Markdown</button>
+                    <a href="#" id="ask-chatgpt-btn" target="_blank">Ask ChatGPT</a>
+                </div>
+            </div>
+            
+            <article class="docs-article">
+                <h1 id="architecture">Architecture</h1>
+                
+                <p class="lead">ConstructLM is built with modern web technologies and a privacy-first architecture. This guide explains the technical design and component structure.</p>
+                
+                <section class="content-section">
+                    <h2 id="tech-stack">Technology Stack</h2>
+                    
+                    <h3 id="frontend">Frontend</h3>
+                    <ul>
+                        <li><strong>React 19:</strong> UI framework with hooks and functional components</li>
+                        <li><strong>TypeScript:</strong> Type-safe development</li>
+                        <li><strong>Vite:</strong> Fast build tool and dev server</li>
+                        <li><strong>Tailwind CSS:</strong> Utility-first styling</li>
+                    </ul>
+                    
+                    <h3 id="ai-ml">AI & Machine Learning</h3>
+                    <ul>
+                        <li><strong>Transformers.js (@xenova/transformers):</strong> Local embeddings</li>
+                        <li><strong>Google Gemini API:</strong> AI chat responses</li>
+                        <li><strong>Cerebras AI API:</strong> Fast AI chat responses</li>
+                    </ul>
+                    
+                    <h3 id="storage">Storage & Data</h3>
+                    <ul>
+                        <li><strong>IndexedDB:</strong> Vector database and document storage</li>
+                        <li><strong>localStorage:</strong> API keys and preferences</li>
+                    </ul>
+                    
+                    <h3 id="rendering">Rendering & Formatting</h3>
+                    <ul>
+                        <li><strong>react-markdown:</strong> Markdown rendering</li>
+                        <li><strong>remark-gfm:</strong> GitHub Flavored Markdown support</li>
+                        <li><strong>lucide-react:</strong> Icon library</li>
+                    </ul>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="project-structure">Project Structure</h2>
+                    
+                    <pre><code>constructlm/
+├── components/
+│   ├── ChatInterface.tsx      # Main chat UI
+│   ├── Sidebar.tsx             # Document & chat management
+│   ├── SettingsModal.tsx       # API configuration
+│   └── ui/
+│       └── Button.tsx          # Reusable button component
+├── services/
+│   ├── embeddingService.ts     # Transformers.js integration
+│   ├── vectorDb.ts             # IndexedDB vector operations
+│   ├── geminiService.ts        # Gemini API client
+│   ├── cerebrasService.ts      # Cerebras API client
+│   ├── chatStorage.ts          # Chat session persistence
+│   └── pdfParser.ts            # PDF text extraction
+├── App.tsx                     # Main application component
+├── types.ts                    # TypeScript type definitions
+├── index.tsx                   # Application entry point
+└── index.css                   # Global styles</code></pre>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="component-architecture">Component Architecture</h2>
+                    
+                    <h3 id="app-component">App.tsx</h3>
+                    <p>Root component managing:</p>
+                    <ul>
+                        <li>Application state (files, messages, settings)</li>
+                        <li>Sidebar resize logic</li>
+                        <li>Mobile gesture handling</li>
+                        <li>Chat session management</li>
+                        <li>API key configuration</li>
+                    </ul>
+                    
+                    <h3 id="chatinterface">ChatInterface.tsx</h3>
+                    <p>Handles conversation display:</p>
+                    <ul>
+                        <li>Message rendering with markdown support</li>
+                        <li>Citation display and tooltips</li>
+                        <li>Input field with submit handling</li>
+                        <li>Auto-scroll to latest message</li>
+                        <li>Streaming response updates</li>
+                    </ul>
+                    
+                    <h3 id="sidebar-component">Sidebar.tsx</h3>
+                    <p>Manages documents and chats:</p>
+                    <ul>
+                        <li>Tab switching (CHATS / SOURCES)</li>
+                        <li>File upload handling</li>
+                        <li>Document enable/disable toggles</li>
+                        <li>Chat session list</li>
+                        <li>Context usage meter</li>
+                    </ul>
+                    
+                    <h3 id="settingsmodal">SettingsModal.tsx</h3>
+                    <p>API configuration interface:</p>
+                    <ul>
+                        <li>API key input fields</li>
+                        <li>Show/hide password toggles</li>
+                        <li>Key validation and testing</li>
+                        <li>Save to localStorage</li>
+                    </ul>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="service-layer">Service Layer</h2>
+                    
+                    <h3 id="embeddingservice">embeddingService.ts</h3>
+                    <p>Local embedding generation:</p>
+                    <pre><code>class EmbeddingService {
+  - loadModel(): Downloads and caches Transformers.js model
+  - generateEmbedding(text): Creates 384-dim vector
+  - getEmbeddings(texts[]): Batch embedding generation
+}</code></pre>
+                    
+                    <h3 id="vectordb">vectorDb.ts</h3>
+                    <p>IndexedDB operations:</p>
+                    <pre><code>Functions:
+  - processFile(): Parse, chunk, embed, store document
+  - searchVectors(): Cosine similarity search
+  - getAllFiles(): Retrieve all documents
+  - deleteFile(): Remove document and chunks
+  - updateFileEnabled(): Toggle document in searches</code></pre>
+                    
+                    <h3 id="ai-services">AI Services</h3>
+                    <p><strong>geminiService.ts</strong> and <strong>cerebrasService.ts</strong>:</p>
+                    <pre><code>Functions:
+  - streamChatResponse(): 
+      - Builds prompt with context
+      - Streams AI response
+      - Handles errors and retries</code></pre>
+                    
+                    <h3 id="chatstorage">chatStorage.ts</h3>
+                    <p>Chat session management:</p>
+                    <pre><code>Functions:
+  - saveChatSession(): Persist chat to localStorage
+  - getChatSession(): Load specific chat
+  - getAllChatSessions(): List all chats
+  - deleteChatSession(): Remove chat
+  - generateChatTitle(): Create title from first message</code></pre>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="data-flow">Data Flow</h2>
+                    
+                    <h3 id="document-upload-flow">Document Upload Flow</h3>
+                    <ol class="step-list">
+                        <li>
+                            <strong>User uploads file</strong>
+                            <p>File selected via input element</p>
+                        </li>
+                        <li>
+                            <strong>File parsing</strong>
+                            <p>Text extracted (PDF uses pdfParser, others use FileReader)</p>
+                        </li>
+                        <li>
+                            <strong>Text chunking</strong>
+                            <p>Split into 1000-char chunks with 200-char overlap</p>
+                        </li>
+                        <li>
+                            <strong>Embedding generation</strong>
+                            <p>Each chunk embedded locally via Transformers.js</p>
+                        </li>
+                        <li>
+                            <strong>Storage</strong>
+                            <p>Document metadata and chunk vectors saved to IndexedDB</p>
+                        </li>
+                        <li>
+                            <strong>UI update</strong>
+                            <p>Document appears in sidebar SOURCES tab</p>
+                        </li>
+                    </ol>
+                    
+                    <h3 id="query-flow">Query Flow</h3>
+                    <ol class="step-list">
+                        <li>
+                            <strong>User submits question</strong>
+                            <p>Text entered in input field</p>
+                        </li>
+                        <li>
+                            <strong>Query embedding</strong>
+                            <p>Question embedded locally to create query vector</p>
+                        </li>
+                        <li>
+                            <strong>Vector search</strong>
+                            <p>Cosine similarity calculated against all enabled document chunks</p>
+                        </li>
+                        <li>
+                            <strong>Result diversification</strong>
+                            <p>Top results selected with diversity across documents</p>
+                        </li>
+                        <li>
+                            <strong>Context preparation</strong>
+                            <p>Relevant chunks formatted as context for AI</p>
+                        </li>
+                        <li>
+                            <strong>AI request</strong>
+                            <p>Query + context sent to Gemini or Cerebras API</p>
+                        </li>
+                        <li>
+                            <strong>Response streaming</strong>
+                            <p>AI response streamed back and displayed incrementally</p>
+                        </li>
+                        <li>
+                            <strong>Citation display</strong>
+                            <p>Source chunks shown as clickable citation badges</p>
+                        </li>
+                    </ol>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="storage-schema">Storage Schema</h2>
+                    
+                    <h3 id="indexeddb-schema">IndexedDB</h3>
+                    <p><strong>Database:</strong> ConstructLM_DB</p>
+                    
+                    <p><strong>Object Store: files</strong></p>
+                    <pre><code>{
+  id: string (UUID)
+  name: string
+  type: string (MIME type)
+  size: number (bytes)
+  uploadDate: number (timestamp)
+  status: 'processing' | 'ready' | 'error'
+  tokenCount: number
+  isEnabled: boolean
+}</code></pre>
+                    
+                    <p><strong>Object Store: chunks</strong></p>
+                    <pre><code>{
+  id: string (UUID)
+  docId: string (foreign key to files)
+  text: string
+  vector: number[] (384 dimensions)
+  startIndex: number
+  endIndex: number
+}
+Index: docId (for efficient deletion)</code></pre>
+                    
+                    <h3 id="localstorage-schema">localStorage</h3>
+                    <pre><code>Keys:
+  - gemini_api_key: string
+  - cerebras_api_key: string
+  - chat_sessions: JSON array of ChatSession objects</code></pre>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="security">Security Considerations</h2>
+                    
+                    <h3 id="api-keys">API Keys</h3>
+                    <ul>
+                        <li>Stored in localStorage (browser-local, not transmitted)</li>
+                        <li>Never logged or exposed in UI (password fields)</li>
+                        <li>Sent only in Authorization headers to respective APIs</li>
+                        <li>User responsible for key security</li>
+                    </ul>
+                    
+                    <h3 id="document-privacy">Document Privacy</h3>
+                    <ul>
+                        <li>Documents embedded locally—never sent to embedding APIs</li>
+                        <li>Only query + retrieved context sent to AI providers</li>
+                        <li>Full documents remain in browser IndexedDB</li>
+                        <li>No server-side storage or processing</li>
+                    </ul>
+                    
+                    <h3 id="xss-protection">XSS Protection</h3>
+                    <ul>
+                        <li>React's built-in XSS protection</li>
+                        <li>Markdown rendered via react-markdown (sanitized)</li>
+                        <li>No dangerouslySetInnerHTML usage</li>
+                    </ul>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="performance">Performance Optimizations</h2>
+                    <ul>
+                        <li><strong>Lazy Loading:</strong> Transformers.js model loaded on first use</li>
+                        <li><strong>Caching:</strong> Model cached in browser for offline use</li>
+                        <li><strong>Streaming:</strong> AI responses streamed for perceived speed</li>
+                        <li><strong>Debouncing:</strong> Input handling optimized</li>
+                        <li><strong>Virtual Scrolling:</strong> Efficient message list rendering</li>
+                        <li><strong>IndexedDB Indexes:</strong> Fast document lookup by docId</li>
+                    </ul>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="browser-compatibility">Browser Compatibility</h2>
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Browser</th>
+                                <th>Version</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Chrome</td>
+                                <td>90+</td>
+                                <td>✅ Full Support</td>
+                            </tr>
+                            <tr>
+                                <td>Edge</td>
+                                <td>90+</td>
+                                <td>✅ Full Support</td>
+                            </tr>
+                            <tr>
+                                <td>Firefox</td>
+                                <td>88+</td>
+                                <td>✅ Full Support</td>
+                            </tr>
+                            <tr>
+                                <td>Safari</td>
+                                <td>15+</td>
+                                <td>✅ Full Support</td>
+                            </tr>
+                            <tr>
+                                <td>Mobile Safari</td>
+                                <td>iOS 15+</td>
+                                <td>✅ Full Support</td>
+                            </tr>
+                            <tr>
+                                <td>Chrome Mobile</td>
+                                <td>90+</td>
+                                <td>✅ Full Support</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <p><strong>Requirements:</strong></p>
+                    <ul>
+                        <li>WebAssembly support</li>
+                        <li>IndexedDB support</li>
+                        <li>localStorage support</li>
+                        <li>ES6+ JavaScript</li>
+                    </ul>
+                </section>
+            </article>
+        </main>
+        
+        <aside class="docs-index">
+            <div class="index-header">On This Page</div>
+            <nav class="page-index"></nav>
+        </aside>
+    </div>
+    
+    <script src="docs.js"></script>
+</body>
+</html>

@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Troubleshooting - ConstructLM Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="docs-layout">
+        <aside class="docs-sidebar">
+            <div class="docs-header">
+                <h1>CONSTRUCTLM</h1>
+                <p class="docs-subtitle">Documentation</p>
+            </div>
+            
+            <nav class="docs-toc">
+                <div class="toc-section">
+                    <button class="toc-parent" data-section="getting-started">
+                        <span class="toc-icon">+</span>
+                        <span class="toc-label">Getting Started</span>
+                    </button>
+                    <div class="toc-children">
+                        <a href="index.html" class="toc-item">Introduction</a>
+                        <a href="quick-start.html" class="toc-item">Quick Start</a>
+                        <a href="interface.html" class="toc-item">Interface Overview</a>
+                    </div>
+                </div>
+                
+                <div class="toc-section">
+                    <button class="toc-parent" data-section="core-features">
+                        <span class="toc-icon">+</span>
+                        <span class="toc-label">Core Features</span>
+                    </button>
+                    <div class="toc-children">
+                        <a href="local-embeddings.html" class="toc-item">Local Embeddings</a>
+                        <a href="rag-system.html" class="toc-item">RAG System</a>
+                        <a href="ai-models.html" class="toc-item">AI Models</a>
+                        <a href="chat-management.html" class="toc-item">Chat Management</a>
+                    </div>
+                </div>
+                
+                <div class="toc-section">
+                    <button class="toc-parent" data-section="advanced">
+                        <span class="toc-icon">+</span>
+                        <span class="toc-label">Advanced Features</span>
+                    </button>
+                    <div class="toc-children">
+                        <a href="api-configuration.html" class="toc-item">API Configuration</a>
+                        <a href="document-management.html" class="toc-item">Document Management</a>
+                        <a href="citations.html" class="toc-item">Source Citations</a>
+                    </div>
+                </div>
+                
+                <div class="toc-section">
+                    <button class="toc-parent" data-section="reference">
+                        <span class="toc-icon">-</span>
+                        <span class="toc-label">Reference</span>
+                    </button>
+                    <div class="toc-children active">
+                        <a href="architecture.html" class="toc-item">Architecture</a>
+                        <a href="troubleshooting.html" class="toc-item active">Troubleshooting</a>
+                        <a href="tips.html" class="toc-item">Tips & Best Practices</a>
+                    </div>
+                </div>
+            </nav>
+        </aside>
+        
+        <main class="docs-content">
+            <div class="ask-more-container">
+                <button class="ask-more-button" id="ask-more-btn">Ask More</button>
+                <div class="ask-more-dropdown">
+                    <button id="copy-markdown-btn">Copy as Markdown</button>
+                    <a href="#" id="ask-chatgpt-btn" target="_blank">Ask ChatGPT</a>
+                </div>
+            </div>
+            
+            <article class="docs-article">
+                <h1 id="troubleshooting">Troubleshooting</h1>
+                
+                <p class="lead">Common issues and their solutions. If you encounter a problem not listed here, check the browser console for error messages.</p>
+                
+                <section class="content-section">
+                    <h2 id="api-key-issues">API Key Issues</h2>
+                    
+                    <h3 id="invalid-api-key">Invalid API Key Error</h3>
+                    <p><strong>Symptom:</strong> Red X (✗) when testing API key, or "Invalid API key" error when sending messages.</p>
+                    
+                    <p><strong>Solutions:</strong></p>
+                    <ul>
+                        <li>Verify you copied the entire API key without extra spaces</li>
+                        <li>Check that the key is from the correct provider (Gemini vs Cerebras)</li>
+                        <li>Ensure the API key hasn't expired or been revoked</li>
+                        <li>For Gemini: Get key from <a href="https://makersuite.google.com/app/apikey" target="_blank">Google AI Studio</a></li>
+                        <li>For Cerebras: Get key from <a href="https://cloud.cerebras.ai/" target="_blank">Cerebras Cloud</a></li>
+                    </ul>
+                    
+                    <h3 id="api-key-not-saved">API Key Not Saved</h3>
+                    <p><strong>Symptom:</strong> Need to re-enter API keys after refreshing page.</p>
+                    
+                    <p><strong>Solutions:</strong></p>
+                    <ul>
+                        <li>Check if browser is in private/incognito mode (localStorage disabled)</li>
+                        <li>Verify browser allows localStorage for the site</li>
+                        <li>Check if browser extensions are blocking storage</li>
+                        <li>Try a different browser</li>
+                    </ul>
+                    
+                    <h3 id="rate-limit-errors">Rate Limit Errors</h3>
+                    <p><strong>Symptom:</strong> "Rate limit exceeded" or "Too many requests" errors.</p>
+                    
+                    <p><strong>Solutions:</strong></p>
+                    <ul>
+                        <li>Wait a few minutes before trying again</li>
+                        <li>Check your API provider's rate limits and usage</li>
+                        <li>Switch to the other AI model temporarily</li>
+                        <li>Upgrade your API plan if needed</li>
+                    </ul>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="document-upload-issues">Document Upload Issues</h2>
+                    
+                    <h3 id="upload-stuck">Upload Stuck or Very Slow</h3>
+                    <p><strong>Symptom:</strong> Document processing takes extremely long or appears frozen.</p>
+                    
+                    <p><strong>Solutions:</strong></p>
+                    <ul>
+                        <li><strong>First upload:</strong> Model download (~25MB) happens once—be patient</li>
+                        <li><strong>Large files:</strong> Files >1MB take several minutes to process</li>
+                        <li><strong>Check console:</strong> Open browser DevTools (F12) to see progress</li>
+                        <li><strong>Refresh page:</strong> If truly stuck, refresh and try again</li>
+                        <li><strong>Split files:</strong> Break very large documents into smaller files</li>
+                    </ul>
+                    
+                    <h3 id="pdf-parsing-fails">PDF Parsing Fails</h3>
+                    <p><strong>Symptom:</strong> Error when uploading PDF files.</p>
+                    
+                    <p><strong>Solutions:</strong></p>
+                    <ul>
+                        <li>Ensure PDF contains actual text (not scanned images)</li>
+                        <li>Try converting PDF to TXT or MD format first</li>
+                        <li>Check if PDF is password-protected (not supported)</li>
+                        <li>Verify PDF isn't corrupted by opening in another app</li>
+                    </ul>
+                    
+                    <h3 id="unsupported-file-type">Unsupported File Type</h3>
+                    <p><strong>Symptom:</strong> File upload rejected or fails to process.</p>
+                    
+                    <p><strong>Supported formats:</strong></p>
+                    <ul>
+                        <li>.txt (Plain text)</li>
+                        <li>.md (Markdown)</li>
+                        <li>.json (JSON)</li>
+                        <li>.csv (CSV)</li>
+                        <li>.pdf (PDF with text)</li>
+                    </ul>
+                    
+                    <p><strong>Solutions:</strong></p>
+                    <ul>
+                        <li>Convert unsupported formats to TXT or MD</li>
+                        <li>For Word docs: Save as TXT or copy/paste into TXT file</li>
+                        <li>For images: Use OCR to extract text first</li>
+                    </ul>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="embedding-issues">Embedding Issues</h2>
+                    
+                    <h3 id="model-download-fails">Model Download Fails</h3>
+                    <p><strong>Symptom:</strong> Error during first document upload about model loading.</p>
+                    
+                    <p><strong>Solutions:</strong></p>
+                    <ul>
+                        <li>Check internet connection</li>
+                        <li>Verify firewall isn't blocking HuggingFace CDN</li>
+                        <li>Clear browser cache and try again</li>
+                        <li>Try a different network</li>
+                        <li>Wait and retry—CDN may be temporarily down</li>
+                    </ul>
+                    
+                    <h3 id="embeddings-not-working">Embeddings Not Working Offline</h3>
+                    <p><strong>Symptom:</strong> Can't upload documents when offline.</p>
+                    
+                    <p><strong>Explanation:</strong> Model must be downloaded once while online. After that, embeddings work offline.</p>
+                    
+                    <p><strong>Solutions:</strong></p>
+                    <ul>
+                        <li>Upload at least one document while online to cache model</li>
+                        <li>Verify model is cached: Check browser storage in DevTools</li>
+                        <li>If cache was cleared, reconnect to internet and upload a test file</li>
+                    </ul>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="search-issues">Search & Query Issues</h2>
+                    
+                    <h3 id="no-relevant-results">No Relevant Results Found</h3>
+                    <p><strong>Symptom:</strong> AI says it can't find information, even though it's in your documents.</p>
+                    
+                    <p><strong>Solutions:</strong></p>
+                    <ul>
+                        <li><strong>Check document is enabled:</strong> Click document card in SOURCES tab to enable</li>
+                        <li><strong>Rephrase query:</strong> Try different wording or keywords</li>
+                        <li><strong>Be more specific:</strong> Add context to your question</li>
+                        <li><strong>Check document content:</strong> Verify the information is actually in the uploaded files</li>
+                        <li><strong>Upload more context:</strong> Add related documents for better coverage</li>
+                    </ul>
+                    
+                    <h3 id="wrong-sources-cited">Wrong Sources Cited</h3>
+                    <p><strong>Symptom:</strong> Citations don't seem relevant to the answer.</p>
+                    
+                    <p><strong>Explanation:</strong> Embedding similarity isn't perfect. The AI uses the provided context even if not ideal.</p>
+                    
+                    <p><strong>Solutions:</strong></p>
+                    <ul>
+                        <li>Click citations to verify what text was actually used</li>
+                        <li>Rephrase your question to be more specific</li>
+                        <li>Disable irrelevant documents in SOURCES tab</li>
+                        <li>Upload more focused, relevant documents</li>
+                    </ul>
+                    
+                    <h3 id="slow-responses">Slow AI Responses</h3>
+                    <p><strong>Symptom:</strong> Long wait time for AI to respond.</p>
+                    
+                    <p><strong>Solutions:</strong></p>
+                    <ul>
+                        <li><strong>Cerebras:</strong> Usually very fast—check internet connection</li>
+                        <li><strong>Gemini:</strong> Can be slower during high load—try Cerebras</li>
+                        <li><strong>Large context:</strong> Many citations slow down response—disable some documents</li>
+                        <li><strong>API issues:</strong> Provider may be experiencing downtime</li>
+                    </ul>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="ui-issues">UI & Display Issues</h2>
+                    
+                    <h3 id="sidebar-not-visible">Sidebar Not Visible</h3>
+                    <p><strong>Symptom:</strong> Can't see sidebar on desktop.</p>
+                    
+                    <p><strong>Solutions:</strong></p>
+                    <ul>
+                        <li>Look for collapse/expand button on left edge</li>
+                        <li>Click the button to expand sidebar</li>
+                        <li>Refresh page if button is missing</li>
+                    </ul>
+                    
+                    <h3 id="mobile-sidebar-stuck">Mobile Sidebar Stuck Open</h3>
+                    <p><strong>Symptom:</strong> Can't close sidebar on mobile.</p>
+                    
+                    <p><strong>Solutions:</strong></p>
+                    <ul>
+                        <li>Tap the X button in top-right of sidebar</li>
+                        <li>Swipe left to close</li>
+                        <li>Tap the dark backdrop area</li>
+                        <li>Refresh page if unresponsive</li>
+                    </ul>
+                    
+                    <h3 id="markdown-not-rendering">Markdown Not Rendering</h3>
+                    <p><strong>Symptom:</strong> AI responses show raw markdown instead of formatted text.</p>
+                    
+                    <p><strong>Solutions:</strong></p>
+                    <ul>
+                        <li>Refresh the page</li>
+                        <li>Clear browser cache</li>
+                        <li>Check browser console for JavaScript errors</li>
+                        <li>Try a different browser</li>
+                    </ul>
+                    
+                    <h3 id="citations-not-showing">Citations Not Showing</h3>
+                    <p><strong>Symptom:</strong> No citation badges below AI responses.</p>
+                    
+                    <p><strong>Possible causes:</strong></p>
+                    <ul>
+                        <li>No documents uploaded yet</li>
+                        <li>All documents disabled in SOURCES tab</li>
+                        <li>Query didn't match any document content</li>
+                        <li>Error during vector search (check console)</li>
+                    </ul>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="performance-issues">Performance Issues</h2>
+                    
+                    <h3 id="browser-slow">Browser Becomes Slow</h3>
+                    <p><strong>Symptom:</strong> Browser lags or becomes unresponsive.</p>
+                    
+                    <p><strong>Solutions:</strong></p>
+                    <ul>
+                        <li><strong>Too many documents:</strong> Delete unused documents</li>
+                        <li><strong>Large documents:</strong> Split into smaller files</li>
+                        <li><strong>Memory:</strong> Close other tabs and applications</li>
+                        <li><strong>Old browser:</strong> Update to latest version</li>
+                        <li><strong>Clear data:</strong> Delete old chat sessions</li>
+                    </ul>
+                    
+                    <h3 id="high-memory-usage">High Memory Usage</h3>
+                    <p><strong>Symptom:</strong> Browser uses excessive RAM.</p>
+                    
+                    <p><strong>Explanation:</strong> Embedding model and vectors consume memory.</p>
+                    
+                    <p><strong>Solutions:</strong></p>
+                    <ul>
+                        <li>Limit total documents to <500KB combined</li>
+                        <li>Close and reopen tab to free memory</li>
+                        <li>Use a device with more RAM</li>
+                        <li>Delete unnecessary documents</li>
+                    </ul>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="data-issues">Data & Storage Issues</h2>
+                    
+                    <h3 id="documents-disappeared">Documents Disappeared</h3>
+                    <p><strong>Symptom:</strong> Previously uploaded documents are gone.</p>
+                    
+                    <p><strong>Possible causes:</strong></p>
+                    <ul>
+                        <li>Browser data/cache was cleared</li>
+                        <li>Using different browser or device</li>
+                        <li>Private/incognito mode (data not persisted)</li>
+                        <li>IndexedDB was manually deleted</li>
+                    </ul>
+                    
+                    <p><strong>Prevention:</strong></p>
+                    <ul>
+                        <li>Keep original document files as backup</li>
+                        <li>Don't clear browser data for this site</li>
+                        <li>Use same browser consistently</li>
+                        <li>Avoid private/incognito mode for regular use</li>
+                    </ul>
+                    
+                    <h3 id="chat-history-lost">Chat History Lost</h3>
+                    <p><strong>Symptom:</strong> Previous conversations are missing.</p>
+                    
+                    <p><strong>Causes:</strong></p>
+                    <ul>
+                        <li>localStorage was cleared</li>
+                        <li>Different browser or device</li>
+                        <li>Private/incognito mode</li>
+                    </ul>
+                    
+                    <p><strong>Note:</strong> Chat history is stored locally and cannot be recovered if deleted.</p>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="browser-console">Using Browser Console</h2>
+                    <p>For advanced troubleshooting, open the browser console:</p>
+                    
+                    <ol class="step-list">
+                        <li>
+                            <strong>Open DevTools</strong>
+                            <p>Press F12 or right-click → "Inspect"</p>
+                        </li>
+                        <li>
+                            <strong>Go to Console Tab</strong>
+                            <p>Click "Console" at the top of DevTools</p>
+                        </li>
+                        <li>
+                            <strong>Look for Errors</strong>
+                            <p>Red text indicates errors. Copy error messages when reporting issues.</p>
+                        </li>
+                        <li>
+                            <strong>Check Network Tab</strong>
+                            <p>See API requests and responses for debugging API issues</p>
+                        </li>
+                    </ol>
+                    
+                    <div class="note-box">
+                        <strong>Helpful Console Messages</strong>
+                        <p>ConstructLM logs useful information to the console, including RAG search results, citation counts, and API responses. Check the console for debugging details.</p>
+                    </div>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="getting-help">Getting Help</h2>
+                    <p>If you can't resolve an issue:</p>
+                    
+                    <ul>
+                        <li>Check browser console for error messages</li>
+                        <li>Try in a different browser to isolate the issue</li>
+                        <li>Clear browser cache and try again</li>
+                        <li>Verify internet connection is stable</li>
+                        <li>Check API provider status pages</li>
+                        <li>Review this documentation thoroughly</li>
+                    </ul>
+                </section>
+            </article>
+        </main>
+        
+        <aside class="docs-index">
+            <div class="index-header">On This Page</div>
+            <nav class="page-index"></nav>
+        </aside>
+    </div>
+    
+    <script src="docs.js"></script>
+</body>
+</html>

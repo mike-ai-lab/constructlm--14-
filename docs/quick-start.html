@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Start - ConstructLM Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="docs-layout">
+        <aside class="docs-sidebar">
+            <div class="docs-header">
+                <h1>CONSTRUCTLM</h1>
+                <p class="docs-subtitle">Documentation</p>
+            </div>
+            
+            <nav class="docs-toc">
+                <div class="toc-section">
+                    <button class="toc-parent" data-section="getting-started">
+                        <span class="toc-icon">-</span>
+                        <span class="toc-label">Getting Started</span>
+                    </button>
+                    <div class="toc-children active">
+                        <a href="index.html" class="toc-item">Introduction</a>
+                        <a href="quick-start.html" class="toc-item active">Quick Start</a>
+                        <a href="interface.html" class="toc-item">Interface Overview</a>
+                    </div>
+                </div>
+                
+                <div class="toc-section">
+                    <button class="toc-parent" data-section="core-features">
+                        <span class="toc-icon">+</span>
+                        <span class="toc-label">Core Features</span>
+                    </button>
+                    <div class="toc-children">
+                        <a href="local-embeddings.html" class="toc-item">Local Embeddings</a>
+                        <a href="rag-system.html" class="toc-item">RAG System</a>
+                        <a href="ai-models.html" class="toc-item">AI Models</a>
+                        <a href="chat-management.html" class="toc-item">Chat Management</a>
+                    </div>
+                </div>
+                
+                <div class="toc-section">
+                    <button class="toc-parent" data-section="advanced">
+                        <span class="toc-icon">+</span>
+                        <span class="toc-label">Advanced Features</span>
+                    </button>
+                    <div class="toc-children">
+                        <a href="api-configuration.html" class="toc-item">API Configuration</a>
+                        <a href="document-management.html" class="toc-item">Document Management</a>
+                        <a href="citations.html" class="toc-item">Source Citations</a>
+                    </div>
+                </div>
+                
+                <div class="toc-section">
+                    <button class="toc-parent" data-section="reference">
+                        <span class="toc-icon">+</span>
+                        <span class="toc-label">Reference</span>
+                    </button>
+                    <div class="toc-children">
+                        <a href="architecture.html" class="toc-item">Architecture</a>
+                        <a href="troubleshooting.html" class="toc-item">Troubleshooting</a>
+                        <a href="tips.html" class="toc-item">Tips & Best Practices</a>
+                    </div>
+                </div>
+            </nav>
+        </aside>
+        
+        <main class="docs-content">
+            <div class="ask-more-container">
+                <button class="ask-more-button" id="ask-more-btn">Ask More</button>
+                <div class="ask-more-dropdown">
+                    <button id="copy-markdown-btn">Copy as Markdown</button>
+                    <a href="#" id="ask-chatgpt-btn" target="_blank">Ask ChatGPT</a>
+                </div>
+            </div>
+            
+            <article class="docs-article">
+                <h1 id="quick-start">Quick Start Guide</h1>
+                
+                <p class="lead">Get started with ConstructLM in just 5 minutes. This guide will walk you through the essential steps to start asking questions about your documents.</p>
+                
+                <section class="content-section">
+                    <h2 id="step-1-configure-api-keys">Step 1: Configure API Keys</h2>
+                    <p>Before you can use ConstructLM, you need to configure at least one AI model API key.</p>
+                    
+                    <ol class="step-list">
+                        <li>
+                            <strong>Open Settings</strong>
+                            <p>Click the ⚙️ settings icon in the sidebar (desktop) or header (mobile). If this is your first time, the settings modal will open automatically.</p>
+                        </li>
+                        <li>
+                            <strong>Get API Keys</strong>
+                            <p>You need at least one of these API keys:</p>
+                            <ul>
+                                <li><strong>Cerebras API</strong> (recommended for speed): Get from <a href="https://cloud.cerebras.ai/" target="_blank">Cerebras Cloud</a></li>
+                                <li><strong>Gemini API</strong> (optional): Get from <a href="https://makersuite.google.com/app/apikey" target="_blank">Google AI Studio</a></li>
+                            </ul>
+                        </li>
+                        <li>
+                            <strong>Enter and Test Keys</strong>
+                            <p>Paste your API key(s) into the respective fields. Click "TEST" to verify each key works correctly. You should see a green checkmark if successful.</p>
+                        </li>
+                        <li>
+                            <strong>Save Configuration</strong>
+                            <p>Click "SAVE" to store your keys. They are saved securely in your browser's localStorage and never leave your device.</p>
+                        </li>
+                    </ol>
+                    
+                    <div class="note-box">
+                        <strong>Note:</strong>
+                        <p>API keys are stored locally in your browser. You'll need to reconfigure them if you clear your browser data or use a different browser.</p>
+                    </div>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="step-2-upload-documents">Step 2: Upload Documents</h2>
+                    <p>Add documents to your knowledge base for the AI to reference.</p>
+                    
+                    <ol class="step-list">
+                        <li>
+                            <strong>Navigate to Sources Tab</strong>
+                            <p>In the sidebar, click the "SOURCES" tab to view your document library.</p>
+                        </li>
+                        <li>
+                            <strong>Click "ADD SOURCE"</strong>
+                            <p>Click the dashed box labeled "+ ADD SOURCE" to open the file picker.</p>
+                        </li>
+                        <li>
+                            <strong>Select Files</strong>
+                            <p>Choose one or more files to upload. Supported formats: TXT, MD, CSV, JSON, PDF. You can select multiple files at once.</p>
+                        </li>
+                        <li>
+                            <strong>Wait for Processing</strong>
+                            <p>The system will:</p>
+                            <ul>
+                                <li>Parse the file content</li>
+                                <li>Chunk the text into manageable pieces</li>
+                                <li>Generate embeddings locally using Transformers.js</li>
+                                <li>Store everything in IndexedDB</li>
+                            </ul>
+                            <p>Processing time depends on file size. A typical document takes 10-30 seconds.</p>
+                        </li>
+                    </ol>
+                    
+                    <div class="note-box">
+                        <strong>First-Time Model Download:</strong>
+                        <p>The first time you upload a document, ConstructLM will download the embedding model (~25MB). This is cached for offline use afterward.</p>
+                    </div>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="step-3-ask-questions">Step 3: Ask Questions</h2>
+                    <p>Now you're ready to interact with your documents!</p>
+                    
+                    <ol class="step-list">
+                        <li>
+                            <strong>Select AI Model</strong>
+                            <p>Choose between GEMINI or CEREBRAS using the toggle buttons in the header. On desktop, you can also select specific model variants from the dropdown.</p>
+                        </li>
+                        <li>
+                            <strong>Type Your Question</strong>
+                            <p>In the input field at the bottom, type a question related to your uploaded documents. For example: "What are the main features mentioned in the documentation?"</p>
+                        </li>
+                        <li>
+                            <strong>Submit Query</strong>
+                            <p>Press Enter or click the send icon. The system will:</p>
+                            <ul>
+                                <li>Search your document embeddings locally</li>
+                                <li>Find the most relevant text chunks</li>
+                                <li>Send the query + context to the AI model</li>
+                                <li>Stream the response back to you</li>
+                            </ul>
+                        </li>
+                        <li>
+                            <strong>Review Answer with Citations</strong>
+                            <p>The AI response will appear with source citation badges at the bottom. Click any citation to see the exact source text that was used.</p>
+                        </li>
+                    </ol>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="example-workflow">Example Workflow</h2>
+                    <p>Here's a complete example to help you get started:</p>
+                    
+                    <pre><code>1. Upload: README.md, API_DOCS.md, USER_GUIDE.pdf
+2. Wait: Processing completes (3 files, ~45 seconds)
+3. Ask: "How do I configure the API settings?"
+4. Review: AI provides answer with citations from API_DOCS.md
+5. Explore: Click citation badges to see exact source passages
+6. Follow-up: "What are the authentication options?"
+7. Continue: Build on the conversation naturally</code></pre>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="tips-for-success">Tips for Success</h2>
+                    <ul>
+                        <li><strong>Upload Related Documents:</strong> Group related documents together for better context</li>
+                        <li><strong>Use Specific Questions:</strong> More specific questions yield better answers</li>
+                        <li><strong>Check Citations:</strong> Always verify important information by reviewing the source citations</li>
+                        <li><strong>Enable/Disable Sources:</strong> Click on source cards to toggle them on/off for specific queries</li>
+                        <li><strong>Try Different Models:</strong> Gemini and Cerebras have different strengths—experiment to find what works best</li>
+                        <li><strong>Manage Chat History:</strong> Use the CHATS tab to revisit previous conversations</li>
+                    </ul>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="next-steps">Next Steps</h2>
+                    <p>Now that you're up and running, explore these topics to get the most out of ConstructLM:</p>
+                    
+                    <div class="quick-links">
+                        <a href="interface.html" class="quick-link-card">
+                            <h3>Interface Overview</h3>
+                            <p>Detailed tour of all UI components</p>
+                        </a>
+                        <a href="document-management.html" class="quick-link-card">
+                            <h3>Document Management</h3>
+                            <p>Advanced document handling techniques</p>
+                        </a>
+                        <a href="tips.html" class="quick-link-card">
+                            <h3>Tips & Best Practices</h3>
+                            <p>Get the most out of ConstructLM</p>
+                        </a>
+                    </div>
+                </section>
+            </article>
+        </main>
+        
+        <aside class="docs-index">
+            <div class="index-header">On This Page</div>
+            <nav class="page-index"></nav>
+        </aside>
+    </div>
+    
+    <script src="docs.js"></script>
+</body>
+</html>

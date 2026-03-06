@@ -9,12 +9,18 @@ export const streamChatResponse = async (
   context: Citation[],
   onChunk: (text: string) => void,
   apiKey?: string,
-  model: string = "llama3.1-8b"
+  model: string = "llama3.1-8b",
+  imageBase64?: string // Accept but ignore (Cerebras doesn't support vision)
 ) => {
   const key = apiKey || import.meta.env.VITE_CEREBRAS_API_KEY;
   
   if (!key) {
     throw new Error("Cerebras API key not configured");
+  }
+
+  // Warn if image provided (not supported)
+  if (imageBase64) {
+    console.warn('Cerebras does not support vision. Switch to Gemini for image analysis.');
   }
 
   // Format context for the system instruction

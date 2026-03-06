@@ -7,7 +7,7 @@ import * as VectorDB from './services/vectorDb';
 import * as GeminiService from './services/geminiService';
 import * as CerebrasService from './services/cerebrasService';
 import * as ChatStorage from './services/chatStorage';
-import { Settings, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Settings, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
 
 const App: React.FC = () => {
   const [files, setFiles] = useState<FileDocument[]>([]);
@@ -15,8 +15,8 @@ const App: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
-  const [aiModel, setAiModel] = useState<'gemini' | 'cerebras'>('cerebras');
-  const [selectedModel, setSelectedModel] = useState('llama3.1-8b');
+  const [aiModel, setAiModel] = useState<'gemini' | 'cerebras'>('gemini');
+  const [selectedModel, setSelectedModel] = useState('gemini-2.5-flash');
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(320);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -211,7 +211,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleSendMessage = async (text: string) => {
+  const handleSendMessage = async (text: string, imageBase64?: string) => {
     // Check if API key is configured for selected model
     if (aiModel === 'gemini' && !geminiApiKey) {
       alert('Please configure your Gemini API key in Settings');
@@ -275,7 +275,8 @@ const App: React.FC = () => {
           ));
         },
         apiKey,
-        selectedModel
+        selectedModel,
+        imageBase64 // Pass image to service
       );
 
       // 4. Finalize
@@ -338,6 +339,13 @@ const App: React.FC = () => {
         style={{ height: MOBILE_HEADER_HEIGHT_WITH_SAFE_AREA, paddingTop: 'env(safe-area-inset-top)' }}
       >
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => window.open('/docs/index.html', '_blank')}
+            className="hover:bg-gray-100 px-2 py-1 rounded"
+            title="Documentation"
+          >
+            <BookOpen size={18} />
+          </button>
           <button
             onClick={() => setIsSettingsOpen(true)}
             className="hover:bg-gray-100 px-2 py-1 rounded"
@@ -464,10 +472,17 @@ const App: React.FC = () => {
         {/* Desktop Header */}
         <header className="hidden md:flex h-16 border-b-2 border-black items-center justify-between px-8 bg-white shrink-0 z-20">
           <div className="flex items-center gap-6">
+            <BookOpen 
+              size={18} 
+              className="cursor-pointer hover:scale-110 transition-transform" 
+              onClick={() => window.open('/docs/index.html', '_blank')}
+              title="Documentation"
+            />
             <Settings 
               size={18} 
               className="cursor-pointer hover:rotate-45 transition-transform" 
               onClick={() => setIsSettingsOpen(true)}
+              title="Settings"
             />
             <h1 className="text-lg font-black uppercase tracking-tighter">Construct_LM</h1>
             
@@ -500,7 +515,7 @@ const App: React.FC = () => {
                     </button>
                   ))}
                   <div className="p-2 border-b border-t border-gray-200 text-[8px] font-bold text-gray-500">GEMINI</div>
-                  {['gemini-1.5-flash', 'gemini-1.5-pro'].map(model => (
+                  {['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.5-flash-lite', 'gemini-2.0-flash'].map(model => (
                     <button
                       key={model}
                       onClick={() => {

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Introduction - ConstructLM Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="docs-layout">
+        <!-- Left Sidebar - TOC Tree -->
+        <aside class="docs-sidebar">
+            <div class="docs-header">
+                <h1>CONSTRUCTLM</h1>
+                <p class="docs-subtitle">Documentation</p>
+            </div>
+            
+            <nav class="docs-toc">
+                <div class="toc-section">
+                    <button class="toc-parent" data-section="getting-started">
+                        <span class="toc-icon">-</span>
+                        <span class="toc-label">Getting Started</span>
+                    </button>
+                    <div class="toc-children active">
+                        <a href="index.html" class="toc-item active">Introduction</a>
+                        <a href="quick-start.html" class="toc-item">Quick Start</a>
+                        <a href="interface.html" class="toc-item">Interface Overview</a>
+                    </div>
+                </div>
+                
+                <div class="toc-section">
+                    <button class="toc-parent" data-section="core-features">
+                        <span class="toc-icon">+</span>
+                        <span class="toc-label">Core Features</span>
+                    </button>
+                    <div class="toc-children">
+                        <a href="local-embeddings.html" class="toc-item">Local Embeddings</a>
+                        <a href="rag-system.html" class="toc-item">RAG System</a>
+                        <a href="ai-models.html" class="toc-item">AI Models</a>
+                        <a href="chat-management.html" class="toc-item">Chat Management</a>
+                    </div>
+                </div>
+                
+                <div class="toc-section">
+                    <button class="toc-parent" data-section="advanced">
+                        <span class="toc-icon">+</span>
+                        <span class="toc-label">Advanced Features</span>
+                    </button>
+                    <div class="toc-children">
+                        <a href="api-configuration.html" class="toc-item">API Configuration</a>
+                        <a href="document-management.html" class="toc-item">Document Management</a>
+                        <a href="citations.html" class="toc-item">Source Citations</a>
+                    </div>
+                </div>
+                
+                <div class="toc-section">
+                    <button class="toc-parent" data-section="reference">
+                        <span class="toc-icon">+</span>
+                        <span class="toc-label">Reference</span>
+                    </button>
+                    <div class="toc-children">
+                        <a href="architecture.html" class="toc-item">Architecture</a>
+                        <a href="troubleshooting.html" class="toc-item">Troubleshooting</a>
+                        <a href="tips.html" class="toc-item">Tips & Best Practices</a>
+                    </div>
+                </div>
+            </nav>
+        </aside>
+        
+        <!-- Main Content -->
+        <main class="docs-content">
+            <!-- Ask More Button -->
+            <div class="ask-more-container">
+                <button class="ask-more-button" id="ask-more-btn">Ask More</button>
+                <div class="ask-more-dropdown">
+                    <button id="copy-markdown-btn">Copy as Markdown</button>
+                    <a href="#" id="ask-chatgpt-btn" target="_blank">Ask ChatGPT</a>
+                </div>
+            </div>
+            
+            <article class="docs-article">
+                <h1 id="introduction">Welcome to ConstructLM</h1>
+                
+                <p class="lead">ConstructLM is a privacy-first RAG (Retrieval-Augmented Generation) workspace that runs entirely in your browser. Upload documents, ask questions, and get AI-powered answers with source citations—all while keeping your data completely private.</p>
+                
+                <section class="content-section">
+                    <h2 id="what-is-constructlm">What is ConstructLM?</h2>
+                    <p>ConstructLM transforms how you interact with your documents using AI. Unlike traditional RAG systems that send your data to external servers for processing, ConstructLM uses local browser-based embeddings (Transformers.js) to keep your documents completely private. Only the final queries are sent to AI providers (Gemini or Cerebras) for generating responses.</p>
+                    
+                    <p>Whether you're researching technical documentation, analyzing business reports, or studying academic papers, ConstructLM provides intelligent answers backed by exact source citations from your uploaded documents.</p>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="key-benefits">Key Benefits</h2>
+                    <ul>
+                        <li><strong>Privacy-First Architecture</strong> - Documents are embedded locally in your browser using Transformers.js. No document data leaves your device</li>
+                        <li><strong>Dual AI Models</strong> - Switch between Google Gemini and Cerebras AI for chat responses with multiple model options</li>
+                        <li><strong>Smart RAG Search</strong> - Diversified retrieval ensures coverage from all uploaded documents with relevance scoring</li>
+                        <li><strong>Source Citations</strong> - Every answer includes clickable citations showing the exact source text used</li>
+                        <li><strong>Multi-Format Support</strong> - Upload TXT, MD, CSV, JSON, and PDF files</li>
+                        <li><strong>Chat History</strong> - Automatic session management with persistent chat history</li>
+                        <li><strong>Markdown Rendering</strong> - Rich formatting in responses including tables, code blocks, and lists</li>
+                        <li><strong>Offline Embeddings</strong> - Once the model is downloaded (~25MB), embeddings work offline</li>
+                        <li><strong>IndexedDB Storage</strong> - All documents and embeddings stored locally in your browser</li>
+                        <li><strong>Responsive Design</strong> - Works seamlessly on desktop and mobile devices</li>
+                    </ul>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="how-it-works">How It Works</h2>
+                    <p>ConstructLM operates through a simple workflow:</p>
+                    
+                    <ol class="step-list">
+                        <li>
+                            <strong>Upload Documents</strong>
+                            <p>Add your documents (TXT, MD, CSV, JSON, PDF). They are chunked and embedded locally using Transformers.js.</p>
+                        </li>
+                        <li>
+                            <strong>Ask Questions</strong>
+                            <p>Type your question. The system searches your document embeddings locally to find relevant context.</p>
+                        </li>
+                        <li>
+                            <strong>Get AI Answers</strong>
+                            <p>The relevant context is sent to your chosen AI model (Gemini or Cerebras) which generates an answer with citations.</p>
+                        </li>
+                        <li>
+                            <strong>Explore Sources</strong>
+                            <p>Click on citation badges to see the exact source text that was used to generate the answer.</p>
+                        </li>
+                    </ol>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="privacy-guarantee">Privacy Guarantee</h2>
+                    <div class="note-box">
+                        <strong>Your Data Stays Private</strong>
+                        <p>ConstructLM uses local embeddings (Transformers.js) to process your documents entirely in your browser. Only the final query and retrieved context snippets are sent to AI providers. Your full documents never leave your device.</p>
+                    </div>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="system-requirements">System Requirements</h2>
+                    <ul>
+                        <li><strong>Browser:</strong> Chrome, Edge, Firefox, or Safari (latest versions)</li>
+                        <li><strong>RAM:</strong> Minimum 4GB recommended</li>
+                        <li><strong>Storage:</strong> ~25MB for embedding model (cached after first download)</li>
+                        <li><strong>Internet:</strong> Required for AI model API calls and initial model download</li>
+                        <li><strong>API Keys:</strong> Gemini API key and/or Cerebras API key</li>
+                    </ul>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="supported-formats">Supported File Formats</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Format</th>
+                                <th>Extension</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Plain Text</td>
+                                <td>.txt</td>
+                                <td>Standard text files</td>
+                            </tr>
+                            <tr>
+                                <td>Markdown</td>
+                                <td>.md</td>
+                                <td>Markdown formatted documents</td>
+                            </tr>
+                            <tr>
+                                <td>JSON</td>
+                                <td>.json</td>
+                                <td>JSON data files</td>
+                            </tr>
+                            <tr>
+                                <td>CSV</td>
+                                <td>.csv</td>
+                                <td>Comma-separated values</td>
+                            </tr>
+                            <tr>
+                                <td>PDF</td>
+                                <td>.pdf</td>
+                                <td>Portable Document Format</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="next-steps">Get Started</h2>
+                    <p>Ready to start using ConstructLM? Choose a topic below to learn more:</p>
+                    
+                    <div class="quick-links">
+                        <a href="quick-start.html" class="quick-link-card">
+                            <h3>Quick Start</h3>
+                            <p>Get up and running in 5 minutes</p>
+                        </a>
+                        <a href="interface.html" class="quick-link-card">
+                            <h3>Interface Overview</h3>
+                            <p>Learn about the main components</p>
+                        </a>
+                        <a href="local-embeddings.html" class="quick-link-card">
+                            <h3>Local Embeddings</h3>
+                            <p>Understand privacy-first processing</p>
+                        </a>
+                    </div>
+                </section>
+            </article>
+        </main>
+        
+        <!-- Right Sidebar - Page Index -->
+        <aside class="docs-index">
+            <div class="index-header">On This Page</div>
+            <nav class="page-index">
+                <!-- Auto-generated by JavaScript -->
+            </nav>
+        </aside>
+    </div>
+    
+    <script src="docs.js"></script>
+</body>
+</html>

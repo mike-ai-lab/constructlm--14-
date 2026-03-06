@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interface Overview - ConstructLM Documentation</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="docs-layout">
+        <aside class="docs-sidebar">
+            <div class="docs-header">
+                <h1>CONSTRUCTLM</h1>
+                <p class="docs-subtitle">Documentation</p>
+            </div>
+            
+            <nav class="docs-toc">
+                <div class="toc-section">
+                    <button class="toc-parent" data-section="getting-started">
+                        <span class="toc-icon">-</span>
+                        <span class="toc-label">Getting Started</span>
+                    </button>
+                    <div class="toc-children active">
+                        <a href="index.html" class="toc-item">Introduction</a>
+                        <a href="quick-start.html" class="toc-item">Quick Start</a>
+                        <a href="interface.html" class="toc-item active">Interface Overview</a>
+                    </div>
+                </div>
+                
+                <div class="toc-section">
+                    <button class="toc-parent" data-section="core-features">
+                        <span class="toc-icon">+</span>
+                        <span class="toc-label">Core Features</span>
+                    </button>
+                    <div class="toc-children">
+                        <a href="local-embeddings.html" class="toc-item">Local Embeddings</a>
+                        <a href="rag-system.html" class="toc-item">RAG System</a>
+                        <a href="ai-models.html" class="toc-item">AI Models</a>
+                        <a href="chat-management.html" class="toc-item">Chat Management</a>
+                    </div>
+                </div>
+                
+                <div class="toc-section">
+                    <button class="toc-parent" data-section="advanced">
+                        <span class="toc-icon">+</span>
+                        <span class="toc-label">Advanced Features</span>
+                    </button>
+                    <div class="toc-children">
+                        <a href="api-configuration.html" class="toc-item">API Configuration</a>
+                        <a href="document-management.html" class="toc-item">Document Management</a>
+                        <a href="citations.html" class="toc-item">Source Citations</a>
+                    </div>
+                </div>
+                
+                <div class="toc-section">
+                    <button class="toc-parent" data-section="reference">
+                        <span class="toc-icon">+</span>
+                        <span class="toc-label">Reference</span>
+                    </button>
+                    <div class="toc-children">
+                        <a href="architecture.html" class="toc-item">Architecture</a>
+                        <a href="troubleshooting.html" class="toc-item">Troubleshooting</a>
+                        <a href="tips.html" class="toc-item">Tips & Best Practices</a>
+                    </div>
+                </div>
+            </nav>
+        </aside>
+        
+        <main class="docs-content">
+            <div class="ask-more-container">
+                <button class="ask-more-button" id="ask-more-btn">Ask More</button>
+                <div class="ask-more-dropdown">
+                    <button id="copy-markdown-btn">Copy as Markdown</button>
+                    <a href="#" id="ask-chatgpt-btn" target="_blank">Ask ChatGPT</a>
+                </div>
+            </div>
+            
+            <article class="docs-article">
+                <h1 id="interface-overview">Interface Overview</h1>
+                
+                <p class="lead">ConstructLM features a clean, brutalist-inspired interface designed for efficiency and clarity. This guide explains each component and how to use it effectively.</p>
+                
+                <section class="content-section">
+                    <h2 id="main-layout">Main Layout</h2>
+                    <p>The interface consists of three main areas:</p>
+                    <ul>
+                        <li><strong>Sidebar (Left):</strong> Document and chat management</li>
+                        <li><strong>Chat Area (Center):</strong> Conversation interface with AI responses</li>
+                        <li><strong>Header (Top):</strong> Model selection and settings access</li>
+                    </ul>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="header">Header</h2>
+                    
+                    <h3 id="desktop-header">Desktop Header</h3>
+                    <p>The desktop header contains:</p>
+                    <ul>
+                        <li><strong>Settings Icon (⚙️):</strong> Opens API configuration modal</li>
+                        <li><strong>App Title:</strong> "Construct_LM" branding</li>
+                        <li><strong>Model Dropdown:</strong> Select specific AI model variants (llama3.1-8b, gpt-oss-120b, gemini-1.5-flash, gemini-1.5-pro)</li>
+                        <li><strong>Model Toggle:</strong> Switch between GEMINI and CEREBRAS providers</li>
+                    </ul>
+                    
+                    <h3 id="mobile-header">Mobile Header</h3>
+                    <p>On mobile devices, the header is simplified:</p>
+                    <ul>
+                        <li><strong>Settings Icon:</strong> Quick access to configuration</li>
+                        <li><strong>Menu Button:</strong> Opens sidebar overlay</li>
+                        <li><strong>File Count:</strong> Shows number of indexed documents</li>
+                        <li><strong>Model Selector:</strong> Compact dropdown for model selection</li>
+                    </ul>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="sidebar">Sidebar</h2>
+                    <p>The sidebar is your control center for managing documents and conversations.</p>
+                    
+                    <h3 id="sidebar-tabs">Tabs</h3>
+                    <p>Two tabs organize different functions:</p>
+                    <ul>
+                        <li><strong>CHATS:</strong> View and manage conversation history</li>
+                        <li><strong>SOURCES:</strong> Manage uploaded documents</li>
+                    </ul>
+                    
+                    <h3 id="chats-tab">CHATS Tab</h3>
+                    <p>Features:</p>
+                    <ul>
+                        <li><strong>+ New Chat Button:</strong> Start a fresh conversation</li>
+                        <li><strong>Chat List:</strong> All saved conversations with titles, message counts, and dates</li>
+                        <li><strong>Active Indicator:</strong> Current chat highlighted with border and shadow</li>
+                        <li><strong>Delete Option:</strong> Hover over chat to reveal "DEL" button</li>
+                    </ul>
+                    
+                    <h3 id="sources-tab">SOURCES Tab</h3>
+                    <p>Features:</p>
+                    <ul>
+                        <li><strong>+ Add Source Button:</strong> Upload new documents</li>
+                        <li><strong>Document Cards:</strong> Each uploaded file shown with checkbox, name, and token count</li>
+                        <li><strong>Enable/Disable Toggle:</strong> Click card or checkbox to include/exclude from searches</li>
+                        <li><strong>Delete Option:</strong> Hover to reveal "DEL" button</li>
+                        <li><strong>Visual Feedback:</strong> Enabled sources have black border and shadow; disabled sources are faded</li>
+                    </ul>
+                    
+                    <h3 id="context-usage">Context Usage Meter</h3>
+                    <p>At the bottom of the sidebar:</p>
+                    <ul>
+                        <li>Shows total tokens across all documents</li>
+                        <li>Progress bar indicates usage relative to 1M token limit</li>
+                        <li>Turns red when approaching limits</li>
+                    </ul>
+                    
+                    <h3 id="sidebar-resize">Sidebar Resizing (Desktop)</h3>
+                    <p>On desktop, you can resize the sidebar:</p>
+                    <ul>
+                        <li>Hover over the right edge of the sidebar</li>
+                        <li>Cursor changes to resize indicator</li>
+                        <li>Click and drag to adjust width (200px - 600px)</li>
+                        <li>Click collapse/expand button to hide/show sidebar</li>
+                    </ul>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="chat-interface">Chat Interface</h2>
+                    
+                    <h3 id="message-display">Message Display</h3>
+                    <p>Conversations are displayed in a clean, readable format:</p>
+                    <ul>
+                        <li><strong>User Messages:</strong> Right-aligned, black background, white text</li>
+                        <li><strong>AI Messages:</strong> Left-aligned, white background with border and shadow</li>
+                        <li><strong>Role Labels:</strong> Small uppercase labels ("YOU" / "CONSTRUCT_LM")</li>
+                        <li><strong>Markdown Rendering:</strong> Full support for formatting, code blocks, tables, lists</li>
+                    </ul>
+                    
+                    <h3 id="citations-display">Citations Display</h3>
+                    <p>Below each AI response:</p>
+                    <ul>
+                        <li><strong>Citation Grid:</strong> 2-column grid of source badges</li>
+                        <li><strong>Source Badges:</strong> Show "SRC 1", "SRC 2", etc. with document name</li>
+                        <li><strong>Hover Tooltip:</strong> Displays highlighted preview and full context</li>
+                        <li><strong>Click to Pin:</strong> Click badge to keep tooltip open</li>
+                        <li><strong>Similarity Score:</strong> Shows relevance score at bottom of tooltip</li>
+                    </ul>
+                    
+                    <h3 id="input-area">Input Area</h3>
+                    <p>At the bottom of the chat:</p>
+                    <ul>
+                        <li><strong>Text Input:</strong> Type your question or message</li>
+                        <li><strong>Focus Effect:</strong> Input gains shadow when focused</li>
+                        <li><strong>Send Button:</strong> Click or press Enter to submit</li>
+                        <li><strong>Loading Indicator:</strong> Spinning icon while AI is responding</li>
+                        <li><strong>Disabled State:</strong> Input disabled while streaming response</li>
+                    </ul>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="settings-modal">Settings Modal</h2>
+                    <p>Access via settings icon (⚙️) in header:</p>
+                    
+                    <h3 id="api-key-configuration">API Key Configuration</h3>
+                    <p>For each AI provider (Gemini and Cerebras):</p>
+                    <ul>
+                        <li><strong>Input Field:</strong> Enter API key (password-masked by default)</li>
+                        <li><strong>Show/Hide Toggle:</strong> Eye icon to reveal/hide key</li>
+                        <li><strong>Test Button:</strong> Verify key works before saving</li>
+                        <li><strong>Status Indicator:</strong> Green checkmark (✓) or red X (✗) with error message</li>
+                        <li><strong>Get Key Link:</strong> Direct link to provider's API key page</li>
+                    </ul>
+                    
+                    <h3 id="modal-actions">Modal Actions</h3>
+                    <ul>
+                        <li><strong>CANCEL:</strong> Close without saving changes</li>
+                        <li><strong>SAVE:</strong> Store keys in localStorage</li>
+                        <li><strong>Close (×):</strong> Top-right corner close button</li>
+                    </ul>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="mobile-interface">Mobile Interface</h2>
+                    
+                    <h3 id="mobile-sidebar">Mobile Sidebar</h3>
+                    <p>On mobile devices:</p>
+                    <ul>
+                        <li><strong>Overlay Mode:</strong> Sidebar slides in from left as full-screen overlay</li>
+                        <li><strong>Dark Backdrop:</strong> Semi-transparent black background</li>
+                        <li><strong>Swipe Gestures:</strong> Swipe right to open, left to close</li>
+                        <li><strong>Swipe Indicator:</strong> Animated dots on left edge when closed</li>
+                        <li><strong>Close Button:</strong> X button in top-right of sidebar</li>
+                    </ul>
+                    
+                    <h3 id="mobile-optimizations">Mobile Optimizations</h3>
+                    <ul>
+                        <li>Touch-friendly button sizes</li>
+                        <li>Simplified header with essential controls</li>
+                        <li>Full-width chat messages</li>
+                        <li>Optimized citation tooltips (centered, scrollable)</li>
+                        <li>Safe area insets for notched devices</li>
+                    </ul>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="visual-design">Visual Design</h2>
+                    
+                    <h3 id="design-philosophy">Design Philosophy</h3>
+                    <p>ConstructLM uses a brutalist design approach:</p>
+                    <ul>
+                        <li><strong>Bold Borders:</strong> 2px black borders throughout</li>
+                        <li><strong>Hard Shadows:</strong> 4px offset shadows for depth</li>
+                        <li><strong>Monospace Font:</strong> Consistent mono typeface</li>
+                        <li><strong>Minimal Colors:</strong> Black, white, and gray with orange accents</li>
+                        <li><strong>Sharp Corners:</strong> No border radius (except specific UI elements)</li>
+                        <li><strong>High Contrast:</strong> Excellent readability</li>
+                    </ul>
+                    
+                    <h3 id="interaction-feedback">Interaction Feedback</h3>
+                    <ul>
+                        <li><strong>Hover Effects:</strong> Subtle transforms and color changes</li>
+                        <li><strong>Active States:</strong> Shadow and border emphasis</li>
+                        <li><strong>Transitions:</strong> Smooth 300ms cubic-bezier animations</li>
+                        <li><strong>Loading States:</strong> Spinning indicators and progress bars</li>
+                    </ul>
+                </section>
+                
+                <section class="content-section">
+                    <h2 id="keyboard-navigation">Keyboard Navigation</h2>
+                    <p>Efficient keyboard shortcuts:</p>
+                    <ul>
+                        <li><strong>Enter:</strong> Submit message in input field</li>
+                        <li><strong>Tab:</strong> Navigate between interactive elements</li>
+                        <li><strong>Esc:</strong> Close modals and dropdowns</li>
+                        <li><strong>Click Citations:</strong> Pin/unpin source tooltips</li>
+                    </ul>
+                </section>
+            </article>
+        </main>
+        
+        <aside class="docs-index">
+            <div class="index-header">On This Page</div>
+            <nav class="page-index"></nav>
+        </aside>
+    </div>
+    
+    <script src="docs.js"></script>
+</body>
+</html>
