@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Send, Image as ImageIcon, X, FileText, Play, Code, Download, Copy, Check, Maximize2 } from 'lucide-react';
+import { Send, Image as ImageIcon, X, FileText, Play, Code, Download, Copy, Check, Maximize2, Undo, Redo } from 'lucide-react';
 import { ChatMessage, Citation } from '../types';
 import * as GeminiService from '../services/geminiService';
 
@@ -32,6 +32,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [canvasEditedCode, setCanvasEditedCode] = useState('');
   const [editedCodeBlocks, setEditedCodeBlocks] = useState<{[blockId: string]: string}>({});
   const [iframeKey, setIframeKey] = useState(0);
+  const [codeVersionHistory, setCodeVersionHistory] = useState<{[blockId: string]: {versions: string[], currentIndex: number}}>({});
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -161,6 +162,42 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
+  const handleVersionUndo = () => {
+    if (!canvasContent) return;
+    const history = codeVersionHistory[canvasContent.blockId];
+    if (!history || history.currentIndex <= 0) return;
+    
+    const newIndex = history.currentIndex - 1;
+    const previousCode = history.versions[newIndex];
+    
+    setCodeVersionHistory(prev => ({
+      ...prev,
+      [canvasContent.blockId]: {...history, currentIndex: newIndex}
+    }));
+    setCanvasEditedCode(previousCode);
+    setEditedCodeBlocks(prev => ({...prev, [canvasContent.blockId]: previousCode}));
+    setCanvasContent({html: previousCode, code: previousCode, language: canvasContent.language, blockId: canvasContent.blockId});
+    setIframeKey(prev => prev + 1);
+  };
+
+  const handleVersionRedo = () => {
+    if (!canvasContent) return;
+    const history = codeVersionHistory[canvasContent.blockId];
+    if (!history || history.currentIndex >= history.versions.length - 1) return;
+    
+    const newIndex = history.currentIndex + 1;
+    const nextCode = history.versions[newIndex];
+    
+    setCodeVersionHistory(prev => ({
+      ...prev,
+      [canvasContent.blockId]: {...history, currentIndex: newIndex}
+    }));
+    setCanvasEditedCode(nextCode);
+    setEditedCodeBlocks(prev => ({...prev, [canvasContent.blockId]: nextCode}));
+    setCanvasContent({html: nextCode, code: nextCode, language: canvasContent.language, blockId: canvasContent.blockId});
+    setIframeKey(prev => prev + 1);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if ((!input.trim() && selectedImages.length === 0) || isStreaming) return;
@@ -245,74 +282,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                             const language = match ? match[1] : 'text';
                             const codeRaw = String(children).replace(/\n$/, '');
                             const blockId = `${msg.id}-${codeRaw.substring(0, 20)}`;
-                            const code = editedCodeBlocks[blockId] || codeRaw; // Use edited version if exists
+                            const code = editedCodeBlocks[blockId] || codeRaw;
                             const isHtml = language === 'html' || language === 'htm';
-                            const isTsx = language === 'tsx' || language === 'jsx' || language === 'typescript' || language === 'ts';
-                            const isPreviewable = isHtml; // Only HTML for now - TSX parsing is too complex
+                            const isPreviewable = isHtml;
                             const blockState = codeBlockStates[blockId] || {showRendered: false};
                             const isCopied = copiedBlocks[blockId];
                             
                             const generatePreviewHtml = () => {
-                              if (isHtml) return code;
-                              
-                              if (isTsx) {
-                                let cleanCode = code
-                                  .split('\n')
-                                  .filter(line => {
-                                    const trimmed = line.trim();
-                                    return !trimmed.startsWith('import ') && !trimmed.startsWith('export ');
-                                  })
-                                  .join('\n')
-                                  .trim();
-                                
-                                // Handle different component formats
-                                if (cleanCode.startsWith('return ')) {
-                                  cleanCode = cleanCode.substring(7).trim();
-                                }
-                                
-                                // If it's a full function, extract the body
-                                const functionMatch = cleanCode.match(/function\s+\w+\s*\([^)]*\)\s*\{([\s\S]*)\}/);
-                                if (functionMatch) {
-                                  cleanCode = functionMatch[1].trim();
-                                  if (cleanCode.startsWith('return ')) {
-                                    cleanCode = cleanCode.substring(7).trim();
-                                  }
-                                }
-                                
-                                // Arrow function format
-                                const arrowMatch = cleanCode.match(/const\s+\w+\s*=\s*\([^)]*\)\s*=>\s*\{?([\s\S]*)\}?/);
-                                if (arrowMatch) {
-                                  cleanCode = arrowMatch[1].trim();
-                                  if (cleanCode.startsWith('return ')) {
-                                    cleanCode = cleanCode.substring(7).trim();
-                                  }
-                                }
-                                
-                                // Remove trailing semicolons and closing braces
-                                cleanCode = cleanCode.replace(/;?\s*$/, '');
-                                
-                                return `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"><\/script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"><\/script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script>
-</head>
-<body>
-  <div id="root"></div>
-  <script type="text/babel">
-try {
-  const Component = () => (${cleanCode});
-  ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(Component));
-} catch (error) {
-  document.getElementById('root').innerHTML = '<div style="padding: 20px; color: red; font-family: monospace;">Preview Error: ' + error.message + '</div>';
-}
-  <\/script>
-</body>
-</html>`;
-                              }
-                              return code;
+                              return code; // HTML code is used directly
                             };
                             
                             return (
@@ -345,6 +322,14 @@ try {
                                           setCanvasEditedCode(code);
                                           setCanvasOpen(true);
                                           setCanvasShowCode(false);
+                                          
+                                          // Initialize version history if not exists
+                                          if (!codeVersionHistory[blockId]) {
+                                            setCodeVersionHistory(prev => ({
+                                              ...prev,
+                                              [blockId]: {versions: [code], currentIndex: 0}
+                                            }));
+                                          }
                                         }}
                                         className="p-1 bg-white border border-black hover:bg-gray-100 text-[10px] font-mono flex items-center gap-1"
                                         title="Open in Canvas"
@@ -654,71 +639,42 @@ try {
                 {canvasContent.language}
               </span>
               <span className="text-xs font-mono">CANVAS</span>
+              {codeVersionHistory[canvasContent.blockId] && (
+                <span className="text-[9px] font-mono text-gray-500">
+                  v{codeVersionHistory[canvasContent.blockId].currentIndex + 1}/{codeVersionHistory[canvasContent.blockId].versions.length}
+                </span>
+              )}
             </div>
             <div className="flex gap-2">
               <button
+                onClick={handleVersionUndo}
+                disabled={!codeVersionHistory[canvasContent.blockId] || codeVersionHistory[canvasContent.blockId].currentIndex <= 0}
+                className="p-1 border border-black hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-[10px] font-mono flex items-center gap-1"
+                title="Undo (Previous Version)"
+              >
+                <Undo size={14} />
+              </button>
+              <button
+                onClick={handleVersionRedo}
+                disabled={!codeVersionHistory[canvasContent.blockId] || codeVersionHistory[canvasContent.blockId].currentIndex >= codeVersionHistory[canvasContent.blockId].versions.length - 1}
+                className="p-1 border border-black hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-[10px] font-mono flex items-center gap-1"
+                title="Redo (Next Version)"
+              >
+                <Redo size={14} />
+              </button>
+              <button
                 onClick={() => {
                   const newCode = canvasEditedCode;
-                  let newHtml = '';
-                  if (canvasContent.language === 'html' || canvasContent.language === 'htm') {
-                    newHtml = newCode;
-                  } else {
-                    let cleanCode = newCode
-                      .split('\n')
-                      .filter(line => {
-                        const trimmed = line.trim();
-                        return !trimmed.startsWith('import ') && !trimmed.startsWith('export ');
-                      })
-                      .join('\n')
-                      .trim();
-                    
-                    // Handle different component formats
-                    if (cleanCode.startsWith('return ')) {
-                      cleanCode = cleanCode.substring(7).trim();
-                    }
-                    
-                    // If it's a full function, extract the body
-                    const functionMatch = cleanCode.match(/function\s+\w+\s*\([^)]*\)\s*\{([\s\S]*)\}/);
-                    if (functionMatch) {
-                      cleanCode = functionMatch[1].trim();
-                      if (cleanCode.startsWith('return ')) {
-                        cleanCode = cleanCode.substring(7).trim();
-                      }
-                    }
-                    
-                    // Arrow function format
-                    const arrowMatch = cleanCode.match(/const\s+\w+\s*=\s*\([^)]*\)\s*=>\s*\{?([\s\S]*)\}?/);
-                    if (arrowMatch) {
-                      cleanCode = arrowMatch[1].trim();
-                      if (cleanCode.startsWith('return ')) {
-                        cleanCode = cleanCode.substring(7).trim();
-                      }
-                    }
-                    
-                    // Remove trailing semicolons and closing braces
-                    cleanCode = cleanCode.replace(/;?\s*$/, '');
-                    
-                    newHtml = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"><\/script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react.production.min.js"><\/script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script>
-</head>
-<body>
-  <div id="root"></div>
-  <script type="text/babel">
-try {
-  const Component = () => (${cleanCode});
-  ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(Component));
-} catch (error) {
-  document.getElementById('root').innerHTML = '<div style="padding: 20px; color: red; font-family: monospace;">Preview Error: ' + error.message + '</div>';
-}
-  <\/script>
-</body>
-</html>`;
-                  }
+                  const newHtml = newCode; // HTML is used directly
+                  
+                  // Save to version history
+                  const history = codeVersionHistory[canvasContent.blockId] || {versions: [canvasContent.code], currentIndex: 0};
+                  const newVersions = [...history.versions.slice(0, history.currentIndex + 1), newCode];
+                  setCodeVersionHistory(prev => ({
+                    ...prev,
+                    [canvasContent.blockId]: {versions: newVersions, currentIndex: newVersions.length - 1}
+                  }));
+                  
                   // Save edited code to state so chat preview updates
                   setEditedCodeBlocks(prev => ({...prev, [canvasContent.blockId]: newCode}));
                   setCanvasContent({html: newHtml, code: newCode, language: canvasContent.language, blockId: canvasContent.blockId});
