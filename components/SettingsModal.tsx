@@ -27,6 +27,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [geminiError, setGeminiError] = useState('');
   const [cerebrasError, setCerebrasError] = useState('');
 
+  // Sync local state with props when they change
+  React.useEffect(() => {
+    setLocalGeminiKey(geminiKey);
+    setLocalCerebrasKey(cerebrasKey);
+  }, [geminiKey, cerebrasKey]);
+
   if (!isOpen) return null;
 
   const testGeminiKey = async () => {

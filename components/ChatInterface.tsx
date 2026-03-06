@@ -27,9 +27,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [codeBlockStates, setCodeBlockStates] = useState<{[key: string]: {showRendered: boolean}}>({});
   const [copiedBlocks, setCopiedBlocks] = useState<{[key: string]: boolean}>({});
   const [canvasOpen, setCanvasOpen] = useState(false);
-  const [canvasContent, setCanvasContent] = useState<{html: string, code: string, language: string} | null>(null);
+  const [canvasContent, setCanvasContent] = useState<{html: string, code: string, language: string, blockId: string} | null>(null);
   const [canvasShowCode, setCanvasShowCode] = useState(false);
   const [canvasEditedCode, setCanvasEditedCode] = useState('');
+  const [editedCodeBlocks, setEditedCodeBlocks] = useState<{[blockId: string]: string}>({});
+  const [iframeKey, setIframeKey] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -230,7 +232,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                           h1: ({node, ...props}) => <h1 className="text-xl font-bold mt-4 mb-2 font-mono" {...props} />,
                           h2: ({node, ...props}) => <h2 className="text-lg font-bold mt-3 mb-2 font-mono" {...props} />,
                           h3: ({node, ...props}) => <h3 className="text-base font-bold mt-2 mb-1 font-mono" {...props} />,
-                          p: ({node, ...props}) => <p className="mb-3 last:mb-0 font-mono text-[13px] text-gray-800" {...props} />,
+                          p: ({node, ...props}) => <div className="mb-3 last:mb-0 font-mono text-[13px] text-gray-800" {...props} />,
                           ul: ({node, ...props}) => <ul className="list-disc list-inside mb-3 space-y-1 font-mono" {...props} />,
                           ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-3 space-y-1 font-mono" {...props} />,
                           li: ({node, ...props}) => <li className="ml-2 font-mono" {...props} />,
@@ -241,11 +243,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                             
                             const match = /language-(\w+)/.exec(className || '');
                             const language = match ? match[1] : 'text';
-                            const code = String(children).replace(/\n$/, '');
+                            const codeRaw = String(children).replace(/\n$/, '');
+                            const blockId = `${msg.id}-${codeRaw.substring(0, 20)}`;
+                            const code = editedCodeBlocks[blockId] || codeRaw; // Use edited version if exists
                             const isHtml = language === 'html' || language === 'htm';
-                            const isTsx = language === 'tsx' || language === 'typescript' || language === 'ts';
-                            const isPreviewable = isHtml || (isTsx && (code.includes('export default') || code.includes('function')));
-                            const blockId = `${msg.id}-${code.substring(0, 20)}`;
+                            const isTsx = language === 'tsx' || language === 'jsx' || language === 'typescript' || language === 'ts';
+                            const isPreviewable = isHtml; // Only HTML for now - TSX parsing is too complex
                             const blockState = codeBlockStates[blockId] || {showRendered: false};
                             const isCopied = copiedBlocks[blockId];
                             
@@ -253,34 +256,59 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                               if (isHtml) return code;
                               
                               if (isTsx) {
+                                let cleanCode = code
+                                  .split('\n')
+                                  .filter(line => {
+                                    const trimmed = line.trim();
+                                    return !trimmed.startsWith('import ') && !trimmed.startsWith('export ');
+                                  })
+                                  .join('\n')
+                                  .trim();
+                                
+                                // Handle different component formats
+                                if (cleanCode.startsWith('return ')) {
+                                  cleanCode = cleanCode.substring(7).trim();
+                                }
+                                
+                                // If it's a full function, extract the body
+                                const functionMatch = cleanCode.match(/function\s+\w+\s*\([^)]*\)\s*\{([\s\S]*)\}/);
+                                if (functionMatch) {
+                                  cleanCode = functionMatch[1].trim();
+                                  if (cleanCode.startsWith('return ')) {
+                                    cleanCode = cleanCode.substring(7).trim();
+                                  }
+                                }
+                                
+                                // Arrow function format
+                                const arrowMatch = cleanCode.match(/const\s+\w+\s*=\s*\([^)]*\)\s*=>\s*\{?([\s\S]*)\}?/);
+                                if (arrowMatch) {
+                                  cleanCode = arrowMatch[1].trim();
+                                  if (cleanCode.startsWith('return ')) {
+                                    cleanCode = cleanCode.substring(7).trim();
+                                  }
+                                }
+                                
+                                // Remove trailing semicolons and closing braces
+                                cleanCode = cleanCode.replace(/;?\s*$/, '');
+                                
                                 return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/framer-motion@11/dist/framer-motion.js"></script>
-  <script src="https://unpkg.com/lucide-react@0.263.1/dist/umd/lucide-react.js"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"><\/script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"><\/script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script>
 </head>
 <body>
   <div id="root"></div>
-  <script type="text/babel" data-presets="react,typescript">
-    const { motion } = window.Motion || {};
-    const lucide = window.lucideReact || {};
-    
-    ${code.replace(/export default/g, 'const Component =')}
-    
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(React.createElement(Component));
-  </script>
-  <script>
-    window.onerror = function(msg, url, line, col, error) {
-      document.body.innerHTML = '<div style="padding:20px;color:red;font-family:monospace;white-space:pre-wrap;">Error: ' + msg + '\n\nLine: ' + line + '</div>';
-      return true;
-    };
-  </script>
+  <script type="text/babel">
+try {
+  const Component = () => (${cleanCode});
+  ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(Component));
+} catch (error) {
+  document.getElementById('root').innerHTML = '<div style="padding: 20px; color: red; font-family: monospace;">Preview Error: ' + error.message + '</div>';
+}
+  <\/script>
 </body>
 </html>`;
                               }
@@ -313,7 +341,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                     <>
                                       <button
                                         onClick={() => {
-                                          setCanvasContent({html: generatePreviewHtml(), code, language});
+                                          setCanvasContent({html: generatePreviewHtml(), code, language, blockId});
                                           setCanvasEditedCode(code);
                                           setCanvasOpen(true);
                                           setCanvasShowCode(false);
@@ -437,7 +465,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                   <ReactMarkdown
                                     remarkPlugins={[remarkGfm]}
                                     components={{
-                                      p: ({node, ...props}) => <p className="mb-2 last:mb-0" {...props} />,
+                                      p: ({node, ...props}) => <div className="mb-2 last:mb-0" {...props} />,
                                       code: ({node, inline, ...props}: any) => 
                                         inline ? (
                                           <code className="bg-gray-100 text-red-600 px-1 py-0.5 rounded text-[10px] font-mono" {...props} />
@@ -629,6 +657,79 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             </div>
             <div className="flex gap-2">
               <button
+                onClick={() => {
+                  const newCode = canvasEditedCode;
+                  let newHtml = '';
+                  if (canvasContent.language === 'html' || canvasContent.language === 'htm') {
+                    newHtml = newCode;
+                  } else {
+                    let cleanCode = newCode
+                      .split('\n')
+                      .filter(line => {
+                        const trimmed = line.trim();
+                        return !trimmed.startsWith('import ') && !trimmed.startsWith('export ');
+                      })
+                      .join('\n')
+                      .trim();
+                    
+                    // Handle different component formats
+                    if (cleanCode.startsWith('return ')) {
+                      cleanCode = cleanCode.substring(7).trim();
+                    }
+                    
+                    // If it's a full function, extract the body
+                    const functionMatch = cleanCode.match(/function\s+\w+\s*\([^)]*\)\s*\{([\s\S]*)\}/);
+                    if (functionMatch) {
+                      cleanCode = functionMatch[1].trim();
+                      if (cleanCode.startsWith('return ')) {
+                        cleanCode = cleanCode.substring(7).trim();
+                      }
+                    }
+                    
+                    // Arrow function format
+                    const arrowMatch = cleanCode.match(/const\s+\w+\s*=\s*\([^)]*\)\s*=>\s*\{?([\s\S]*)\}?/);
+                    if (arrowMatch) {
+                      cleanCode = arrowMatch[1].trim();
+                      if (cleanCode.startsWith('return ')) {
+                        cleanCode = cleanCode.substring(7).trim();
+                      }
+                    }
+                    
+                    // Remove trailing semicolons and closing braces
+                    cleanCode = cleanCode.replace(/;?\s*$/, '');
+                    
+                    newHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"><\/script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react.production.min.js"><\/script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+try {
+  const Component = () => (${cleanCode});
+  ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(Component));
+} catch (error) {
+  document.getElementById('root').innerHTML = '<div style="padding: 20px; color: red; font-family: monospace;">Preview Error: ' + error.message + '</div>';
+}
+  <\/script>
+</body>
+</html>`;
+                  }
+                  // Save edited code to state so chat preview updates
+                  setEditedCodeBlocks(prev => ({...prev, [canvasContent.blockId]: newCode}));
+                  setCanvasContent({html: newHtml, code: newCode, language: canvasContent.language, blockId: canvasContent.blockId});
+                  setIframeKey(prev => prev + 1);
+                  setCanvasShowCode(false);
+                }}
+                className="px-2 py-1 border border-black hover:bg-gray-100 text-[10px] font-mono font-bold"
+              >
+                UPDATE
+              </button>
+              <button
                 onClick={() => setCanvasShowCode(!canvasShowCode)}
                 className="p-1 border border-black hover:bg-gray-100 text-[10px] font-mono flex items-center gap-1"
               >
@@ -650,66 +751,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             {canvasShowCode ? (
               <textarea
                 value={canvasEditedCode}
-                onChange={(e) => {
-                  const newCode = e.target.value;
-                  setCanvasEditedCode(newCode);
-                  
-                  // Generate new preview HTML
-                  let newHtml = '';
-                  if (canvasContent.language === 'html' || canvasContent.language === 'htm') {
-                    newHtml = newCode;
-                  } else {
-                    newHtml = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/framer-motion@11/dist/framer-motion.js"></script>
-  <script src="https://unpkg.com/lucide-react@0.263.1/dist/umd/lucide-react.js"></script>
-  <style>
-    body { margin: 0; padding: 20px; font-family: system-ui, -apple-system, sans-serif; }
-  </style>
-</head>
-<body>
-  <div id="root"></div>
-  <script type="text/babel" data-presets="react,typescript">
-    try {
-      const { motion } = window.Motion || {};
-      const { createElement: h } = React;
-      const lucide = window.lucideReact || {};
-      
-      ${newCode.replace(/export default/g, 'const Component =').replace(/import .+ from .+;?/g, '')}
-      
-      const root = ReactDOM.createRoot(document.getElementById('root'));
-      root.render(React.createElement(Component));
-    } catch (err) {
-      document.body.innerHTML = '<div style="padding:20px;color:red;font-family:monospace;white-space:pre-wrap;">Compilation Error:\n\n' + err.message + '</div>';
-    }
-  </script>
-  <script>
-    window.onerror = function(msg, url, line, col, error) {
-      if (msg === 'Script error.' && line === 0) {
-        document.body.innerHTML = '<div style="padding:20px;color:orange;font-family:monospace;white-space:pre-wrap;">Cross-origin error detected.\n\nThis usually means:\n- External imports are not supported\n- Remove any import statements\n- Use only React, Tailwind, Framer Motion, and Lucide icons</div>';
-      } else {
-        document.body.innerHTML = '<div style="padding:20px;color:red;font-family:monospace;white-space:pre-wrap;">Runtime Error:\n\n' + msg + '\n\nLine: ' + line + '</div>';
-      }
-      return true;
-    };
-  </script>
-</body>
-</html>`;
-                  }
-                  
-                  setCanvasContent(prev => prev ? {...prev, html: newHtml, code: newCode} : null);
-                }}
+                onChange={(e) => setCanvasEditedCode(e.target.value)}
                 className="w-full h-full p-4 text-xs font-mono bg-gray-50 border-0 resize-none focus:outline-none"
                 spellCheck={false}
               />
             ) : (
               <iframe
+                key={iframeKey}
                 srcDoc={canvasContent.html}
                 className="w-full h-full border-0"
                 sandbox="allow-scripts"

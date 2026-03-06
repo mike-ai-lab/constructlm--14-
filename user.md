@@ -208,64 +208,143 @@ export default function Tools() {
 ## The console in the devtools:
 
 ```
-17:43:35.639 pdfParser.ts:17 PDF.js worker configured: https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.624/build/pdf.worker.min.mjs
-17:43:35.846 installHook.js:1 In HTML, <div> cannot be a descendant of <p>.
-This will cause a hydration error.
-
-  ...
-    <div className="flex flex-..." onTouchStart={function onTouchStart} onTouchMove={function onTouchMove} ...>
-      <style>
-      <header>
-      <div className="flex flex-...">
-        <aside>
-        <div>
-        <main className="flex-1 fle...">
-          <header>
-          <ChatInterface messages={[...]} onSendMessage={function handleSendMessage} isStreaming={false}>
-            <div className="flex h-ful...">
-              <div className="flex flex-...">
-                <div className="flex-1 ove..." style={{...}}>
-                  <div className="w-full max...">
-                    <div>
-                    <div className="w-full">
-                      <div className="flex flex-...">
-                        <div>
-                        <div className="w-full bg-...">
-                          <div className="leading-re...">
-                            <Markdown remarkPlugins={[...]} components={{h1:function h1, ...}}>
-                              <p>
-                              <pre>
-                              <p>
-                              <ul>
-                              <p node={{type:"element", ...}}>
->                               <p className="mb-3 last:mb-0 font-mono text-[13px] text-gray-800">
-                                  <code node={{type:"element", ...}}>
-                                    <div className="relative my-2">
->                                     <div className="absolute left-2 top-2 z-10">
-                                      ...
-                                  ...
-                          ...
-                  ...
-                ...
-        ...
-
-overrideMethod @ installHook.js:1
-17:43:35.848 installHook.js:1 <p> cannot contain a nested <div>.
-See this log for the ancestor stack trace.
-overrideMethod @ installHook.js:1
-17:44:49.313 (index):64 cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation
-(anonymous) @ (index):64
-17:44:49.320 createLucideIcon.ts:26 Uncaught TypeError: Cannot read properties of undefined (reading 'forwardRef')
-17:44:49.527 about:srcdoc:236 Uncaught SyntaxError: Invalid or unexpected token
-17:44:49.528 transformScriptTags.ts:271 You are using the in-browser Babel transformer. Be sure to precompile your scripts for production - https://babeljs.io/docs/setup/
+18:12:46.742 about:srcdoc:64 Uncaught SyntaxError: Invalid or unexpected token
+18:12:46.746 unpkg.com/@babel/standalone/babel.min.js:3 You are using the in-browser Babel transformer. Be sure to precompile your scripts for production - https://babeljs.io/docs/setup/
+(anonymous) @ unpkg.com/@babel/standalone/babel.min.js:3
+VEe @ unpkg.com/@babel/standalone/babel.min.js:3
+WEe @ unpkg.com/@babel/standalone/babel.min.js:3
+18:12:49.701 about:srcdoc:64 Uncaught SyntaxError: Invalid or unexpected token (at about:srcdoc:64:131)
+18:12:49.704 about:srcdoc:64 Uncaught SyntaxError: Invalid or unexpected token (at about:srcdoc:64:131)
+18:12:49.705 babel.min.js:3 You are using the in-browser Babel transformer. Be sure to precompile your scripts for production - https://babeljs.io/docs/setup/
 (anonymous) @ transformScriptTags.ts:271
-17:44:49.562 babel.min.js:3 Uncaught SyntaxError: /Inline Babel script: 'import' and 'export' may only appear at the top level. (10:0)
+VEe @ index.ts:277
+WEe @ index.ts:261
+18:12:49.810 babel.min.js:3 You are using the in-browser Babel transformer. Be sure to precompile your scripts for production - https://babeljs.io/docs/setup/
+(anonymous) @ transformScriptTags.ts:271
+VEe @ index.ts:277
+WEe @ index.ts:261
+18:12:51.555 react-dom.production.min.js:16  GET https://via.placeholder.com/400x200 net::ERR_NAME_NOT_RESOLVED
+$d @ react-dom.production.min.js:16
+xk @ react-dom.production.min.js:152
+Qi @ react-dom.production.min.js:195
+Ri @ react-dom.production.min.js:195
+Ok @ react-dom.production.min.js:195
+Nd @ react-dom.production.min.js:194
+Ni @ react-dom.production.min.js:185
+S @ react.production.min.js:17
+U @ react.production.min.js:21
+18:12:51.555 via.placeholder.com/400x200:1  Failed to load resource: net::ERR_NAME_NOT_RESOLVED
+18:12:51.561 via.placeholder.com/400x200:1  GET https://via.placeholder.com/400x200 net::ERR_NAME_NOT_RESOLVED
+Image
+Ji @ react-dom.production.min.js:181
+Hi @ react-dom.production.min.js:179
+Hk @ react-dom.production.min.js:178
+Rk @ react-dom.production.min.js:197
+xb @ react-dom.production.min.js:196
+Ni @ react-dom.production.min.js:187
+S @ react.production.min.js:17
+U @ react.production.min.js:21
+18:12:51.561 via.placeholder.com/400x200:1  Failed to load resource: net::ERR_NAME_NOT_RESOLVED
+18:13:01.367 about:srcdoc:64 Uncaught SyntaxError: Invalid or unexpected token (at about:srcdoc:64:131)
+18:13:01.369 babel.min.js:3 You are using the in-browser Babel transformer. Be sure to precompile your scripts for production - https://babeljs.io/docs/setup/
+(anonymous) @ transformScriptTags.ts:271
+VEe @ index.ts:277
+WEe @ index.ts:261
+18:13:04.157 via.placeholder.com/400x200:1  GET https://via.placeholder.com/400x200 net::ERR_NAME_NOT_RESOLVED
+Image
+Ji @ react-dom.production.min.js:181
+Hi @ react-dom.production.min.js:179
+Hk @ react-dom.production.min.js:178
+Rk @ react-dom.production.min.js:197
+xb @ react-dom.production.min.js:196
+Ni @ react-dom.production.min.js:187
+S @ react.production.min.js:17
+U @ react.production.min.js:21
+18:13:09.651 about:srcdoc:64 Uncaught SyntaxError: Invalid or unexpected token (at about:srcdoc:64:131)
+18:13:09.653 babel.min.js:3 You are using the in-browser Babel transformer. Be sure to precompile your scripts for production - https://babeljs.io/docs/setup/
+(anonymous) @ transformScriptTags.ts:271
+VEe @ index.ts:277
+WEe @ index.ts:261
+18:13:11.655 via.placeholder.com/400x200:1  GET https://via.placeholder.com/400x200 net::ERR_NAME_NOT_RESOLVED
+Image
+Ji @ react-dom.production.min.js:181
+Hi @ react-dom.production.min.js:179
+Hk @ react-dom.production.min.js:178
+Rk @ react-dom.production.min.js:197
+xb @ react-dom.production.min.js:196
+Ni @ react-dom.production.min.js:187
+S @ react.production.min.js:17
+U @ react.production.min.js:21
+18:13:17.153 about:srcdoc:242 Uncaught SyntaxError: Invalid or unexpected token (at about:srcdoc:242:35)
+18:13:17.158 about:srcdoc:64 Uncaught SyntaxError: Invalid or unexpected token (at about:srcdoc:64:131)
+18:13:17.159 transformScriptTags.ts:271 You are using the in-browser Babel transformer. Be sure to precompile your scripts for production - https://babeljs.io/docs/setup/
+(anonymous) @ transformScriptTags.ts:271
+VEe @ index.ts:277
+WEe @ index.ts:261
+18:13:17.212 parse-error.ts:95 Uncaught SyntaxError: /Inline Babel script: 'import' and 'export' may only appear at the top level. (9:0)
 
+   7 |
    8 |
-   9 |
-> 10 | import { 
+>  9 | import { 
      | ^
-  11 |   Terminal,
-  12 |   Box,
-  13 |   ChevronRight,
+  10 |   Terminal,
+  11 |   Box,
+  12 |   ChevronRight,
+e @ parse-error.ts:95
+r.raise @ index.ts:1504
+r.parseStatementContent @ statement.ts:640
+r.parseStatementLike @ statement.ts:482
+r.parseStatementLike @ index.ts:1991
+r.parseStatementListItem @ statement.ts:431
+r.parseBlockOrModuleBlockBody @ statement.ts:1444
+r.parseBlockBody @ statement.ts:1417
+r.parseBlock @ statement.ts:1385
+r.parseTryStatement @ statement.ts:1205
+r.parseStatementContent @ statement.ts:549
+r.parseStatementLike @ statement.ts:482
+r.parseStatementLike @ index.ts:1991
+r.parseModuleItem @ statement.ts:419
+r.parseBlockOrModuleBlockBody @ statement.ts:1443
+r.parseBlockBody @ statement.ts:1417
+r.parseProgram @ statement.ts:229
+r.parseTopLevel @ statement.ts:203
+r.parseTopLevel @ index.ts:3372
+r.parse @ index.ts:83
+aR @ index.ts:86
+(anonymous) @ index.ts:29
+(anonymous) @ babel.min.js:3
+(anonymous) @ babel.min.js:3
+(anonymous) @ babel.min.js:3
+(anonymous) @ babel.min.js:3
+(anonymous) @ babel.min.js:3
+(anonymous) @ babel.min.js:3
+(anonymous) @ babel.min.js:3
+(anonymous) @ babel.min.js:3
+iF @ index.js:251
+sync @ index.js:89
+stopHiding - secret - don't use this - v1 @ rewrite-stack-trace.ts:99
+SV @ transform.ts:66
+FEe @ index.ts:179
+(anonymous) @ transformScriptTags.ts:53
+SEe @ transformScriptTags.ts:120
+n @ transformScriptTags.ts:193
+PEe @ transformScriptTags.ts:240
+(anonymous) @ transformScriptTags.ts:276
+VEe @ index.ts:277
+WEe @ index.ts:261
+18:13:17.216 transformScriptTags.ts:271 You are using the in-browser Babel transformer. Be sure to precompile your scripts for production - https://babeljs.io/docs/setup/
+(anonymous) @ transformScriptTags.ts:271
+VEe @ index.ts:277
+WEe @ index.ts:261
+18:13:18.606 via.placeholder.com/400x200:1  GET https://via.placeholder.com/400x200 net::ERR_NAME_NOT_RESOLVED
+Image
+Ji @ react-dom.production.min.js:181
+Hi @ react-dom.production.min.js:179
+Hk @ react-dom.production.min.js:178
+Rk @ react-dom.production.min.js:197
+xb @ react-dom.production.min.js:196
+Ni @ react-dom.production.min.js:187
+S @ react.production.min.js:17
+U @ react.production.min.js:21
+
 ```

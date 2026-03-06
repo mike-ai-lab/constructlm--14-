@@ -1,0 +1,908 @@
+19:46:13.398 installHook.js:1 No chunks above threshold - returning top results as fallback
+
+overrideMethod @ installHook.js:1
+
+searchVectors @ vectorDb.ts:189
+
+await in searchVectors
+
+handleSendMessage @ App.tsx:301
+
+handleSubmit @ ChatInterface.tsx:167
+
+executeDispatch @ react-dom-client.development.js:19116
+
+runWithFiberInDEV @ react-dom-client.development.js:871
+
+processDispatchQueue @ react-dom-client.development.js:19166
+
+(anonymous) @ react-dom-client.development.js:19767
+
+batchedUpdates$1 @ react-dom-client.development.js:3255
+
+dispatchEventForPluginEventSystem @ react-dom-client.development.js:19320
+
+dispatchEvent @ react-dom-client.development.js:23585
+
+dispatchDiscreteEvent @ react-dom-client.development.js:23553
+
+<form>
+
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:335
+
+ChatInterface @ ChatInterface.tsx:594
+
+react_stack_bottom_frame @ react-dom-client.development.js:25904
+
+renderWithHooksAgain @ react-dom-client.development.js:7762
+
+renderWithHooks @ react-dom-client.development.js:7674
+
+updateFunctionComponent @ react-dom-client.development.js:10166
+
+beginWork @ react-dom-client.development.js:11778
+
+runWithFiberInDEV @ react-dom-client.development.js:871
+
+performUnitOfWork @ react-dom-client.development.js:17641
+
+workLoopSync @ react-dom-client.development.js:17469
+
+renderRootSync @ react-dom-client.development.js:17450
+
+performWorkOnRoot @ react-dom-client.development.js:16504
+
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:18957
+
+performWorkUntilDeadline @ scheduler.development.js:45
+
+<ChatInterface>
+
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:335
+
+App @ App.tsx:636
+
+react_stack_bottom_frame @ react-dom-client.development.js:25904
+
+renderWithHooksAgain @ react-dom-client.development.js:7762
+
+renderWithHooks @ react-dom-client.development.js:7674
+
+updateFunctionComponent @ react-dom-client.development.js:10166
+
+beginWork @ react-dom-client.development.js:11778
+
+runWithFiberInDEV @ react-dom-client.development.js:871
+
+performUnitOfWork @ react-dom-client.development.js:17641
+
+workLoopSync @ react-dom-client.development.js:17469
+
+renderRootSync @ react-dom-client.development.js:17450
+
+performWorkOnRoot @ react-dom-client.development.js:16504
+
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:18957
+
+performWorkUntilDeadline @ scheduler.development.js:45
+
+<App>
+
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:335
+
+(anonymous) @ index.tsx:13
+
+19:54:44.310 installHook.js:1 No chunks above threshold - returning top results as fallback
+
+overrideMethod @ installHook.js:1
+
+searchVectors @ vectorDb.ts:189
+
+await in searchVectors
+
+handleSendMessage @ App.tsx:301
+
+handleSubmit @ ChatInterface.tsx:168
+
+executeDispatch @ react-dom-client.development.js:19116
+
+runWithFiberInDEV @ react-dom-client.development.js:871
+
+processDispatchQueue @ react-dom-client.development.js:19166
+
+(anonymous) @ react-dom-client.development.js:19767
+
+batchedUpdates$1 @ react-dom-client.development.js:3255
+
+dispatchEventForPluginEventSystem @ react-dom-client.development.js:19320
+
+dispatchEvent @ react-dom-client.development.js:23585
+
+dispatchDiscreteEvent @ react-dom-client.development.js:23553
+
+<form>
+
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:335
+
+ChatInterface @ ChatInterface.tsx:596
+
+react_stack_bottom_frame @ react-dom-client.development.js:25904
+
+renderWithHooksAgain @ react-dom-client.development.js:7762
+
+renderWithHooks @ react-dom-client.development.js:7674
+
+updateFunctionComponent @ react-dom-client.development.js:10166
+
+beginWork @ react-dom-client.development.js:11778
+
+runWithFiberInDEV @ react-dom-client.development.js:871
+
+performUnitOfWork @ react-dom-client.development.js:17641
+
+workLoopSync @ react-dom-client.development.js:17469
+
+renderRootSync @ react-dom-client.development.js:17450
+
+performWorkOnRoot @ react-dom-client.development.js:16504
+
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:18957
+
+performWorkUntilDeadline @ scheduler.development.js:45
+
+<ChatInterface>
+
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:335
+
+App @ App.tsx:636
+
+react_stack_bottom_frame @ react-dom-client.development.js:25904
+
+renderWithHooksAgain @ react-dom-client.development.js:7762
+
+renderWithHooks @ react-dom-client.development.js:7674
+
+updateFunctionComponent @ react-dom-client.development.js:10166
+
+beginWork @ react-dom-client.development.js:11778
+
+runWithFiberInDEV @ react-dom-client.development.js:871
+
+performUnitOfWork @ react-dom-client.development.js:17641
+
+workLoopSync @ react-dom-client.development.js:17469
+
+renderRootSync @ react-dom-client.development.js:17450
+
+performWorkOnRoot @ react-dom-client.development.js:16504
+
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:18957
+
+performWorkUntilDeadline @ scheduler.development.js:45
+
+<App>
+
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:335
+
+(anonymous) @ index.tsx:13
+
+19:54:52.303 babel.min.js:3 You are using the in-browser Babel transformer. Be sure to precompile your scripts for production - https://babeljs.io/docs/setup/
+
+(anonymous) @ transformScriptTags.ts:271
+
+VEe @ index.ts:277
+
+WEe @ index.ts:261
+
+19:54:52.363 babel.min.js:3 Uncaught SyntaxError: /Inline Babel script: Unexpected token, expected "," (30:3)
+
+  28 |       </div>
+
+  29 |     </div>
+
+> 30 |   );
+
+     |    ^
+
+  31 | });
+
+  32 |   ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(Component));
+
+  33 | } catch (error) {
+
+e @ parse-error.ts:95
+
+r.raise @ index.ts:1504
+
+r.unexpected @ index.ts:1544
+
+r.expect @ util.ts:157
+
+r.parseParenAndDistinguishExpression @ expression.ts:1798
+
+r.parseParenAndDistinguishExpression @ index.ts:3197
+
+r.parseExprAtom @ expression.ts:1170
+
+r.parseExprAtom @ index.ts:583
+
+r.parseExprSubscripts @ expression.ts:742
+
+r.parseUpdate @ expression.ts:721
+
+r.parseMaybeUnary @ expression.ts:683
+
+r.parseMaybeUnaryOrPrivate @ expression.ts:417
+
+r.parseExprOps @ expression.ts:429
+
+r.parseMaybeConditional @ expression.ts:384
+
+r.parseMaybeAssign @ expression.ts:301
+
+r.parseMaybeAssign @ index.ts:3098
+
+r.parseFunctionBody @ expression.ts:2604
+
+(anonymous) @ index.ts:1941
+
+r.forwardNoArrowParamsConversionAt @ index.ts:2225
+
+r.parseFunctionBody @ index.ts:1940
+
+r.parseArrowExpression @ expression.ts:2559
+
+r.parseParenAndDistinguishExpression @ expression.ts:1847
+
+r.parseParenAndDistinguishExpression @ index.ts:3197
+
+r.parseExprAtom @ expression.ts:1170
+
+r.parseExprAtom @ index.ts:583
+
+r.parseExprSubscripts @ expression.ts:742
+
+r.parseUpdate @ expression.ts:721
+
+r.parseMaybeUnary @ expression.ts:683
+
+r.parseMaybeUnaryOrPrivate @ expression.ts:417
+
+r.parseExprOps @ expression.ts:429
+
+r.parseMaybeConditional @ expression.ts:384
+
+r.parseMaybeAssign @ expression.ts:301
+
+r.parseMaybeAssign @ index.ts:3098
+
+(anonymous) @ expression.ts:257
+
+r.allowInAnd @ expression.ts:3189
+
+r.parseMaybeAssignAllowIn @ expression.ts:256
+
+r.parseVar @ statement.ts:1587
+
+r.parseVarStatement @ statement.ts:1251
+
+r.parseStatementContent @ statement.ts:612
+
+r.parseStatementLike @ statement.ts:482
+
+r.parseStatementLike @ index.ts:1991
+
+r.parseStatementListItem @ statement.ts:431
+
+r.parseBlockOrModuleBlockBody @ statement.ts:1444
+
+r.parseBlockBody @ statement.ts:1417
+
+r.parseBlock @ statement.ts:1385
+
+r.parseTryStatement @ statement.ts:1205
+
+r.parseStatementContent @ statement.ts:549
+
+r.parseStatementLike @ statement.ts:482
+
+r.parseStatementLike @ index.ts:1991
+
+r.parseModuleItem @ statement.ts:419
+
+r.parseBlockOrModuleBlockBody @ statement.ts:1443
+
+r.parseBlockBody @ statement.ts:1417
+
+r.parseProgram @ statement.ts:229
+
+r.parseTopLevel @ statement.ts:203
+
+r.parseTopLevel @ index.ts:3372
+
+r.parse @ index.ts:83
+
+aR @ index.ts:86
+
+(anonymous) @ index.ts:29
+
+(anonymous) @ babel.min.js:3
+
+(anonymous) @ babel.min.js:3
+
+(anonymous) @ babel.min.js:3
+
+(anonymous) @ babel.min.js:3
+
+(anonymous) @ babel.min.js:3
+
+(anonymous) @ babel.min.js:3
+
+(anonymous) @ babel.min.js:3
+
+(anonymous) @ babel.min.js:3
+
+iF @ index.js:251
+
+sync @ index.js:89
+
+stopHiding - secret - don't use this - v1 @ rewrite-stack-trace.ts:99
+
+SV @ transform.ts:66
+
+FEe @ index.ts:179
+
+(anonymous) @ transformScriptTags.ts:53
+
+SEe @ transformScriptTags.ts:120
+
+n @ transformScriptTags.ts:193
+
+PEe @ transformScriptTags.ts:240
+
+(anonymous) @ transformScriptTags.ts:276
+
+VEe @ index.ts:277
+
+WEe @ index.ts:261
+
+19:55:06.966 babel.min.js:3 You are using the in-browser Babel transformer. Be sure to precompile your scripts for production - https://babeljs.io/docs/setup/
+
+(anonymous) @ babel.min.js:sourcemap:3
+
+VEe @ babel.min.js:sourcemap:3
+
+WEe @ babel.min.js:sourcemap:3
+
+19:55:07.031 babel.min.js:3 Uncaught SyntaxError: /Inline Babel script: Unexpected token, expected "," (30:3)
+
+  28 |       </div>
+
+  29 |     </div>
+
+> 30 |   );
+
+     |    ^
+
+  31 | });
+
+  32 |   ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(Component));
+
+  33 | } catch (error) {
+
+e @ babel.min.js:sourcemap:3
+
+r.raise @ babel.min.js:sourcemap:3
+
+r.unexpected @ babel.min.js:sourcemap:3
+
+r.expect @ babel.min.js:sourcemap:3
+
+r.parseParenAndDistinguishExpression @ babel.min.js:sourcemap:3
+
+r.parseParenAndDistinguishExpression @ babel.min.js:sourcemap:3
+
+r.parseExprAtom @ babel.min.js:sourcemap:3
+
+r.parseExprAtom @ babel.min.js:sourcemap:3
+
+r.parseExprSubscripts @ babel.min.js:sourcemap:3
+
+r.parseUpdate @ babel.min.js:sourcemap:3
+
+r.parseMaybeUnary @ babel.min.js:sourcemap:3
+
+r.parseMaybeUnaryOrPrivate @ babel.min.js:sourcemap:3
+
+r.parseExprOps @ babel.min.js:sourcemap:3
+
+r.parseMaybeConditional @ babel.min.js:sourcemap:3
+
+r.parseMaybeAssign @ babel.min.js:sourcemap:3
+
+r.parseMaybeAssign @ babel.min.js:sourcemap:3
+
+r.parseFunctionBody @ babel.min.js:sourcemap:3
+
+(anonymous) @ babel.min.js:sourcemap:3
+
+r.forwardNoArrowParamsConversionAt @ babel.min.js:sourcemap:3
+
+r.parseFunctionBody @ babel.min.js:sourcemap:3
+
+r.parseArrowExpression @ babel.min.js:sourcemap:3
+
+r.parseParenAndDistinguishExpression @ babel.min.js:sourcemap:3
+
+r.parseParenAndDistinguishExpression @ babel.min.js:sourcemap:3
+
+r.parseExprAtom @ babel.min.js:sourcemap:3
+
+r.parseExprAtom @ babel.min.js:sourcemap:3
+
+r.parseExprSubscripts @ babel.min.js:sourcemap:3
+
+r.parseUpdate @ babel.min.js:sourcemap:3
+
+r.parseMaybeUnary @ babel.min.js:sourcemap:3
+
+r.parseMaybeUnaryOrPrivate @ babel.min.js:sourcemap:3
+
+r.parseExprOps @ babel.min.js:sourcemap:3
+
+r.parseMaybeConditional @ babel.min.js:sourcemap:3
+
+r.parseMaybeAssign @ babel.min.js:sourcemap:3
+
+r.parseMaybeAssign @ babel.min.js:sourcemap:3
+
+(anonymous) @ babel.min.js:sourcemap:3
+
+r.allowInAnd @ babel.min.js:sourcemap:3
+
+r.parseMaybeAssignAllowIn @ babel.min.js:sourcemap:3
+
+r.parseVar @ babel.min.js:sourcemap:3
+
+r.parseVarStatement @ babel.min.js:sourcemap:3
+
+r.parseStatementContent @ babel.min.js:sourcemap:3
+
+r.parseStatementLike @ babel.min.js:sourcemap:3
+
+r.parseStatementLike @ babel.min.js:sourcemap:3
+
+r.parseStatementListItem @ babel.min.js:sourcemap:3
+
+r.parseBlockOrModuleBlockBody @ babel.min.js:sourcemap:3
+
+r.parseBlockBody @ babel.min.js:sourcemap:3
+
+r.parseBlock @ babel.min.js:sourcemap:3
+
+r.parseTryStatement @ babel.min.js:sourcemap:3
+
+r.parseStatementContent @ babel.min.js:sourcemap:3
+
+r.parseStatementLike @ babel.min.js:sourcemap:3
+
+r.parseStatementLike @ babel.min.js:sourcemap:3
+
+r.parseModuleItem @ babel.min.js:sourcemap:3
+
+r.parseBlockOrModuleBlockBody @ babel.min.js:sourcemap:3
+
+r.parseBlockBody @ babel.min.js:sourcemap:3
+
+r.parseProgram @ babel.min.js:sourcemap:3
+
+r.parseTopLevel @ babel.min.js:sourcemap:3
+
+r.parseTopLevel @ babel.min.js:sourcemap:3
+
+r.parse @ babel.min.js:sourcemap:3
+
+aR @ babel.min.js:sourcemap:3
+
+(anonymous) @ babel.min.js:sourcemap:3
+
+(anonymous) @ babel.min.js:sourcemap:3
+
+(anonymous) @ babel.min.js:sourcemap:3
+
+(anonymous) @ babel.min.js:sourcemap:3
+
+(anonymous) @ babel.min.js:sourcemap:3
+
+(anonymous) @ babel.min.js:sourcemap:3
+
+(anonymous) @ babel.min.js:sourcemap:3
+
+(anonymous) @ babel.min.js:sourcemap:3
+
+(anonymous) @ babel.min.js:sourcemap:3
+
+iF @ babel.min.js:sourcemap:3
+
+sync @ babel.min.js:sourcemap:3
+
+stopHiding - secret - don't use this - v1 @ babel.min.js:sourcemap:3
+
+SV @ babel.min.js:sourcemap:3
+
+FEe @ babel.min.js:sourcemap:3
+
+(anonymous) @ babel.min.js:sourcemap:3
+
+SEe @ babel.min.js:sourcemap:3
+
+n @ babel.min.js:sourcemap:3
+
+PEe @ babel.min.js:sourcemap:3
+
+(anonymous) @ babel.min.js:sourcemap:3
+
+VEe @ babel.min.js:sourcemap:3
+
+WEe @ babel.min.js:sourcemap:3
+
+19:55:07.034 babel.min.js:3 You are using the in-browser Babel transformer. Be sure to precompile your scripts for production - https://babeljs.io/docs/setup/
+
+(anonymous) @ babel.min.js:sourcemap:3
+
+VEe @ babel.min.js:sourcemap:3
+
+WEe @ babel.min.js:sourcemap:3
+
+19:55:07.099 babel.min.js:3 Uncaught SyntaxError: /Inline Babel script: Unexpected token, expected "," (30:3)
+
+  28 |       </div>
+
+  29 |     </div>
+
+> 30 |   );
+
+     |    ^
+
+  31 | });
+
+  32 |   ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(Component));
+
+  33 | } catch (error) {
+
+e @ babel.min.js:sourcemap:3
+
+r.raise @ babel.min.js:sourcemap:3
+
+r.unexpected @ babel.min.js:sourcemap:3
+
+r.expect @ babel.min.js:sourcemap:3
+
+r.parseParenAndDistinguishExpression @ babel.min.js:sourcemap:3
+
+r.parseParenAndDistinguishExpression @ babel.min.js:sourcemap:3
+
+r.parseExprAtom @ babel.min.js:sourcemap:3
+
+r.parseExprAtom @ babel.min.js:sourcemap:3
+
+r.parseExprSubscripts @ babel.min.js:sourcemap:3
+
+r.parseUpdate @ babel.min.js:sourcemap:3
+
+r.parseMaybeUnary @ babel.min.js:sourcemap:3
+
+r.parseMaybeUnaryOrPrivate @ babel.min.js:sourcemap:3
+
+r.parseExprOps @ babel.min.js:sourcemap:3
+
+r.parseMaybeConditional @ babel.min.js:sourcemap:3
+
+r.parseMaybeAssign @ babel.min.js:sourcemap:3
+
+r.parseMaybeAssign @ babel.min.js:sourcemap:3
+
+r.parseFunctionBody @ babel.min.js:sourcemap:3
+
+(anonymous) @ babel.min.js:sourcemap:3
+
+r.forwardNoArrowParamsConversionAt @ babel.min.js:sourcemap:3
+
+r.parseFunctionBody @ babel.min.js:sourcemap:3
+
+r.parseArrowExpression @ babel.min.js:sourcemap:3
+
+r.parseParenAndDistinguishExpression @ babel.min.js:sourcemap:3
+
+r.parseParenAndDistinguishExpression @ babel.min.js:sourcemap:3
+
+r.parseExprAtom @ babel.min.js:sourcemap:3
+
+r.parseExprAtom @ babel.min.js:sourcemap:3
+
+r.parseExprSubscripts @ babel.min.js:sourcemap:3
+
+r.parseUpdate @ babel.min.js:sourcemap:3
+
+r.parseMaybeUnary @ babel.min.js:sourcemap:3
+
+r.parseMaybeUnaryOrPrivate @ babel.min.js:sourcemap:3
+
+r.parseExprOps @ babel.min.js:sourcemap:3
+
+r.parseMaybeConditional @ babel.min.js:sourcemap:3
+
+r.parseMaybeAssign @ babel.min.js:sourcemap:3
+
+r.parseMaybeAssign @ babel.min.js:sourcemap:3
+
+(anonymous) @ babel.min.js:sourcemap:3
+
+r.allowInAnd @ babel.min.js:sourcemap:3
+
+r.parseMaybeAssignAllowIn @ babel.min.js:sourcemap:3
+
+r.parseVar @ babel.min.js:sourcemap:3
+
+r.parseVarStatement @ babel.min.js:sourcemap:3
+
+r.parseStatementContent @ babel.min.js:sourcemap:3
+
+r.parseStatementLike @ babel.min.js:sourcemap:3
+
+r.parseStatementLike @ babel.min.js:sourcemap:3
+
+r.parseStatementListItem @ babel.min.js:sourcemap:3
+
+r.parseBlockOrModuleBlockBody @ babel.min.js:sourcemap:3
+
+r.parseBlockBody @ babel.min.js:sourcemap:3
+
+r.parseBlock @ babel.min.js:sourcemap:3
+
+r.parseTryStatement @ babel.min.js:sourcemap:3
+
+r.parseStatementContent @ babel.min.js:sourcemap:3
+
+r.parseStatementLike @ babel.min.js:sourcemap:3
+
+r.parseStatementLike @ babel.min.js:sourcemap:3
+
+r.parseModuleItem @ babel.min.js:sourcemap:3
+
+r.parseBlockOrModuleBlockBody @ babel.min.js:sourcemap:3
+
+r.parseBlockBody @ babel.min.js:sourcemap:3
+
+r.parseProgram @ babel.min.js:sourcemap:3
+
+r.parseTopLevel @ babel.min.js:sourcemap:3
+
+r.parseTopLevel @ babel.min.js:sourcemap:3
+
+r.parse @ babel.min.js:sourcemap:3
+
+aR @ babel.min.js:sourcemap:3
+
+(anonymous) @ babel.min.js:sourcemap:3
+
+(anonymous) @ babel.min.js:sourcemap:3
+
+(anonymous) @ babel.min.js:sourcemap:3
+
+(anonymous) @ babel.min.js:sourcemap:3
+
+(anonymous) @ babel.min.js:sourcemap:3
+
+(anonymous) @ babel.min.js:sourcemap:3
+
+(anonymous) @ babel.min.js:sourcemap:3
+
+(anonymous) @ babel.min.js:sourcemap:3
+
+(anonymous) @ babel.min.js:sourcemap:3
+
+iF @ babel.min.js:sourcemap:3
+
+sync @ babel.min.js:sourcemap:3
+
+stopHiding - secret - don't use this - v1 @ babel.min.js:sourcemap:3
+
+SV @ babel.min.js:sourcemap:3
+
+FEe @ babel.min.js:sourcemap:3
+
+(anonymous) @ babel.min.js:sourcemap:3
+
+SEe @ babel.min.js:sourcemap:3
+
+n @ babel.min.js:sourcemap:3
+
+PEe @ babel.min.js:sourcemap:3
+
+(anonymous) @ babel.min.js:sourcemap:3
+
+VEe @ babel.min.js:sourcemap:3
+
+WEe @ babel.min.js:sourcemap:3
+
+19:55:13.743 transformScriptTags.ts:271 You are using the in-browser Babel transformer. Be sure to precompile your scripts for production - https://babeljs.io/docs/setup/
+
+(anonymous) @ transformScriptTags.ts:271
+
+VEe @ index.ts:277
+
+WEe @ index.ts:261
+
+19:55:13.810 parse-error.ts:95 Uncaught SyntaxError: /Inline Babel script: Unexpected token, expected "," (30:3)
+
+  28 |       </div>
+
+  29 |     </div>
+
+> 30 |   );
+
+     |    ^
+
+  31 | });
+
+  32 |   ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(Component));
+
+  33 | } catch (error) {
+
+e @ parse-error.ts:95
+
+r.raise @ index.ts:1504
+
+r.unexpected @ index.ts:1544
+
+r.expect @ util.ts:157
+
+r.parseParenAndDistinguishExpression @ expression.ts:1798
+
+r.parseParenAndDistinguishExpression @ index.ts:3197
+
+r.parseExprAtom @ expression.ts:1170
+
+r.parseExprAtom @ index.ts:583
+
+r.parseExprSubscripts @ expression.ts:742
+
+r.parseUpdate @ expression.ts:721
+
+r.parseMaybeUnary @ expression.ts:683
+
+r.parseMaybeUnaryOrPrivate @ expression.ts:417
+
+r.parseExprOps @ expression.ts:429
+
+r.parseMaybeConditional @ expression.ts:384
+
+r.parseMaybeAssign @ expression.ts:301
+
+r.parseMaybeAssign @ index.ts:3098
+
+r.parseFunctionBody @ expression.ts:2604
+
+(anonymous) @ index.ts:1941
+
+r.forwardNoArrowParamsConversionAt @ index.ts:2225
+
+r.parseFunctionBody @ index.ts:1940
+
+r.parseArrowExpression @ expression.ts:2559
+
+r.parseParenAndDistinguishExpression @ expression.ts:1847
+
+r.parseParenAndDistinguishExpression @ index.ts:3197
+
+r.parseExprAtom @ expression.ts:1170
+
+r.parseExprAtom @ index.ts:583
+
+r.parseExprSubscripts @ expression.ts:742
+
+r.parseUpdate @ expression.ts:721
+
+r.parseMaybeUnary @ expression.ts:683
+
+r.parseMaybeUnaryOrPrivate @ expression.ts:417
+
+r.parseExprOps @ expression.ts:429
+
+r.parseMaybeConditional @ expression.ts:384
+
+r.parseMaybeAssign @ expression.ts:301
+
+r.parseMaybeAssign @ index.ts:3098
+
+(anonymous) @ expression.ts:257
+
+r.allowInAnd @ expression.ts:3189
+
+r.parseMaybeAssignAllowIn @ expression.ts:256
+
+r.parseVar @ statement.ts:1587
+
+r.parseVarStatement @ statement.ts:1251
+
+r.parseStatementContent @ statement.ts:612
+
+r.parseStatementLike @ statement.ts:482
+
+r.parseStatementLike @ index.ts:1991
+
+r.parseStatementListItem @ statement.ts:431
+
+r.parseBlockOrModuleBlockBody @ statement.ts:1444
+
+r.parseBlockBody @ statement.ts:1417
+
+r.parseBlock @ statement.ts:1385
+
+r.parseTryStatement @ statement.ts:1205
+
+r.parseStatementContent @ statement.ts:549
+
+r.parseStatementLike @ statement.ts:482
+
+r.parseStatementLike @ index.ts:1991
+
+r.parseModuleItem @ statement.ts:419
+
+r.parseBlockOrModuleBlockBody @ statement.ts:1443
+
+r.parseBlockBody @ statement.ts:1417
+
+r.parseProgram @ statement.ts:229
+
+r.parseTopLevel @ statement.ts:203
+
+r.parseTopLevel @ index.ts:3372
+
+r.parse @ index.ts:83
+
+aR @ index.ts:86
+
+(anonymous) @ index.ts:29
+
+(anonymous) @ babel.min.js:3
+
+(anonymous) @ babel.min.js:3
+
+(anonymous) @ babel.min.js:3
+
+(anonymous) @ babel.min.js:3
+
+(anonymous) @ babel.min.js:3
+
+(anonymous) @ babel.min.js:3
+
+(anonymous) @ babel.min.js:3
+
+(anonymous) @ babel.min.js:3
+
+iF @ index.js:251
+
+sync @ index.js:89
+
+stopHiding - secret - don't use this - v1 @ rewrite-stack-trace.ts:99
+
+SV @ transform.ts:66
+
+FEe @ index.ts:179
+
+(anonymous) @ transformScriptTags.ts:53
+
+SEe @ transformScriptTags.ts:120
+
+n @ transformScriptTags.ts:193
+
+PEe @ transformScriptTags.ts:240
+
+(anonymous) @ transformScriptTags.ts:276
+
+VEe @ index.ts:277
+
+WEe @ index.ts:261
+
