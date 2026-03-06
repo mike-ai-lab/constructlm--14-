@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Send, Image as ImageIcon, X, FileText, Play, Code, Download, Copy, Check } from 'lucide-react';
+import { Send, Image as ImageIcon, X, FileText, Play, Code, Download, Copy, Check, Maximize2 } from 'lucide-react';
 import { ChatMessage, Citation } from '../types';
 import * as GeminiService from '../services/geminiService';
 
@@ -26,6 +26,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [codeBlockStates, setCodeBlockStates] = useState<{[key: string]: {showRendered: boolean}}>({});
   const [copiedBlocks, setCopiedBlocks] = useState<{[key: string]: boolean}>({});
+  const [canvasOpen, setCanvasOpen] = useState(false);
+  const [canvasContent, setCanvasContent] = useState<{html: string, code: string, language: string} | null>(null);
+  const [canvasShowCode, setCanvasShowCode] = useState(false);
+  const [canvasEditedCode, setCanvasEditedCode] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -169,7 +173,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   }, [messages]);
 
   return (
-    <div className="flex flex-col h-full bg-white relative overflow-hidden">
+    <div className="flex h-full bg-white relative overflow-hidden">
+      {/* Main Chat Area */}
+      <div className={`flex flex-col bg-white relative overflow-hidden transition-all duration-300 ${canvasOpen ? 'w-1/2' : 'w-full'}`}>
       <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-12 flex flex-col items-center" style={{ WebkitOverflowScrolling: 'touch' }}>
         <div className="w-full max-w-3xl space-y-6">
           {messages.length === 0 && (
@@ -237,9 +243,49 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                             const language = match ? match[1] : 'text';
                             const code = String(children).replace(/\n$/, '');
                             const isHtml = language === 'html' || language === 'htm';
+                            const isTsx = language === 'tsx' || language === 'typescript' || language === 'ts';
+                            const isPreviewable = isHtml || (isTsx && (code.includes('export default') || code.includes('function')));
                             const blockId = `${msg.id}-${code.substring(0, 20)}`;
                             const blockState = codeBlockStates[blockId] || {showRendered: false};
                             const isCopied = copiedBlocks[blockId];
+                            
+                            const generatePreviewHtml = () => {
+                              if (isHtml) return code;
+                              
+                              if (isTsx) {
+                                return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/framer-motion@11/dist/framer-motion.js"></script>
+  <script src="https://unpkg.com/lucide-react@0.263.1/dist/umd/lucide-react.js"></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" data-presets="react,typescript">
+    const { motion } = window.Motion || {};
+    const lucide = window.lucideReact || {};
+    
+    ${code.replace(/export default/g, 'const Component =')}
+    
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(React.createElement(Component));
+  </script>
+  <script>
+    window.onerror = function(msg, url, line, col, error) {
+      document.body.innerHTML = '<div style="padding:20px;color:red;font-family:monospace;white-space:pre-wrap;">Error: ' + msg + '\n\nLine: ' + line + '</div>';
+      return true;
+    };
+  </script>
+</body>
+</html>`;
+                              }
+                              return code;
+                            };
                             
                             return (
                               <div className="relative my-2">
@@ -263,33 +309,51 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                   >
                                     <Download size={12} />
                                   </button>
-                                  {isHtml && (
-                                    <button
-                                      onClick={() => setCodeBlockStates(prev => ({
-                                        ...prev,
-                                        [blockId]: {showRendered: !blockState.showRendered}
-                                      }))}
-                                      className="p-1 bg-white border border-black hover:bg-gray-100 text-[10px] font-mono flex items-center gap-1"
-                                      title="Toggle View"
-                                    >
-                                      <Code size={12} />
-                                      {blockState.showRendered ? 'CODE' : 'PREVIEW'}
-                                    </button>
+                                  {isPreviewable && (
+                                    <>
+                                      <button
+                                        onClick={() => {
+                                          setCanvasContent({html: generatePreviewHtml(), code, language});
+                                          setCanvasEditedCode(code);
+                                          setCanvasOpen(true);
+                                          setCanvasShowCode(false);
+                                        }}
+                                        className="p-1 bg-white border border-black hover:bg-gray-100 text-[10px] font-mono flex items-center gap-1"
+                                        title="Open in Canvas"
+                                      >
+                                        <Maximize2 size={12} />
+                                      </button>
+                                      <button
+                                        onClick={() => setCodeBlockStates(prev => ({
+                                          ...prev,
+                                          [blockId]: {showRendered: !blockState.showRendered}
+                                        }))}
+                                        className="p-1 bg-white border border-black hover:bg-gray-100 text-[10px] font-mono flex items-center gap-1"
+                                        title="Toggle View"
+                                      >
+                                        <Code size={12} />
+                                        {blockState.showRendered ? 'CODE' : 'PREVIEW'}
+                                      </button>
+                                    </>
                                   )}
                                 </div>
                                 {blockState.showRendered ? (
                                   <div className="border border-gray-300 bg-white mt-8">
                                     <iframe
-                                      srcDoc={code}
+                                      srcDoc={generatePreviewHtml()}
                                       className="w-full border-0"
                                       style={{ minHeight: '400px', height: 'auto' }}
                                       sandbox="allow-scripts"
-                                      title="HTML Preview"
+                                      title="Preview"
                                       onLoad={(e) => {
                                         const iframe = e.target as HTMLIFrameElement;
                                         if (iframe.contentWindow) {
-                                          const height = iframe.contentWindow.document.body.scrollHeight;
-                                          iframe.style.height = height + 'px';
+                                          try {
+                                            const height = iframe.contentWindow.document.body.scrollHeight;
+                                            iframe.style.height = height + 'px';
+                                          } catch (err) {
+                                            // Cross-origin or error, keep min height
+                                          }
                                         }
                                       }}
                                     />
@@ -550,6 +614,111 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           </form>
         </div>
       </div>
+      </div>
+
+      {/* Canvas Side Panel */}
+      {canvasOpen && canvasContent && (
+        <div className="w-1/2 border-l-2 border-black bg-white flex flex-col">
+          {/* Canvas Header */}
+          <div className="h-14 border-b-2 border-black flex items-center justify-between px-4 bg-white shrink-0">
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold uppercase bg-black text-white px-2 py-1">
+                {canvasContent.language}
+              </span>
+              <span className="text-xs font-mono">CANVAS</span>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setCanvasShowCode(!canvasShowCode)}
+                className="p-1 border border-black hover:bg-gray-100 text-[10px] font-mono flex items-center gap-1"
+              >
+                <Code size={14} />
+                {canvasShowCode ? 'PREVIEW' : 'CODE'}
+              </button>
+              <button
+                onClick={() => setCanvasOpen(false)}
+                className="p-1 border border-black hover:bg-gray-100"
+                title="Close Canvas"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          </div>
+          
+          {/* Canvas Content */}
+          <div className="flex-1 overflow-auto">
+            {canvasShowCode ? (
+              <textarea
+                value={canvasEditedCode}
+                onChange={(e) => {
+                  const newCode = e.target.value;
+                  setCanvasEditedCode(newCode);
+                  
+                  // Generate new preview HTML
+                  let newHtml = '';
+                  if (canvasContent.language === 'html' || canvasContent.language === 'htm') {
+                    newHtml = newCode;
+                  } else {
+                    newHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/framer-motion@11/dist/framer-motion.js"></script>
+  <script src="https://unpkg.com/lucide-react@0.263.1/dist/umd/lucide-react.js"></script>
+  <style>
+    body { margin: 0; padding: 20px; font-family: system-ui, -apple-system, sans-serif; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel" data-presets="react,typescript">
+    try {
+      const { motion } = window.Motion || {};
+      const { createElement: h } = React;
+      const lucide = window.lucideReact || {};
+      
+      ${newCode.replace(/export default/g, 'const Component =').replace(/import .+ from .+;?/g, '')}
+      
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(React.createElement(Component));
+    } catch (err) {
+      document.body.innerHTML = '<div style="padding:20px;color:red;font-family:monospace;white-space:pre-wrap;">Compilation Error:\n\n' + err.message + '</div>';
+    }
+  </script>
+  <script>
+    window.onerror = function(msg, url, line, col, error) {
+      if (msg === 'Script error.' && line === 0) {
+        document.body.innerHTML = '<div style="padding:20px;color:orange;font-family:monospace;white-space:pre-wrap;">Cross-origin error detected.\n\nThis usually means:\n- External imports are not supported\n- Remove any import statements\n- Use only React, Tailwind, Framer Motion, and Lucide icons</div>';
+      } else {
+        document.body.innerHTML = '<div style="padding:20px;color:red;font-family:monospace;white-space:pre-wrap;">Runtime Error:\n\n' + msg + '\n\nLine: ' + line + '</div>';
+      }
+      return true;
+    };
+  </script>
+</body>
+</html>`;
+                  }
+                  
+                  setCanvasContent(prev => prev ? {...prev, html: newHtml, code: newCode} : null);
+                }}
+                className="w-full h-full p-4 text-xs font-mono bg-gray-50 border-0 resize-none focus:outline-none"
+                spellCheck={false}
+              />
+            ) : (
+              <iframe
+                srcDoc={canvasContent.html}
+                className="w-full h-full border-0"
+                sandbox="allow-scripts"
+                title="Canvas Preview"
+              />
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
