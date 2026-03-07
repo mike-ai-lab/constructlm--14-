@@ -2455,11 +2455,166 @@
         
         // ===== DRAG & DROP FUNCTIONALITY =====
         let draggedElement = null;
+        let dragPlaceholder = null;
         let dragOffset = { x: 0, y: 0 };
         let isDragging = false;
         let dragStartPos = { x: 0, y: 0 };
         let hasMoved = false;
+        let affectedParent = null;
+        let originalParentRect = null;
         const DRAG_THRESHOLD = 5;
+        
+        function isDestructiveMove(element) {
+            const parent = element.parentElement;
+            if (!parent) return false;
+            
+            const parentStyle = window.getComputedStyle(parent);
+            const display = parentStyle.display;
+            
+            // Destructive if parent uses flex or grid layout
+            return display === 'flex' || display === 'grid' || display === 'inline-flex' || display === 'inline-grid';
+        }
+        
+        function showDestructiveMoveConfirmation(doc, element, placeholder, parent, originalRect) {
+            // Create overlay on parent
+            const overlay = doc.createElement('div');
+            overlay.style.position = 'absolute';
+            overlay.style.top = '0';
+            overlay.style.left = '0';
+            overlay.style.right = '0';
+            overlay.style.bottom = '0';
+            overlay.style.backgroundColor = 'rgba(255, 87, 34, 0.15)';
+            overlay.style.border = '3px solid #ff5722';
+            overlay.style.zIndex = '10000';
+            overlay.style.pointerEvents = 'none';
+            overlay.className = 'destructive-move-overlay';
+            
+            // Create confirmation panel
+            const panel = doc.createElement('div');
+            panel.style.position = 'absolute';
+            panel.style.top = '50%';
+            panel.style.left = '50%';
+            panel.style.transform = 'translate(-50%, -50%)';
+            panel.style.backgroundColor = '#fff';
+            panel.style.border = '3px solid #ff5722';
+            panel.style.borderRadius = '8px';
+            panel.style.padding = '20px';
+            panel.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
+            panel.style.zIndex = '10001';
+            panel.style.pointerEvents = 'all';
+            panel.style.minWidth = '300px';
+            panel.style.fontFamily = 'monospace';
+            
+            const newRect = parent.getBoundingClientRect();
+            const sizeChanged = Math.abs(newRect.width - originalRect.width) > 1 || Math.abs(newRect.height - originalRect.height) > 1;
+            
+            panel.innerHTML = `
+                <div style="margin-bottom: 15px; font-weight: bold; color: #ff5722; font-size: 16px;">
+                    ⚠️ LAYOUT AFFECTED
+                </div>
+                <div style="margin-bottom: 15px; font-size: 13px; line-height: 1.5;">
+                    Moving this element ${sizeChanged ? 'changed parent size' : 'affected parent layout'}:<br>
+                    <strong>Parent:</strong> ${parent.tagName.toLowerCase()}<br>
+                    ${sizeChanged ? `<strong>Size:</strong> ${Math.round(originalRect.width)}×${Math.round(originalRect.height)} → ${Math.round(newRect.width)}×${Math.round(newRect.height)}` : ''}
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button id="confirmMove" style="flex: 1; padding: 10px; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                        ✓ KEEP MOVE
+                    </button>
+                    <button id="undoMove" style="flex: 1; padding: 10px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                        ✗ UNDO
+                    </button>
+                </div>
+            `;
+            
+            // Make parent position relative if needed
+            const parentComputed = window.getComputedStyle(parent);
+            if (parentComputed.position === 'static') {
+                parent.style.position = 'relative';
+            }
+            
+            parent.appendChild(overlay);
+            parent.appendChild(panel);
+            
+            // Handle confirm
+            panel.querySelector('#confirmMove').addEventListener('click', () => {
+                // Remove visual feedback
+                parent.style.outline = '';
+                parent.style.outlineOffset = '';
+                delete parent.dataset.affectedByDrag;
+                
+                // Remove placeholder
+                if (placeholder && placeholder.parentNode) {
+                    placeholder.parentNode.removeChild(placeholder);
+                }
+                
+                // Remove overlay and panel
+                overlay.remove();
+                panel.remove();
+                
+                // Reset globals
+                dragPlaceholder = null;
+                affectedParent = null;
+                originalParentRect = null;
+                
+                saveState();
+                
+                const indicator = document.getElementById('copyIndicator');
+                indicator.textContent = 'MOVE CONFIRMED!';
+                indicator.style.display = 'block';
+                setTimeout(() => indicator.style.display = 'none', 1500);
+            });
+            
+            // Handle undo
+            panel.querySelector('#undoMove').addEventListener('click', () => {
+                // Restore element to placeholder position
+                if (placeholder && placeholder.parentNode) {
+                    placeholder.parentNode.insertBefore(element, placeholder);
+                }
+                
+                // Restore original styles
+                element.style.position = element.dataset.originalPosition || '';
+                element.style.top = element.dataset.originalTop || '';
+                element.style.left = element.dataset.originalLeft || '';
+                element.style.width = element.dataset.originalWidth || '';
+                element.style.height = element.dataset.originalHeight || '';
+                element.style.margin = element.dataset.originalMargin || '';
+                element.style.zIndex = element.dataset.originalZIndex || '';
+                
+                // Clean up dataset
+                delete element.dataset.originalPosition;
+                delete element.dataset.originalTop;
+                delete element.dataset.originalLeft;
+                delete element.dataset.originalWidth;
+                delete element.dataset.originalHeight;
+                delete element.dataset.originalMargin;
+                delete element.dataset.originalZIndex;
+                
+                // Remove placeholder
+                if (placeholder && placeholder.parentNode) {
+                    placeholder.parentNode.removeChild(placeholder);
+                }
+                
+                // Remove visual feedback
+                parent.style.outline = '';
+                parent.style.outlineOffset = '';
+                delete parent.dataset.affectedByDrag;
+                
+                // Remove overlay and panel
+                overlay.remove();
+                panel.remove();
+                
+                // Reset globals
+                dragPlaceholder = null;
+                affectedParent = null;
+                originalParentRect = null;
+                
+                const indicator = document.getElementById('copyIndicator');
+                indicator.textContent = 'MOVE UNDONE!';
+                indicator.style.display = 'block';
+                setTimeout(() => indicator.style.display = 'none', 1500);
+            });
+        }
         
         function enableDragDrop(doc) {
             doc.body.addEventListener('mousedown', (e) => {
@@ -2492,26 +2647,56 @@
                     isDragging = true;
                     hasMoved = true;
                     
-                    const computed = window.getComputedStyle(draggedElement);
-                    if (computed.position === 'static' || computed.position === 'relative') {
-                        const rect = draggedElement.getBoundingClientRect();
-                        const scrollX = doc.documentElement.scrollLeft || doc.body.scrollLeft;
-                        const scrollY = doc.documentElement.scrollTop || doc.body.scrollTop;
+                    // Check if move is destructive
+                    const isDestructive = isDestructiveMove(draggedElement);
+                    
+                    if (isDestructive) {
+                        affectedParent = draggedElement.parentElement;
+                        originalParentRect = affectedParent.getBoundingClientRect();
                         
-                        draggedElement.dataset.originalPosition = computed.position;
-                        draggedElement.dataset.originalTop = draggedElement.style.top || '';
-                        draggedElement.dataset.originalLeft = draggedElement.style.left || '';
-                        
-                        draggedElement.style.position = 'absolute';
-                        draggedElement.style.left = (rect.left + scrollX) + 'px';
-                        draggedElement.style.top = (rect.top + scrollY) + 'px';
-                        draggedElement.style.width = rect.width + 'px';
-                        draggedElement.style.height = rect.height + 'px';
-                        draggedElement.style.margin = '0';
+                        // Add visual feedback to parent
+                        affectedParent.style.outline = '3px solid #ff5722';
+                        affectedParent.style.outlineOffset = '-3px';
+                        affectedParent.dataset.affectedByDrag = 'true';
                     }
                     
-                    draggedElement.classList.add('dragging');
+                    // Create placeholder to preserve layout
+                    const rect = draggedElement.getBoundingClientRect();
+                    dragPlaceholder = doc.createElement('div');
+                    dragPlaceholder.className = 'drag-placeholder';
+                    dragPlaceholder.style.width = rect.width + 'px';
+                    dragPlaceholder.style.height = rect.height + 'px';
+                    dragPlaceholder.style.backgroundColor = 'rgba(255, 152, 0, 0.2)';
+                    dragPlaceholder.style.border = '2px dashed #ff9800';
+                    dragPlaceholder.style.boxSizing = 'border-box';
+                    dragPlaceholder.style.pointerEvents = 'none';
+                    
+                    // Insert placeholder before element
+                    draggedElement.parentNode.insertBefore(dragPlaceholder, draggedElement);
+                    
+                    // Store original styles
+                    const computed = window.getComputedStyle(draggedElement);
+                    draggedElement.dataset.originalPosition = computed.position;
+                    draggedElement.dataset.originalTop = draggedElement.style.top || '';
+                    draggedElement.dataset.originalLeft = draggedElement.style.left || '';
+                    draggedElement.dataset.originalWidth = draggedElement.style.width || '';
+                    draggedElement.dataset.originalHeight = draggedElement.style.height || '';
+                    draggedElement.dataset.originalMargin = draggedElement.style.margin || '';
+                    draggedElement.dataset.originalZIndex = draggedElement.style.zIndex || '';
+                    
+                    // Make element float above layout
+                    const scrollX = doc.documentElement.scrollLeft || doc.body.scrollLeft;
+                    const scrollY = doc.documentElement.scrollTop || doc.body.scrollTop;
+                    
+                    draggedElement.style.position = 'absolute';
+                    draggedElement.style.left = (rect.left + scrollX) + 'px';
+                    draggedElement.style.top = (rect.top + scrollY) + 'px';
+                    draggedElement.style.width = rect.width + 'px';
+                    draggedElement.style.height = rect.height + 'px';
+                    draggedElement.style.margin = '0';
                     draggedElement.style.zIndex = '9999';
+                    draggedElement.style.opacity = '0.8';
+                    draggedElement.classList.add('dragging');
                 }
                 
                 if (!isDragging) return;
@@ -2537,15 +2722,31 @@
                 if (isDragging) {
                     isDragging = false;
                     draggedElement.classList.remove('dragging');
+                    draggedElement.style.opacity = '';
                     
-                    saveState();
+                    // Check if this was a destructive move
+                    const wasDestructive = affectedParent !== null;
                     
-                    const indicator = document.getElementById('copyIndicator');
-                    indicator.textContent = 'ELEMENT MOVED!';
-                    indicator.style.display = 'block';
-                    setTimeout(() => indicator.style.display = 'none', 1500);
+                    if (wasDestructive) {
+                        // Show custom confirmation overlay on affected parent
+                        showDestructiveMoveConfirmation(doc, draggedElement, dragPlaceholder, affectedParent, originalParentRect);
+                    } else {
+                        // Non-destructive move - just apply it
+                        if (dragPlaceholder && dragPlaceholder.parentNode) {
+                            dragPlaceholder.parentNode.removeChild(dragPlaceholder);
+                        }
+                        dragPlaceholder = null;
+                        
+                        saveState();
+                        
+                        const indicator = document.getElementById('copyIndicator');
+                        indicator.textContent = 'ELEMENT MOVED!';
+                        indicator.style.display = 'block';
+                        setTimeout(() => indicator.style.display = 'none', 1500);
+                    }
                 }
                 
+                draggedElement = null;
                 draggedElement = null;
             }, true);
             
@@ -2553,7 +2754,24 @@
                 if (isDragging && draggedElement) {
                     isDragging = false;
                     draggedElement.classList.remove('dragging');
+                    draggedElement.style.opacity = '';
+                    
+                    // Clean up affected parent visual feedback
+                    if (affectedParent) {
+                        affectedParent.style.outline = '';
+                        affectedParent.style.outlineOffset = '';
+                        delete affectedParent.dataset.affectedByDrag;
+                    }
+                    
+                    // Clean up placeholder
+                    if (dragPlaceholder && dragPlaceholder.parentNode) {
+                        dragPlaceholder.parentNode.removeChild(dragPlaceholder);
+                    }
+                    
+                    dragPlaceholder = null;
                     draggedElement = null;
+                    affectedParent = null;
+                    originalParentRect = null;
                 }
             });
         }
