@@ -18,12 +18,15 @@ ConstructLM is a privacy-first RAG (Retrieval-Augmented Generation) workspace th
 - Chat session management with history
 - In-app API key configuration
 - Responsive design (desktop + mobile)
-- Interactive code canvas with production-grade runtime bundler
+- Interactive code canvas with production-grade runtime bundler v2
+  - esbuild-wasm compilation (4x faster than Babel)
   - Renders React/TSX/JSX components with full import resolution
+  - Imperative DOM bridge for canvas 2D and native APIs
   - Handles malformed imports and syntax errors gracefully
   - Live preview with code editing and version history
   - Supports Framer Motion, Wouter, Lucide React, Tailwind CSS
   - Intelligent mock components for missing dependencies
+  - Dependency mapping layer for extensibility
 
 ## User Flow
 

@@ -15,6 +15,7 @@
 - **pdfjs-dist**: PDF parsing and text extraction
 - **react-markdown**: Markdown rendering with GitHub Flavored Markdown (remark-gfm)
 - **rehype-raw**: HTML support in markdown
+- **esbuild-wasm**: Ultra-fast TypeScript/JSX compilation in browser (canvas v2)
 
 ## AI Services
 

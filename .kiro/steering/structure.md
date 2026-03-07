@@ -47,12 +47,16 @@ Services are organized by domain:
 - **geminiService/cerebrasService**: API integrations with streaming support
 - **chatStorage**: Chat session persistence in localStorage
 - **pdfParser**: File parsing utilities
-- **runtimeBundler**: Production-grade TSX/JSX compilation with import resolution
+- **runtimeBundler**: Production-grade TSX/JSX compilation with import resolution (v2)
+  - esbuild-wasm compilation engine (4x faster than Babel)
   - Line-by-line import parsing and removal
   - Handles malformed imports and syntax errors
+  - Dependency mapping layer for library resolution
   - Intelligent mock component injection
   - Identifier validation and deduplication
-  - Babel transpilation in isolated iframe sandbox
+  - Imperative DOM bridge for canvas 2D context
+  - Dual execution modes: React components + native DOM code
+  - Isolated iframe sandbox with error boundaries
 
 ### Data Flow
 
@@ -63,7 +67,9 @@ Services are organized by domain:
 5. Top chunks retrieved → passed to AI service
 6. AI streams response → UI updates incrementally
 7. Code blocks detected → runtimeBundler.generateBundledPreview()
-8. User opens canvas → Component rendered in isolated iframe
+8. Code type detection → React component OR imperative DOM code
+9. esbuild-wasm compilation (30-50ms)
+10. User opens canvas → Component/code rendered in isolated iframe with DOM bridge
 
 ## File Naming Conventions
 

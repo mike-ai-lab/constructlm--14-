@@ -1,0 +1,3089 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Muhamad's Design Studio: Inspector & Editor</title>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root { --panel-bg: #1e1e1e; --accent: #ff9800; --text: #eee; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; display: flex; height: 100vh; background: #121212; color: var(--text); overflow: hidden; }
+        
+        /* Layout */
+        #main { flex-grow: 1; display: flex; flex-direction: column; min-width: 0; }
+        #sidebar { width: 320px; min-width: 320px; max-width: 320px; background: var(--panel-bg); border-left: 2px solid #333; padding: 15px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; transition: margin-right 0.3s; }
+        #sidebar.collapsed { margin-right: -320px; }
+        
+        /* Paste Code Panel */
+        #pasteCodePanel { display: none; flex-direction: column; gap: 10px; margin-bottom: 15px; padding: 15px; background: #2b2b2b; border-radius: 6px; border: 1px solid #444; }
+        #pasteCodePanel.active { display: flex; }
+        #pasteCodePanel h4 { margin: 0 0 10px 0; color: var(--accent); font-size: 13px; }
+        #pasteCodeTextarea { flex: 1; min-height: 200px; max-height: 300px; padding: 10px; background: #1e1e1e; border: 1px solid #444; color: white; border-radius: 4px; font-family: 'Monaco', 'Menlo', 'Courier New', monospace; font-size: 12px; resize: vertical; }
+        #pasteCodeTextarea:focus { outline: none; border-color: var(--accent); }
+        #pasteCodeActions { display: flex; gap: 8px; }
+        #pasteCodeRenderBtn { flex: 1; padding: 8px; background: var(--accent); color: black; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; }
+        #pasteCodeRenderBtn:hover { opacity: 0.9; }
+        #pasteCodeClearBtn { flex: 1; padding: 8px; background: #d32f2f; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; }
+        #pasteCodeClearBtn:hover { opacity: 0.9; }
+        #togglePasteCodeBtn { padding: 8px; background: #3b3b3b; color: white; border: 1px solid #555; border-radius: 4px; cursor: pointer; font-size: 12px; }
+        #togglePasteCodeBtn:hover { background: #4b4b4b; }
+        
+        /* Compact Controls */
+        #toolbar { padding: 6px 10px; background: var(--panel-bg); border-bottom: 1px solid #333; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 13px; }
+        .toolbar-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .icon-btn { background: #2b2b2b; border: 1px solid #444; color: white; padding: 4px 8px; border-radius: 3px; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; font-size: 12px; }
+        .icon-btn:hover { background: #3b3b3b; }
+        .icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .icon-btn svg { width: 14px; height: 14px; }
+        #urlInput { min-width: 200px; flex: 1; font-size: 12px; padding: 4px 6px; }
+        #baseUrl { min-width: 120px; font-size: 12px; padding: 4px 6px; }
+        #fileInput { font-size: 12px; }
+        #viewer { flex-grow: 1; width: 100%; border: none; background: white; }
+        
+        /* Collapse Button */
+        #collapseBtn { position: absolute; top: 10px; right: 10px; z-index: 1000; background: var(--accent); color: black; border: none; padding: 6px; border-radius: 3px; cursor: pointer; }
+        #collapseBtn:hover { opacity: 0.8; }
+        
+        /* Editor UI */
+        .section-header { 
+            background: #2b2b2b; 
+            color: var(--accent); 
+            padding: 8px 10px; 
+            font-size: 11px; 
+            font-weight: bold; 
+            border-radius: 3px; 
+            margin: 10px 0 8px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .section-separator { 
+            height: 2px; 
+            background: linear-gradient(to right, transparent, #444, transparent); 
+            margin: 15px 0; 
+        }
+        .editor-group { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 5px; 
+            margin-bottom: 10px; 
+        }
+        label { 
+            font-size: 10px; 
+            color: #aaa; 
+            text-transform: uppercase; 
+            font-weight: bold; 
+        }
+        input, select { 
+            background: #2b2b2b; 
+            border: 1px solid #444; 
+            color: white; 
+            padding: 6px; 
+            border-radius: 3px; 
+            font-size: 12px; 
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        #copyIndicator { 
+            background: #2e7d32; 
+            color: white; 
+            padding: 8px; 
+            border-radius: 3px; 
+            text-align: center; 
+            display: none; 
+            margin-top: 8px; 
+            font-size: 12px; 
+        }
+        
+        .empty-state { 
+            color: #666; 
+            font-style: italic; 
+            text-align: center; 
+            margin-top: 50px; 
+            font-size: 13px; 
+        }
+        
+        .action-btn { 
+            border: none; 
+            padding: 10px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            border-radius: 3px; 
+            margin-top: 5px; 
+            font-size: 12px; 
+        }
+        .action-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.active {
+            display: flex;
+        }
+        .modal-content {
+            background: var(--panel-bg);
+            padding: 25px;
+            border-radius: 8px;
+            max-width: 400px;
+            width: 90%;
+            border: 2px solid #444;
+        }
+        .modal-content h3 {
+            margin: 0 0 20px 0;
+            color: var(--accent);
+            font-size: 18px;
+        }
+        .style-categories {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .style-categories label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #eee;
+            font-size: 13px;
+            cursor: pointer;
+            text-transform: none;
+            font-weight: normal;
+        }
+        .style-categories input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .modal-btn {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #444;
+            background: #2b2b2b;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .modal-btn:hover {
+            background: #3b3b3b;
+        }
+        .modal-btn.primary {
+            background: var(--accent);
+            color: black;
+            border-color: var(--accent);
+        }
+        .modal-btn.primary:hover {
+            opacity: 0.9;
+        }
+        
+        /* Clipboard History Styles */
+        .history-item {
+            background: #2b2b2b;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .history-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .history-item-name {
+            color: var(--accent);
+            font-weight: bold;
+            font-size: 12px;
+            flex: 1;
+            cursor: pointer;
+        }
+        .history-item-name:hover {
+            text-decoration: underline;
+        }
+        .history-item-preview {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            font-size: 10px;
+            color: #aaa;
+        }
+        .history-item-tag {
+            background: #3b3b3b;
+            padding: 2px 6px;
+            border-radius: 3px;
+            border: 1px solid #555;
+        }
+        .history-item-actions {
+            display: flex;
+            gap: 5px;
+        }
+        .history-item-btn {
+            padding: 4px 8px;
+            font-size: 10px;
+            background: #3b3b3b;
+            border: 1px solid #555;
+            color: white;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .history-item-btn:hover {
+            background: #4b4b4b;
+        }
+        .history-item-btn.paste {
+            background: #673ab7;
+            border-color: #673ab7;
+        }
+        .history-item-btn.delete {
+            background: #d32f2f;
+            border-color: #d32f2f;
+        }
+        
+        /* Batch Paste Mode */
+        .batch-mode-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #673ab7, #9c27b0);
+            color: white;
+            padding: 15px;
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            animation: slideDown 0.3s ease;
+        }
+        .batch-mode-banner.active {
+            display: flex;
+        }
+        @keyframes slideDown {
+            from { transform: translateY(-100%); }
+            to { transform: translateY(0); }
+        }
+        .batch-mode-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .batch-mode-counter {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        .batch-mode-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .batch-mode-btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .batch-mode-btn.done {
+            background: #4caf50;
+            color: white;
+        }
+        .batch-mode-btn.undo {
+            background: #ff9800;
+            color: white;
+        }
+        .batch-mode-btn.cancel {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+        
+        /* Compatibility Warning */
+        .compat-warning {
+            background: #ff9800;
+            color: black;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 12px;
+            display: none;
+        }
+        .compat-warning.show {
+            display: block;
+        }
+        .compat-warning strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+        
+        /* Drag & Drop Styles */
+        .dragging {
+            opacity: 0.8;
+            cursor: move !important;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3) !important;
+            transition: none !important;
+        }
+        
+        /* Locked Element Styles */
+        .locked-element {
+            outline: 2px dashed #ff5722 !important;
+            outline-offset: -2px;
+        }
+        
+        /* Multi-Select Styles */
+        .multi-selected {
+            outline: 3px solid #2196f3 !important;
+            outline-offset: -3px;
+            background: rgba(33, 150, 243, 0.1) !important;
+        }
+        
+        /* Drag Selection Box */
+        .drag-select-box {
+            position: fixed;
+            border: 2px solid #2196f3;
+            background: rgba(33, 150, 243, 0.2);
+            z-index: 10001;
+            pointer-events: none;
+        }
+        
+        /* Grouped Elements */
+        .grouped-element {
+            outline: 2px solid #9c27b0 !important;
+            outline-offset: -2px;
+        }
+        .group-container {
+            outline: 3px solid #9c27b0 !important;
+            outline-offset: 2px;
+            position: relative;
+        }
+        .group-container::before {
+            content: '📦 GROUP';
+            position: absolute;
+            top: -20px;
+            left: 0;
+            background: #9c27b0;
+            color: white;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 3px;
+            z-index: 10000;
+            pointer-events: none;
+        }
+        
+        /* Multi-Select Mode Banner */
+        .multiselect-mode-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #2196f3, #1976d2);
+            color: white;
+            padding: 15px;
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            animation: slideDown 0.3s ease;
+        }
+        .multiselect-mode-banner.active {
+            display: flex;
+        }
+        .multiselect-mode-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .multiselect-mode-counter {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        .multiselect-mode-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .multiselect-mode-btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .multiselect-mode-btn.distribute {
+            background: #4caf50;
+            color: white;
+        }
+        .multiselect-mode-btn.clear {
+            background: #ff9800;
+            color: white;
+        }
+        .multiselect-mode-btn.cancel {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+        
+        /* Distribute Modal */
+        .distribute-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .distribute-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .distribute-input {
+            flex: 1;
+            padding: 8px;
+            background: #2b2b2b;
+            border: 1px solid #444;
+            color: white;
+            border-radius: 4px;
+        }
+        
+        /* Arrange Mode Styles */
+        .arrange-mode-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #0288d1, #0277bd);
+            color: white;
+            padding: 15px;
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            animation: slideDown 0.3s ease;
+        }
+        .arrange-mode-banner.active {
+            display: flex;
+        }
+        .arrange-mode-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .arrange-mode-counter {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+        .arrange-mode-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .arrange-mode-btn {
+            padding: 8px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        .arrange-mode-btn.done {
+            background: #4caf50;
+            color: white;
+        }
+        .arrange-mode-btn.undo {
+            background: #ff9800;
+            color: white;
+        }
+        .arrange-mode-btn.cancel {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+        
+        /* Arrange hover effect */
+        .arrange-hover {
+            outline: 3px solid #0288d1 !important;
+            outline-offset: 2px;
+            background: rgba(2, 136, 209, 0.1) !important;
+        }
+        
+        /* Arrange applied effect */
+        .arrange-applied {
+            outline: 3px solid #4caf50 !important;
+            outline-offset: 2px;
+            animation: arrangeFlash 0.5s ease;
+        }
+        
+        @keyframes arrangeFlash {
+            0%, 100% { background: transparent; }
+            50% { background: rgba(76, 175, 80, 0.3); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="main">
+        <div id="toolbar">
+            <input type="file" id="fileInput" accept=".html">
+            <input type="file" id="cssInput" accept=".css" multiple style="display:none;">
+            <button id="browseCssBtn" class="icon-btn">
+                <i data-lucide="folder"></i> Browse CSS
+            </button>
+            <input type="text" id="baseUrl" placeholder="Paste folder path OR browse CSS files" title="You can paste a folder path here">
+            <button id="reloadBtn" class="icon-btn" style="background: #2e7d32;" disabled>
+                <i data-lucide="refresh-cw"></i> Reload
+            </button>
+            <button id="clearBtn" class="icon-btn" style="background: #d32f2f;">
+                <i data-lucide="x"></i> Clear
+            </button>
+            <button id="undoBtn" class="icon-btn" disabled>
+                <i data-lucide="undo"></i>
+            </button>
+            <button id="redoBtn" class="icon-btn" disabled>
+                <i data-lucide="redo"></i>
+            </button>
+        </div>
+        <iframe id="viewer"></iframe>
+    </div>
+
+    <div id="sidebar">
+        <button id="collapseBtn">
+            <i data-lucide="chevron-right"></i>
+        </button>
+        <h3>Element Editor</h3>
+        
+        <!-- Paste Code Panel -->
+        <div id="pasteCodePanel">
+            <h4>📝 Paste Code</h4>
+            <textarea id="pasteCodeTextarea" placeholder="Paste HTML, CSS, or JavaScript code here..."></textarea>
+            <div id="pasteCodeActions">
+                <button id="pasteCodeRenderBtn">Render</button>
+                <button id="pasteCodeClearBtn">Clear</button>
+            </div>
+        </div>
+        
+        <button id="togglePasteCodeBtn">+ Paste Code</button>
+        
+        <div id="editorUI" style="display:none; flex-direction: column;">
+            <!-- SECTION: TEXT & CONTENT -->
+            <div class="section-header">📝 TEXT & CONTENT</div>
+            <div class="editor-group">
+                <label>Text Content</label>
+                <input type="text" id="propText">
+            </div>
+            
+            <div class="section-separator"></div>
+            
+            <!-- SECTION: TYPOGRAPHY -->
+            <div class="section-header">🔤 TYPOGRAPHY</div>
+            <div class="editor-group">
+                <label>Font Family</label>
+                <select id="propFontFamily">
+                    <option value="inherit">Inherit</option>
+                    <option value="Arial, sans-serif">Arial</option>
+                    <option value="'Segoe UI', Tahoma, sans-serif">Segoe UI</option>
+                    <option value="'Times New Roman', serif">Times New Roman</option>
+                    <option value="Georgia, serif">Georgia</option>
+                    <option value="'Courier New', monospace">Courier New</option>
+                    <option value="Verdana, sans-serif">Verdana</option>
+                </select>
+            </div>
+            <div class="editor-group">
+                <label>Font Size (px)</label>
+                <input type="number" id="propFontSize">
+            </div>
+            <div class="editor-group">
+                <label>Font Weight</label>
+                <select id="propFontWeight">
+                    <option value="normal">Normal</option>
+                    <option value="bold">Bold</option>
+                    <option value="lighter">Lighter</option>
+                    <option value="100">100</option>
+                    <option value="300">300</option>
+                    <option value="500">500</option>
+                    <option value="700">700</option>
+                    <option value="900">900</option>
+                </select>
+            </div>
+            <div class="editor-group">
+                <label>Text Align</label>
+                <select id="propTextAlign">
+                    <option value="left">Left</option>
+                    <option value="center">Center</option>
+                    <option value="right">Right</option>
+                    <option value="justify">Justify</option>
+                </select>
+            </div>
+            
+            <div class="section-separator"></div>
+            
+            <!-- SECTION: COLORS -->
+            <div class="section-header">🎨 COLORS</div>
+            <div class="editor-group">
+                <label>Text Color</label>
+                <input type="color" id="propColor">
+            </div>
+            <div class="editor-group">
+                <label>Background Color</label>
+                <input type="color" id="propBg">
+            </div>
+            
+            <div class="section-separator"></div>
+            
+            <!-- SECTION: SPACING -->
+            <div class="section-header">📏 SPACING</div>
+            <div class="editor-group">
+                <label>Padding (px)</label>
+                <input type="number" id="propPadding">
+            </div>
+            <div class="editor-group">
+                <label>Margin (px)</label>
+                <input type="number" id="propMargin">
+            </div>
+            
+            <div class="section-separator"></div>
+            
+            <!-- SECTION: DIMENSIONS -->
+            <div class="section-header">📐 DIMENSIONS</div>
+            <div class="editor-group">
+                <label>Width (px or auto)</label>
+                <input type="text" id="propWidth" placeholder="auto">
+            </div>
+            <div class="editor-group">
+                <label>Height (px or auto)</label>
+                <input type="text" id="propHeight" placeholder="auto">
+            </div>
+            <div class="editor-group">
+                <label>Display</label>
+                <select id="propDisplay">
+                    <option value="block">Block</option>
+                    <option value="inline">Inline</option>
+                    <option value="inline-block">Inline Block</option>
+                    <option value="flex">Flex</option>
+                    <option value="none">None (Hide)</option>
+                </select>
+            </div>
+            
+            <div class="section-separator"></div>
+            
+            <!-- SECTION: BORDER -->
+            <div class="section-header">🔲 BORDER</div>
+            <div class="editor-group">
+                <label>Border Width (px)</label>
+                <input type="number" id="propBorderWidth" min="0">
+            </div>
+            <div class="editor-group">
+                <label>Border Style</label>
+                <select id="propBorderStyle">
+                    <option value="none">None</option>
+                    <option value="solid">Solid</option>
+                    <option value="dashed">Dashed</option>
+                    <option value="dotted">Dotted</option>
+                    <option value="double">Double</option>
+                </select>
+            </div>
+            <div class="editor-group">
+                <label>Border Color</label>
+                <input type="color" id="propBorderColor">
+            </div>
+            <div class="editor-group">
+                <label>Border Radius (px)</label>
+                <input type="number" id="propBorderRadius" min="0">
+            </div>
+            
+            <div class="section-separator"></div>
+            
+            <!-- SECTION: ARRANGE (Z-INDEX) -->
+            <div class="section-header">📚 ARRANGE (LAYERING)</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
+                <button id="bringToFrontBtn" class="action-btn" style="background: #1976d2; color: white; padding: 8px; font-size: 11px;">
+                    ⬆️ To Front
+                </button>
+                <button id="bringForwardBtn" class="action-btn" style="background: #1976d2; color: white; padding: 8px; font-size: 11px;">
+                    ↑ Forward
+                </button>
+                <button id="sendBackwardBtn" class="action-btn" style="background: #1976d2; color: white; padding: 8px; font-size: 11px;">
+                    ↓ Backward
+                </button>
+                <button id="sendToBackBtn" class="action-btn" style="background: #1976d2; color: white; padding: 8px; font-size: 11px;">
+                    ⬇️ To Back
+                </button>
+            </div>
+            <button id="bringAboveElementBtn" class="action-btn" style="background: #0288d1; color: white; margin-top: 5px;">
+                🎯 BRING ABOVE ELEMENT
+            </button>
+            
+            <div class="section-separator"></div>
+            
+            <!-- SECTION: ACTIONS -->
+            <div class="section-header">⚡ ACTIONS</div>
+            <button id="lockBtn" class="action-btn" style="background: #ff5722; color: white;">
+                🔒 LOCK ELEMENT
+            </button>
+            <button id="groupBtn" class="action-btn" style="background: #9c27b0; color: white; display: none;">
+                📦 GROUP SELECTED
+            </button>
+            <button id="ungroupBtn" class="action-btn" style="background: #9c27b0; color: white; display: none;">
+                📦 UNGROUP
+            </button>
+            <button id="multiSelectBtn" class="action-btn" style="background: #2196f3; color: white;">
+                ☑️ MULTI-SELECT MODE
+            </button>
+            <button id="copyStyleBtn" class="action-btn" style="background: #9c27b0; color: white;">
+                🎨 COPY STYLE
+            </button>
+            <button id="pasteStyleBtn" class="action-btn" style="background: #673ab7; color: white; display: none;">
+                📋 PASTE STYLE
+            </button>
+            <button id="deleteBtn" class="action-btn" style="background: #d32f2f; color: white;">
+                �️ DELETE
+            </button>
+            <button id="copyBtn" class="action-btn" style="background: var(--accent); color: black;">
+                📋 COPY HTML
+            </button>
+            <button id="duplicateBtn" class="action-btn" style="background: #9c27b0; color: white;">
+                📑 DUPLICATE
+            </button>
+            <button id="groupSelectedBtn" class="action-btn" style="background: #673ab7; color: white; display: none;">
+                📦 GROUP SELECTED
+            </button>
+            <button id="ungroupBtn" class="action-btn" style="background: #673ab7; color: white; display: none;">
+                📦 UNGROUP
+            </button>
+            <button id="ungroupElementsBtn" class="action-btn" style="background: #673ab7; color: white; display: none;">
+                📦 UNWRAP GROUP
+            </button>
+            <button id="exportBtn" class="action-btn" style="background: #2e7d32; color: white;">
+                💾 EXPORT
+            </button>
+            <div id="copyIndicator">COPIED!</div>
+        </div>
+        
+        <!-- Style Clipboard History Panel -->
+        <div id="clipboardHistory" style="display:none; flex-direction: column;">
+            <div class="section-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <span>📋 STYLE CLIPBOARD (<span id="historyCount">0</span>)</span>
+                <button id="toggleHistoryBtn" style="background: none; border: none; color: var(--accent); cursor: pointer; font-size: 16px;">▼</button>
+            </div>
+            <div id="historyList" style="display: flex; flex-direction: column; gap: 10px; max-height: 300px; overflow-y: auto;">
+                <!-- History items will be added here -->
+            </div>
+        </div>
+        
+        <div id="emptyMsg" class="empty-state">Click an element to edit</div>
+    </div>
+
+    <!-- Copy Style Modal -->
+    <div id="copyStyleModal" class="modal">
+        <div class="modal-content">
+            <h3>📋 Copy Styles From Element</h3>
+            <div class="style-categories">
+                <label><input type="checkbox" id="cat-colors" checked> Colors (text, background)</label>
+                <label><input type="checkbox" id="cat-typography" checked> Typography (font, size, weight)</label>
+                <label><input type="checkbox" id="cat-spacing" checked> Spacing (padding, margin)</label>
+                <label><input type="checkbox" id="cat-dimensions" checked> Dimensions (width, height)</label>
+                <label><input type="checkbox" id="cat-border" checked> Border (width, style, color)</label>
+                <label><input type="checkbox" id="cat-radius" checked> Border Radius (corners)</label>
+                <label><input type="checkbox" id="cat-display" checked> Display & Alignment</label>
+            </div>
+            <div class="modal-actions">
+                <button id="selectAllBtn" class="modal-btn">Select All</button>
+                <button id="selectNoneBtn" class="modal-btn">Select None</button>
+            </div>
+            <div class="modal-actions">
+                <button id="copySelectedBtn" class="modal-btn primary">Copy Selected</button>
+                <button id="cancelCopyBtn" class="modal-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Paste Style Modal -->
+    <div id="pasteStyleModal" class="modal">
+        <div class="modal-content">
+            <h3>📋 Paste Styles To Element</h3>
+            <p style="color: #aaa; font-size: 12px; margin-bottom: 15px;">Select which properties to paste:</p>
+            
+            <!-- Compatibility Warning -->
+            <div id="compatWarning" class="compat-warning">
+                <strong>⚠️ Compatibility Warning:</strong>
+                <span id="compatMessage"></span>
+            </div>
+            
+            <div id="pasteCategories" class="style-categories">
+                <!-- Dynamically populated -->
+            </div>
+            <div class="modal-actions">
+                <button id="pasteSelectedBtn" class="modal-btn primary">Paste Selected</button>
+                <button id="pasteAllBtn" class="modal-btn">Paste All</button>
+                <button id="batchPasteBtn" class="modal-btn" style="background: #9c27b0; color: white;">Batch Paste</button>
+                <button id="cancelPasteBtn" class="modal-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Batch Paste Mode Banner -->
+    <div id="batchModeBanner" class="batch-mode-banner">
+        <div class="batch-mode-info">
+            <span style="font-size: 20px;">📋</span>
+            <div>
+                <div style="font-weight: bold;">BATCH PASTE MODE</div>
+                <div style="font-size: 12px; opacity: 0.9;">Click elements to paste style</div>
+            </div>
+            <div class="batch-mode-counter">
+                <span id="batchCounter">0</span> elements
+            </div>
+        </div>
+        <div class="batch-mode-actions">
+            <button class="batch-mode-btn undo" id="batchUndoBtn">↶ Undo Last</button>
+            <button class="batch-mode-btn done" id="batchDoneBtn">✓ Done</button>
+            <button class="batch-mode-btn cancel" id="batchCancelBtn">✗ Cancel</button>
+        </div>
+    </div>
+
+    <!-- Arrange Mode Banner -->
+    <div id="arrangeModeBanner" class="arrange-mode-banner">
+        <div class="arrange-mode-info">
+            <span style="font-size: 20px;">📚</span>
+            <div>
+                <div style="font-weight: bold;">ARRANGE MODE</div>
+                <div style="font-size: 12px; opacity: 0.9;">Click elements to bring selected element above them</div>
+            </div>
+            <div class="arrange-mode-counter">
+                <span id="arrangeCounter">0</span> arranged
+            </div>
+        </div>
+        <div class="arrange-mode-actions">
+            <button class="arrange-mode-btn undo" id="arrangeUndoBtn">↶ Undo Last</button>
+            <button class="arrange-mode-btn done" id="arrangeDoneBtn">✓ Done</button>
+            <button class="arrange-mode-btn cancel" id="arrangeCancelBtn">✗ Cancel</button>
+        </div>
+    </div>
+
+    <!-- Multi-Select Mode Banner -->
+    <div id="multiselectModeBanner" class="multiselect-mode-banner">
+        <div class="multiselect-mode-info">
+            <span style="font-size: 20px;">☑️</span>
+            <div>
+                <div style="font-weight: bold;">MULTI-SELECT MODE</div>
+                <div style="font-size: 12px; opacity: 0.9;">Click elements to select multiple (Ctrl+Click to toggle)</div>
+            </div>
+            <div class="multiselect-mode-counter">
+                <span id="multiselectCounter">0</span> selected
+            </div>
+        </div>
+        <div class="multiselect-mode-actions">
+            <button class="multiselect-mode-btn distribute" id="distributeBtn">📐 Distribute</button>
+            <button class="multiselect-mode-btn clear" id="clearSelectionBtn">Clear</button>
+            <button class="multiselect-mode-btn cancel" id="multiselectCancelBtn">✗ Exit</button>
+        </div>
+    </div>
+
+    <!-- Distribute Modal -->
+    <div id="distributeModal" class="modal">
+        <div class="modal-content">
+            <h3>📐 Distribute Elements</h3>
+            <p style="color: #aaa; font-size: 12px; margin-bottom: 15px;">
+                Selected: <span id="distributeCount">0</span> elements
+            </p>
+            
+            <div class="distribute-controls">
+                <div class="distribute-row">
+                    <label style="width: 120px;">Direction:</label>
+                    <select id="distributeDirection" class="distribute-input">
+                        <option value="horizontal">Horizontal (→)</option>
+                        <option value="vertical">Vertical (↓)</option>
+                    </select>
+                </div>
+                
+                <div class="distribute-row">
+                    <label style="width: 120px;">Gap (px):</label>
+                    <input type="number" id="distributeGap" class="distribute-input" value="50" min="0" max="1000">
+                </div>
+                
+                <div class="distribute-row">
+                    <label style="width: 120px;">Alignment:</label>
+                    <select id="distributeAlign" class="distribute-input">
+                        <option value="start">Start</option>
+                        <option value="center">Center</option>
+                        <option value="end">End</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button id="applyDistributeBtn" class="modal-btn primary">Apply Distribution</button>
+                <button id="cancelDistributeBtn" class="modal-btn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const viewer = document.getElementById('viewer');
+        const editorUI = document.getElementById('editorUI');
+        const emptyMsg = document.getElementById('emptyMsg');
+        let selectedElement = null;
+        let lastLoadedHTML = null;
+        let lastLoadedFilePath = null;
+        let loadedCSSFiles = []; // Store multiple CSS files
+        let copiedStyles = null; // Store copied styles with categories
+        let styleClipboardHistory = []; // Store last 10 copied styles
+        const MAX_CLIPBOARD_HISTORY = 10;
+        let batchPasteMode = false;
+        let batchPastedElements = [];
+        let arrangeMode = false;
+        let arrangeTargetElement = null; // The element we want to bring above others
+        let arrangedElements = []; // Track arranged elements for undo
+        let multiSelectMode = false;
+        let selectedElements = []; // Track multiple selected elements
+        let lockedElements = new Set(); // Track locked elements
+        let groups = new Map(); // Track grouped elements: groupId -> [elements]
+        let groupIdCounter = 0;
+        let isDragSelecting = false;
+        let dragSelectBox = null;
+        let dragSelectStart = { x: 0, y: 0 };
+        let history = [];
+        let historyIndex = -1;
+        const MAX_HISTORY = 50;
+
+        function saveState() {
+            const doc = viewer.contentWindow.document;
+            if (!doc.body) return;
+            
+            const state = doc.documentElement.outerHTML;
+            
+            // Remove future states if we're not at the end
+            if (historyIndex < history.length - 1) {
+                history = history.slice(0, historyIndex + 1);
+            }
+            
+            history.push(state);
+            if (history.length > MAX_HISTORY) {
+                history.shift();
+            } else {
+                historyIndex++;
+            }
+            
+            updateHistoryButtons();
+            saveToLocalStorage();
+        }
+
+        function undo() {
+            if (historyIndex > 0) {
+                historyIndex--;
+                restoreState(history[historyIndex]);
+                updateHistoryButtons();
+            }
+        }
+
+        function redo() {
+            if (historyIndex < history.length - 1) {
+                historyIndex++;
+                restoreState(history[historyIndex]);
+                updateHistoryButtons();
+            }
+        }
+
+        function restoreState(html) {
+            const doc = viewer.contentWindow.document;
+            doc.open();
+            doc.write(html);
+            doc.close();
+            setTimeout(() => initInspector(doc), 200);
+        }
+
+        function updateHistoryButtons() {
+            document.getElementById('undoBtn').disabled = historyIndex <= 0;
+            document.getElementById('redoBtn').disabled = historyIndex >= history.length - 1;
+        }
+
+        // LocalStorage persistence
+        function saveToLocalStorage() {
+            try {
+                localStorage.setItem('htmlInspector_history', JSON.stringify(history));
+                localStorage.setItem('htmlInspector_index', historyIndex);
+            } catch (e) {
+                console.warn('Failed to save to localStorage:', e);
+            }
+        }
+
+        function loadFromLocalStorage() {
+            try {
+                const savedHistory = localStorage.getItem('htmlInspector_history');
+                const savedIndex = localStorage.getItem('htmlInspector_index');
+                
+                if (savedHistory) {
+                    history = JSON.parse(savedHistory);
+                    historyIndex = parseInt(savedIndex) || 0;
+                    
+                    if (history.length > 0) {
+                        restoreState(history[historyIndex]);
+                        updateHistoryButtons();
+                    }
+                }
+            } catch (e) {
+                console.warn('Failed to load from localStorage:', e);
+            }
+        }
+
+        // Undo/Redo buttons - will be set up after DOM loads
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'z' && !e.shiftKey) {
+                e.preventDefault();
+                undo();
+            } else if (e.ctrlKey && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+                e.preventDefault();
+                redo();
+            }
+        });
+
+        // 1. Load HTML from file
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                lastLoadedHTML = event.target.result;
+                loadHTMLWithResources(lastLoadedHTML);
+                document.getElementById('reloadBtn').disabled = false;
+            };
+            reader.readAsText(file);
+        });
+
+        // Function to load HTML with base URL
+        function loadHTMLWithBase(originalHTML) {
+            let html = originalHTML;
+            let base = document.getElementById('baseUrl').value.trim();
+            
+            // Normalize Windows paths to file:// URLs
+            if(base) {
+                // Convert backslashes to forward slashes
+                base = base.replace(/\\/g, '/');
+                
+                // Add file:// protocol if it's a local path
+                if (!base.startsWith('http://') && !base.startsWith('https://') && !base.startsWith('file://')) {
+                    // Remove drive letter colon if present (C: -> C)
+                    if (base.match(/^[a-zA-Z]:/)) {
+                        base = 'file:///' + base;
+                    } else {
+                        base = 'file://' + base;
+                    }
+                }
+                
+                // Ensure trailing slash
+                if (!base.endsWith('/')) {
+                    base += '/';
+                }
+                
+                // Insert base tag (case-insensitive)
+                html = html.replace(/(<head[^>]*>)/i, `$1<base href="${base}">`);
+            }
+            
+            const doc = viewer.contentWindow.document;
+            doc.open(); doc.write(html); doc.close();
+            setTimeout(() => {
+                initInspector(doc);
+                saveState(); // Save initial state
+            }, 200);
+        }
+
+        // Browse CSS button - opens file picker
+        document.getElementById('browseCssBtn').addEventListener('click', () => {
+            document.getElementById('cssInput').click();
+        });
+
+        // CSS file selection - reads MULTIPLE CSS files and injects them
+        document.getElementById('cssInput').addEventListener('change', (e) => {
+            const files = Array.from(e.target.files);
+            if (files.length === 0) return;
+            
+            loadedCSSFiles = []; // Clear previous
+            let loadedCount = 0;
+            
+            files.forEach((file, index) => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    loadedCSSFiles.push({
+                        name: file.name,
+                        content: event.target.result
+                    });
+                    
+                    loadedCount++;
+                    
+                    // When all files are loaded
+                    if (loadedCount === files.length) {
+                        const fileNames = loadedCSSFiles.map(f => f.name).join(', ');
+                        document.getElementById('baseUrl').value = `✓ ${loadedCSSFiles.length} CSS file(s): ${fileNames}`;
+                        document.getElementById('baseUrl').style.color = '#4caf50';
+                        
+                        // Auto-reload if HTML is already loaded
+                        if (lastLoadedHTML) {
+                            loadHTMLWithResources(lastLoadedHTML);
+                        } else {
+                            alert(`${loadedCSSFiles.length} CSS file(s) loaded! Now load your HTML file.`);
+                        }
+                    }
+                };
+                reader.readAsText(file);
+            });
+        });
+
+        // Modified function to inject CSS and handle base URL
+        function loadHTMLWithResources(originalHTML) {
+            let html = originalHTML;
+            
+            // Method 1: Inject loaded CSS files directly
+            if (loadedCSSFiles.length > 0) {
+                let allCSS = loadedCSSFiles.map(f => f.content).join('\n\n');
+                const styleTag = `<style>/* Injected CSS Files: ${loadedCSSFiles.map(f => f.name).join(', ')} */\n${allCSS}</style>`;
+                html = html.replace(/(<head[^>]*>)/i, `$1${styleTag}`);
+            }
+            
+            // Method 2: Add base URL for external resources (images, fonts, other CSS)
+            let baseUrl = document.getElementById('baseUrl').value.trim();
+            
+            // Only use base URL if it's not a "loaded CSS" message
+            if (baseUrl && !baseUrl.startsWith('✓')) {
+                // Normalize path
+                baseUrl = baseUrl.replace(/\\/g, '/');
+                
+                if (!baseUrl.startsWith('http://') && !baseUrl.startsWith('https://') && !baseUrl.startsWith('file://')) {
+                    if (baseUrl.match(/^[a-zA-Z]:/)) {
+                        baseUrl = 'file:///' + baseUrl;
+                    } else {
+                        baseUrl = 'file://' + baseUrl;
+                    }
+                }
+                
+                if (!baseUrl.endsWith('/')) {
+                    baseUrl += '/';
+                }
+                
+                // Insert base tag
+                html = html.replace(/(<head[^>]*>)/i, `$1<base href="${baseUrl}">`);
+            }
+            
+            const doc = viewer.contentWindow.document;
+            doc.open(); 
+            doc.write(html); 
+            doc.close();
+            setTimeout(() => {
+                initInspector(doc);
+                saveState();
+            }, 200);
+        }
+
+        // RELOAD button
+        document.getElementById('reloadBtn').addEventListener('click', () => {
+            if (!lastLoadedHTML) {
+                alert('Please load an HTML file first!');
+                return;
+            }
+            loadHTMLWithResources(lastLoadedHTML);
+        });
+
+        // CLEAR button
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            if (confirm('Clear everything?')) {
+                lastLoadedHTML = null;
+                lastLoadedFilePath = null;
+                loadedCSSFiles = [];
+                document.getElementById('baseUrl').value = '';
+                document.getElementById('baseUrl').style.color = '';
+                document.getElementById('fileInput').value = '';
+                document.getElementById('cssInput').value = '';
+                document.getElementById('reloadBtn').disabled = true;
+                
+                const doc = viewer.contentWindow.document;
+                doc.open();
+                doc.write('<html><body style="display:flex;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;color:#666;"><div>Load an HTML file to start</div></body></html>');
+                doc.close();
+                
+                selectedElement = null;
+                editorUI.style.display = 'none';
+                emptyMsg.style.display = 'block';
+                
+                history = [];
+                historyIndex = -1;
+                updateHistoryButtons();
+                localStorage.removeItem('htmlInspector_history');
+                localStorage.removeItem('htmlInspector_index');
+            }
+        });
+
+        // COLLAPSE button
+        document.getElementById('collapseBtn').addEventListener('click', () => {
+            const sidebar = document.getElementById('sidebar');
+            const btn = document.getElementById('collapseBtn');
+            sidebar.classList.toggle('collapsed');
+            
+            if (sidebar.classList.contains('collapsed')) {
+                btn.innerHTML = '<i data-lucide="chevron-left"></i>';
+            } else {
+                btn.innerHTML = '<i data-lucide="chevron-right"></i>';
+            }
+            try {
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+            } catch(e) {
+                console.warn('Lucide icons failed:', e);
+            }
+        });
+
+        // 2. Inspector Logic
+        // (Moved to batch paste section above)
+
+        // 3. Editor Logic
+        function showEditor(el) {
+            emptyMsg.style.display = 'none';
+            editorUI.style.display = 'flex';
+            
+            const style = window.getComputedStyle(el);
+            document.getElementById('propText').value = el.innerText || "";
+            document.getElementById('propFontFamily').value = style.fontFamily;
+            document.getElementById('propFontSize').value = parseInt(style.fontSize);
+            document.getElementById('propFontWeight').value = style.fontWeight;
+            document.getElementById('propColor').value = rgbToHex(style.color);
+            document.getElementById('propBg').value = rgbToHex(style.backgroundColor);
+            document.getElementById('propPadding').value = parseInt(style.padding);
+            document.getElementById('propMargin').value = parseInt(style.margin);
+            document.getElementById('propWidth').value = style.width === 'auto' ? 'auto' : parseInt(style.width);
+            document.getElementById('propHeight').value = style.height === 'auto' ? 'auto' : parseInt(style.height);
+            document.getElementById('propBorderWidth').value = parseInt(style.borderWidth) || 0;
+            document.getElementById('propBorderStyle').value = style.borderStyle;
+            document.getElementById('propBorderColor').value = rgbToHex(style.borderColor);
+            document.getElementById('propBorderRadius').value = parseInt(style.borderRadius) || 0;
+            document.getElementById('propTextAlign').value = style.textAlign;
+            document.getElementById('propDisplay').value = style.display;
+            
+            // Update lock button state
+            updateLockButton();
+            
+            // Update group buttons
+            updateGroupButtons();
+        }
+
+        // Update element live
+        const styleUpdaters = {
+            propText: (el, val) => { if(el && !isElementLocked(el)) el.innerText = val; },
+            propFontFamily: (el, val) => { if(el && !isElementLocked(el)) el.style.fontFamily = val; },
+            propFontSize: (el, val) => { if(el && !isElementLocked(el)) el.style.fontSize = val + 'px'; },
+            propFontWeight: (el, val) => { if(el && !isElementLocked(el)) el.style.fontWeight = val; },
+            propColor: (el, val) => { if(el && !isElementLocked(el)) el.style.color = val; },
+            propBg: (el, val) => { if(el && !isElementLocked(el)) el.style.backgroundColor = val; },
+            propPadding: (el, val) => { if(el && !isElementLocked(el)) el.style.padding = val + 'px'; },
+            propMargin: (el, val) => { if(el && !isElementLocked(el)) el.style.margin = val + 'px'; },
+            propWidth: (el, val) => { if(el && !isElementLocked(el)) el.style.width = val === 'auto' ? 'auto' : val + 'px'; },
+            propHeight: (el, val) => { if(el && !isElementLocked(el)) el.style.height = val === 'auto' ? 'auto' : val + 'px'; },
+            propBorderWidth: (el, val) => { if(el && !isElementLocked(el)) el.style.borderWidth = val + 'px'; },
+            propBorderStyle: (el, val) => { if(el && !isElementLocked(el)) el.style.borderStyle = val; },
+            propBorderColor: (el, val) => { if(el && !isElementLocked(el)) el.style.borderColor = val; },
+            propBorderRadius: (el, val) => { if(el && !isElementLocked(el)) el.style.borderRadius = val + 'px'; },
+            propTextAlign: (el, val) => { if(el && !isElementLocked(el)) el.style.textAlign = val; },
+            propDisplay: (el, val) => { if(el && !isElementLocked(el)) el.style.display = val; }
+        };
+
+        // Setup event listeners for all style inputs
+        function setupStyleListeners() {
+            Object.keys(styleUpdaters).forEach(id => {
+                const input = document.getElementById(id);
+                if (!input) {
+                    console.warn(`Input not found: ${id}`);
+                    return;
+                }
+                
+                // Remove old listeners by cloning
+                const newInput = input.cloneNode(true);
+                input.parentNode.replaceChild(newInput, input);
+                
+                // Add input event for live updates
+                newInput.addEventListener('input', (e) => {
+                    if(!selectedElement) return;
+                    try {
+                        styleUpdaters[id](selectedElement, e.target.value);
+                    } catch(err) {
+                        console.error('Style update error:', err);
+                    }
+                });
+                
+                // Add change event for history
+                newInput.addEventListener('change', () => {
+                    setTimeout(() => saveState(), 500);
+                });
+            });
+        }
+
+        // 4. Copy, Delete & Export Logic
+        document.getElementById('copyBtn').addEventListener('click', () => {
+            if(!selectedElement) return;
+            selectedElement.classList.remove('active-inspect');
+            const code = selectedElement.outerHTML;
+            selectedElement.classList.add('active-inspect');
+            
+            navigator.clipboard.writeText(code).then(() => {
+                const indicator = document.getElementById('copyIndicator');
+                indicator.textContent = 'COPIED!';
+                indicator.style.display = 'block';
+                setTimeout(() => indicator.style.display = 'none', 2000);
+            });
+        });
+
+        document.getElementById('deleteBtn').addEventListener('click', () => {
+            if(!selectedElement) return;
+            if(isElementLocked(selectedElement)) {
+                alert('Cannot delete locked element! Unlock it first.');
+                return;
+            }
+            if(confirm('Delete this element?')) {
+                lockedElements.delete(selectedElement); // Remove from locked set
+                selectedElement.remove();
+                selectedElement = null;
+                editorUI.style.display = 'none';
+                emptyMsg.style.display = 'block';
+                saveState(); // Save after delete
+            }
+        });
+
+        document.getElementById('duplicateBtn').addEventListener('click', () => {
+            if(!selectedElement) return;
+            
+            // Clone the element
+            const clone = selectedElement.cloneNode(true);
+            
+            // Remove locked state from clone
+            clone.classList.remove('locked-element');
+            clone.removeAttribute('data-locked');
+            
+            // Insert clone right after original
+            selectedElement.parentNode.insertBefore(clone, selectedElement.nextSibling);
+            
+            // Select the new clone
+            selectedElement.classList.remove('active-inspect');
+            selectedElement = clone;
+            selectedElement.classList.add('active-inspect');
+            
+            showEditor(selectedElement);
+            saveState();
+            
+            const indicator = document.getElementById('copyIndicator');
+            indicator.textContent = 'ELEMENT DUPLICATED!';
+            indicator.style.display = 'block';
+            setTimeout(() => indicator.style.display = 'none', 1500);
+        });
+
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            const doc = viewer.contentWindow.document;
+            
+            // Remove ONLY inspector styles (marked with data-inspector="true")
+            const inspectorStyle = doc.querySelector('style[data-inspector="true"]');
+            if(inspectorStyle) inspectorStyle.remove();
+            
+            const html = doc.documentElement.outerHTML;
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'edited-design.html';
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            // Re-add inspector styles
+            setTimeout(() => initInspector(doc), 100);
+        });
+
+        // ===== ARRANGE (Z-INDEX) FUNCTIONALITY =====
+        
+        // Helper function to get all siblings with z-index
+        function getAllZIndexElements(element) {
+            const parent = element.parentElement;
+            if (!parent) return [];
+            
+            return Array.from(parent.children).filter(el => {
+                const computed = window.getComputedStyle(el);
+                return computed.position !== 'static' || el.style.zIndex;
+            });
+        }
+        
+        // Helper function to normalize z-index values
+        function normalizeZIndex(element) {
+            const computed = window.getComputedStyle(element);
+            let zIndex = parseInt(element.style.zIndex) || parseInt(computed.zIndex) || 0;
+            if (isNaN(zIndex)) zIndex = 0;
+            return zIndex;
+        }
+        
+        // Bring to Front
+        document.getElementById('bringToFrontBtn').addEventListener('click', () => {
+            if (!selectedElement) return;
+            
+            const parent = selectedElement.parentElement;
+            const siblings = Array.from(parent.children);
+            
+            // Find highest z-index among siblings
+            let maxZ = 0;
+            siblings.forEach(el => {
+                const z = normalizeZIndex(el);
+                if (z > maxZ) maxZ = z;
+            });
+            
+            selectedElement.style.zIndex = maxZ + 1;
+            saveState();
+            
+            const indicator = document.getElementById('copyIndicator');
+            indicator.textContent = 'BROUGHT TO FRONT!';
+            indicator.style.display = 'block';
+            setTimeout(() => indicator.style.display = 'none', 1500);
+        });
+        
+        // Bring Forward
+        document.getElementById('bringForwardBtn').addEventListener('click', () => {
+            if (!selectedElement) return;
+            
+            const currentZ = normalizeZIndex(selectedElement);
+            selectedElement.style.zIndex = currentZ + 1;
+            saveState();
+            
+            const indicator = document.getElementById('copyIndicator');
+            indicator.textContent = 'BROUGHT FORWARD!';
+            indicator.style.display = 'block';
+            setTimeout(() => indicator.style.display = 'none', 1500);
+        });
+        
+        // Send Backward
+        document.getElementById('sendBackwardBtn').addEventListener('click', () => {
+            if (!selectedElement) return;
+            
+            const currentZ = normalizeZIndex(selectedElement);
+            selectedElement.style.zIndex = currentZ - 1;
+            saveState();
+            
+            const indicator = document.getElementById('copyIndicator');
+            indicator.textContent = 'SENT BACKWARD!';
+            indicator.style.display = 'block';
+            setTimeout(() => indicator.style.display = 'none', 1500);
+        });
+        
+        // Send to Back
+        document.getElementById('sendToBackBtn').addEventListener('click', () => {
+            if (!selectedElement) return;
+            
+            const parent = selectedElement.parentElement;
+            const siblings = Array.from(parent.children);
+            
+            // Find lowest z-index among siblings
+            let minZ = 0;
+            siblings.forEach(el => {
+                const z = normalizeZIndex(el);
+                if (z < minZ) minZ = z;
+            });
+            
+            selectedElement.style.zIndex = minZ - 1;
+            saveState();
+            
+            const indicator = document.getElementById('copyIndicator');
+            indicator.textContent = 'SENT TO BACK!';
+            indicator.style.display = 'block';
+            setTimeout(() => indicator.style.display = 'none', 1500);
+        });
+        
+        // Bring Above Element Mode
+        document.getElementById('bringAboveElementBtn').addEventListener('click', () => {
+            if (!selectedElement) {
+                alert('Please select an element first!');
+                return;
+            }
+            
+            // Enter arrange mode
+            arrangeMode = true;
+            arrangeTargetElement = selectedElement;
+            arrangedElements = [];
+            
+            document.getElementById('arrangeModeBanner').classList.add('active');
+            document.getElementById('arrangeCounter').textContent = '0';
+            
+            // Close paste modal if open
+            document.getElementById('pasteStyleModal').classList.remove('active');
+        });
+        
+        // Arrange Mode: Done
+        document.getElementById('arrangeDoneBtn').addEventListener('click', () => {
+            // Clear green outlines
+            arrangedElements.forEach(el => {
+                el.classList.remove('arrange-applied');
+            });
+            
+            exitArrangeMode();
+            
+            const indicator = document.getElementById('copyIndicator');
+            indicator.textContent = `ARRANGED ${arrangedElements.length} ELEMENTS!`;
+            indicator.style.display = 'block';
+            setTimeout(() => indicator.style.display = 'none', 2000);
+            
+            saveState();
+        });
+        
+        // Arrange Mode: Cancel
+        document.getElementById('arrangeCancelBtn').addEventListener('click', () => {
+            // Undo all arrangements
+            arrangedElements.forEach(el => {
+                // Restore original z-index
+                if (el.dataset.originalZIndex !== undefined) {
+                    if (el.dataset.originalZIndex === '') {
+                        el.style.zIndex = '';
+                    } else {
+                        el.style.zIndex = el.dataset.originalZIndex;
+                    }
+                    delete el.dataset.originalZIndex;
+                }
+                el.classList.remove('arrange-applied');
+            });
+            
+            exitArrangeMode();
+            
+            const indicator = document.getElementById('copyIndicator');
+            indicator.textContent = 'ARRANGE CANCELLED!';
+            indicator.style.display = 'block';
+            setTimeout(() => indicator.style.display = 'none', 2000);
+        });
+        
+        // Arrange Mode: Undo Last
+        document.getElementById('arrangeUndoBtn').addEventListener('click', () => {
+            if (arrangedElements.length === 0) return;
+            
+            const lastElement = arrangedElements.pop();
+            
+            // Check if element still exists in DOM
+            if (!lastElement || !lastElement.parentNode) {
+                console.warn('Element no longer exists');
+                document.getElementById('arrangeCounter').textContent = arrangedElements.length;
+                return;
+            }
+            
+            // Restore original z-index
+            if (lastElement.dataset.originalZIndex !== undefined) {
+                if (lastElement.dataset.originalZIndex === '') {
+                    lastElement.style.zIndex = '';
+                } else {
+                    lastElement.style.zIndex = lastElement.dataset.originalZIndex;
+                }
+                delete lastElement.dataset.originalZIndex;
+            }
+            
+            lastElement.classList.remove('arrange-applied');
+            
+            // Update counter
+            document.getElementById('arrangeCounter').textContent = arrangedElements.length;
+            
+            // Show feedback
+            const indicator = document.getElementById('copyIndicator');
+            indicator.textContent = 'UNDONE!';
+            indicator.style.display = 'block';
+            setTimeout(() => indicator.style.display = 'none', 1000);
+        });
+        
+        function exitArrangeMode() {
+            arrangeMode = false;
+            arrangeTargetElement = null;
+            arrangedElements = [];
+            document.getElementById('arrangeModeBanner').classList.remove('active');
+        }
+        
+        // ===== END ARRANGE FUNCTIONALITY =====
+
+        // ===== LOCK/UNLOCK FUNCTIONALITY =====
+        
+        document.getElementById('lockBtn').addEventListener('click', () => {
+            if (!selectedElement) return;
+            
+            const isLocked = lockedElements.has(selectedElement);
+            
+            if (isLocked) {
+                // Unlock
+                lockedElements.delete(selectedElement);
+                selectedElement.classList.remove('locked-element');
+                selectedElement.removeAttribute('data-locked');
+                
+                document.getElementById('lockBtn').innerHTML = '🔒 LOCK ELEMENT';
+                document.getElementById('lockBtn').style.background = '#ff5722';
+                
+                const indicator = document.getElementById('copyIndicator');
+                indicator.textContent = 'ELEMENT UNLOCKED!';
+                indicator.style.display = 'block';
+                setTimeout(() => indicator.style.display = 'none', 1500);
+            } else {
+                // Lock
+                lockedElements.add(selectedElement);
+                selectedElement.classList.add('locked-element');
+                selectedElement.setAttribute('data-locked', 'true');
+                
+                document.getElementById('lockBtn').innerHTML = '🔓 UNLOCK ELEMENT';
+                document.getElementById('lockBtn').style.background = '#4caf50';
+                
+                const indicator = document.getElementById('copyIndicator');
+                indicator.textContent = 'ELEMENT LOCKED!';
+                indicator.style.display = 'block';
+                setTimeout(() => indicator.style.display = 'none', 1500);
+            }
+            
+            saveState();
+        });
+        
+        function isElementLocked(element) {
+            return lockedElements.has(element) || element.hasAttribute('data-locked');
+        }
+        
+        function updateLockButton() {
+            if (!selectedElement) return;
+            
+            const isLocked = isElementLocked(selectedElement);
+            const lockBtn = document.getElementById('lockBtn');
+            
+            if (isLocked) {
+                lockBtn.innerHTML = '🔓 UNLOCK ELEMENT';
+                lockBtn.style.background = '#4caf50';
+            } else {
+                lockBtn.innerHTML = '🔒 LOCK ELEMENT';
+                lockBtn.style.background = '#ff5722';
+            }
+        }
+        
+        // ===== END LOCK/UNLOCK =====
+
+        // ===== MULTI-SELECT & DISTRIBUTE FUNCTIONALITY =====
+        
+        document.getElementById('multiSelectBtn').addEventListener('click', () => {
+            // Enter multi-select mode
+            multiSelectMode = true;
+            selectedElements = [];
+            
+            // Add currently selected element if any
+            if (selectedElement && !isElementLocked(selectedElement)) {
+                selectedElements.push(selectedElement);
+                selectedElement.classList.add('multi-selected');
+            }
+            
+            document.getElementById('multiselectModeBanner').classList.add('active');
+            document.getElementById('multiselectCounter').textContent = selectedElements.length;
+            
+            // Hide editor panel
+            editorUI.style.display = 'none';
+            emptyMsg.style.display = 'block';
+            emptyMsg.textContent = 'Multi-select mode active';
+        });
+        
+        // Clear Selection
+        document.getElementById('clearSelectionBtn').addEventListener('click', () => {
+            selectedElements.forEach(el => el.classList.remove('multi-selected'));
+            selectedElements = [];
+            document.getElementById('multiselectCounter').textContent = '0';
+        });
+        
+        // Exit Multi-Select
+        document.getElementById('multiselectCancelBtn').addEventListener('click', () => {
+            exitMultiSelectMode();
+        });
+        
+        function exitMultiSelectMode() {
+            selectedElements.forEach(el => el.classList.remove('multi-selected'));
+            selectedElements = [];
+            multiSelectMode = false;
+            document.getElementById('multiselectModeBanner').classList.remove('active');
+            document.getElementById('groupBtn').style.display = 'none';
+            emptyMsg.textContent = 'Click an element to edit';
+        }
+        
+        // Distribute Button
+        document.getElementById('distributeBtn').addEventListener('click', () => {
+            if (selectedElements.length < 2) {
+                alert('Please select at least 2 elements to distribute!');
+                return;
+            }
+            
+            document.getElementById('distributeCount').textContent = selectedElements.length;
+            document.getElementById('distributeModal').classList.add('active');
+        });
+        
+        // Cancel Distribute
+        document.getElementById('cancelDistributeBtn').addEventListener('click', () => {
+            document.getElementById('distributeModal').classList.remove('active');
+        });
+        
+        // Apply Distribution
+        document.getElementById('applyDistributeBtn').addEventListener('click', () => {
+            const direction = document.getElementById('distributeDirection').value;
+            const gap = parseInt(document.getElementById('distributeGap').value) || 0;
+            const alignment = document.getElementById('distributeAlign').value;
+            
+            distributeElements(selectedElements, direction, gap, alignment);
+            
+            document.getElementById('distributeModal').classList.remove('active');
+            
+            const indicator = document.getElementById('copyIndicator');
+            indicator.textContent = `DISTRIBUTED ${selectedElements.length} ELEMENTS!`;
+            indicator.style.display = 'block';
+            setTimeout(() => indicator.style.display = 'none', 2000);
+            
+            saveState();
+        });
+        
+        function distributeElements(elements, direction, gap, alignment) {
+            if (elements.length < 2) return;
+            
+            // Make all elements absolutely positioned if not already
+            elements.forEach(el => {
+                const computed = window.getComputedStyle(el);
+                if (computed.position === 'static' || computed.position === 'relative') {
+                    const rect = el.getBoundingClientRect();
+                    const doc = el.ownerDocument;
+                    const scrollX = doc.documentElement.scrollLeft || doc.body.scrollLeft;
+                    const scrollY = doc.documentElement.scrollTop || doc.body.scrollTop;
+                    
+                    el.style.position = 'absolute';
+                    el.style.left = (rect.left + scrollX) + 'px';
+                    el.style.top = (rect.top + scrollY) + 'px';
+                    el.style.width = rect.width + 'px';
+                    el.style.height = rect.height + 'px';
+                }
+            });
+            
+            // Sort elements by current position
+            const sortedElements = [...elements].sort((a, b) => {
+                const rectA = a.getBoundingClientRect();
+                const rectB = b.getBoundingClientRect();
+                
+                if (direction === 'horizontal') {
+                    return rectA.left - rectB.left;
+                } else {
+                    return rectA.top - rectB.top;
+                }
+            });
+            
+            // Get starting position from first element
+            const firstRect = sortedElements[0].getBoundingClientRect();
+            const doc = sortedElements[0].ownerDocument;
+            const scrollX = doc.documentElement.scrollLeft || doc.body.scrollLeft;
+            const scrollY = doc.documentElement.scrollTop || doc.body.scrollTop;
+            
+            let currentPos = direction === 'horizontal' ? 
+                (firstRect.left + scrollX) : 
+                (firstRect.top + scrollY);
+            
+            // Distribute elements
+            sortedElements.forEach((el, index) => {
+                const rect = el.getBoundingClientRect();
+                
+                if (direction === 'horizontal') {
+                    el.style.left = currentPos + 'px';
+                    
+                    // Align vertically
+                    if (alignment === 'center') {
+                        const firstHeight = sortedElements[0].getBoundingClientRect().height;
+                        const centerOffset = (firstHeight - rect.height) / 2;
+                        el.style.top = (firstRect.top + scrollY + centerOffset) + 'px';
+                    } else if (alignment === 'end') {
+                        const firstHeight = sortedElements[0].getBoundingClientRect().height;
+                        el.style.top = (firstRect.top + scrollY + firstHeight - rect.height) + 'px';
+                    } else {
+                        el.style.top = (firstRect.top + scrollY) + 'px';
+                    }
+                    
+                    currentPos += rect.width + gap;
+                } else {
+                    el.style.top = currentPos + 'px';
+                    
+                    // Align horizontally
+                    if (alignment === 'center') {
+                        const firstWidth = sortedElements[0].getBoundingClientRect().width;
+                        const centerOffset = (firstWidth - rect.width) / 2;
+                        el.style.left = (firstRect.left + scrollX + centerOffset) + 'px';
+                    } else if (alignment === 'end') {
+                        const firstWidth = sortedElements[0].getBoundingClientRect().width;
+                        el.style.left = (firstRect.left + scrollX + firstWidth - rect.width) + 'px';
+                    } else {
+                        el.style.left = (firstRect.left + scrollX) + 'px';
+                    }
+                    
+                    currentPos += rect.height + gap;
+                }
+            });
+        }
+        
+        // ===== END MULTI-SELECT & DISTRIBUTE =====
+
+        // ===== GROUPING FUNCTIONALITY =====
+        
+        document.getElementById('groupBtn').addEventListener('click', () => {
+            if (selectedElements.length < 2) {
+                alert('Please select at least 2 elements to group!');
+                return;
+            }
+            
+            // Create group
+            const groupId = 'group-' + (++groupIdCounter);
+            groups.set(groupId, [...selectedElements]);
+            
+            // Mark elements as grouped
+            selectedElements.forEach(el => {
+                el.classList.add('grouped-element');
+                el.setAttribute('data-group-id', groupId);
+            });
+            
+            // Exit multi-select mode
+            exitMultiSelectMode();
+            
+            const indicator = document.getElementById('copyIndicator');
+            indicator.textContent = `GROUPED ${selectedElements.length} ELEMENTS!`;
+            indicator.style.display = 'block';
+            setTimeout(() => indicator.style.display = 'none', 2000);
+            
+            saveState();
+        });
+        
+        document.getElementById('ungroupBtn').addEventListener('click', () => {
+            if (!selectedElement) return;
+            
+            const groupId = selectedElement.getAttribute('data-group-id');
+            if (!groupId) {
+                alert('Selected element is not part of a group!');
+                return;
+            }
+            
+            // Get all elements in the group
+            const groupElements = groups.get(groupId);
+            if (groupElements) {
+                groupElements.forEach(el => {
+                    el.classList.remove('grouped-element');
+                    el.removeAttribute('data-group-id');
+                });
+                groups.delete(groupId);
+            }
+            
+            document.getElementById('ungroupBtn').style.display = 'none';
+            
+            const indicator = document.getElementById('copyIndicator');
+            indicator.textContent = 'GROUP UNGROUPED!';
+            indicator.style.display = 'block';
+            setTimeout(() => indicator.style.display = 'none', 2000);
+            
+            saveState();
+        });
+        
+        function updateGroupButtons() {
+            const groupBtn = document.getElementById('groupBtn');
+            const ungroupBtn = document.getElementById('ungroupBtn');
+            const groupSelectedBtn = document.getElementById('groupSelectedBtn');
+            const ungroupElementsBtn = document.getElementById('ungroupElementsBtn');
+            
+            // Show group button if in multi-select mode with 2+ elements
+            if (multiSelectMode && selectedElements.length >= 2) {
+                groupBtn.style.display = 'block';
+            } else {
+                groupBtn.style.display = 'none';
+            }
+            
+            // Show ungroup button if selected element is grouped
+            if (selectedElement && selectedElement.hasAttribute('data-group-id')) {
+                ungroupBtn.style.display = 'block';
+            } else {
+                ungroupBtn.style.display = 'none';
+            }
+            
+            // Show wrap button for any element
+            if (selectedElement && !selectedElement.hasAttribute('data-group-wrapper')) {
+                groupSelectedBtn.style.display = 'block';
+            } else {
+                groupSelectedBtn.style.display = 'none';
+            }
+            
+            // Show unwrap button if element is a wrapper
+            if (selectedElement && selectedElement.hasAttribute('data-group-wrapper')) {
+                ungroupElementsBtn.style.display = 'block';
+            } else {
+                ungroupElementsBtn.style.display = 'none';
+            }
+        }
+        
+        function selectGroup(element) {
+            const groupId = element.getAttribute('data-group-id');
+            if (!groupId) return false;
+            
+            const groupElements = groups.get(groupId);
+            if (!groupElements) return false;
+            
+            // Enter multi-select mode and select all group elements
+            multiSelectMode = true;
+            selectedElements = [...groupElements];
+            
+            selectedElements.forEach(el => el.classList.add('multi-selected'));
+            
+            document.getElementById('multiselectModeBanner').classList.add('active');
+            document.getElementById('multiselectCounter').textContent = selectedElements.length;
+            
+            // Hide editor panel
+            editorUI.style.display = 'none';
+            emptyMsg.style.display = 'block';
+            emptyMsg.textContent = 'Group selected - ' + selectedElements.length + ' elements';
+            
+            updateGroupButtons();
+            
+            return true;
+        }
+        
+        // ===== END GROUPING =====
+
+        // ===== WRAP IN CONTAINER (GROUP FEATURE) =====
+        
+        document.getElementById('groupSelectedBtn').addEventListener('click', () => {
+            if (!selectedElement) {
+                alert('Select an element first!');
+                return;
+            }
+            
+            // Create wrapper container
+            const wrapper = document.createElement('div');
+            wrapper.style.position = 'absolute';
+            wrapper.style.display = 'flex';
+            wrapper.style.flexDirection = 'column';
+            wrapper.style.gap = '10px';
+            wrapper.style.padding = '10px';
+            wrapper.style.background = 'rgba(255, 107, 0, 0.1)';
+            wrapper.style.border = '2px dashed #ff6f00';
+            wrapper.style.borderRadius = '8px';
+            wrapper.setAttribute('data-group-wrapper', 'true');
+            
+            // Get current position
+            const rect = selectedElement.getBoundingClientRect();
+            const doc = selectedElement.ownerDocument;
+            const scrollX = doc.documentElement.scrollLeft || doc.body.scrollLeft;
+            const scrollY = doc.documentElement.scrollTop || doc.body.scrollTop;
+            
+            wrapper.style.left = (rect.left + scrollX) + 'px';
+            wrapper.style.top = (rect.top + scrollY) + 'px';
+            wrapper.style.width = rect.width + 'px';
+            wrapper.style.minHeight = rect.height + 'px';
+            
+            // Move element into wrapper
+            selectedElement.parentNode.insertBefore(wrapper, selectedElement);
+            wrapper.appendChild(selectedElement);
+            
+            // Reset element's position if it was absolute
+            if (selectedElement.style.position === 'absolute') {
+                selectedElement.style.position = 'relative';
+                selectedElement.style.left = '0';
+                selectedElement.style.top = '0';
+            }
+            
+            // Select wrapper
+            selectedElement.classList.remove('active-inspect');
+            selectedElement = wrapper;
+            selectedElement.classList.add('active-inspect');
+            
+            showEditor(selectedElement);
+            saveState();
+            
+            const indicator = document.getElementById('copyIndicator');
+            indicator.textContent = 'ELEMENT WRAPPED IN GROUP!';
+            indicator.style.display = 'block';
+            setTimeout(() => indicator.style.display = 'none', 1500);
+        });
+        
+        document.getElementById('ungroupElementsBtn').addEventListener('click', () => {
+            if (!selectedElement) return;
+            
+            const isWrapper = selectedElement.hasAttribute('data-group-wrapper');
+            if (!isWrapper) {
+                alert('Selected element is not a group wrapper!');
+                return;
+            }
+            
+            // Move all children out of wrapper
+            const children = Array.from(selectedElement.children);
+            const parent = selectedElement.parentNode;
+            
+            children.forEach(child => {
+                parent.insertBefore(child, selectedElement);
+            });
+            
+            // Remove wrapper
+            selectedElement.remove();
+            selectedElement = null;
+            editorUI.style.display = 'none';
+            emptyMsg.style.display = 'block';
+            
+            const indicator = document.getElementById('copyIndicator');
+            indicator.textContent = 'GROUP UNGROUPED!';
+            indicator.style.display = 'block';
+            setTimeout(() => indicator.style.display = 'none', 1500);
+            
+            saveState();
+        });
+        
+        // ===== END WRAP IN CONTAINER =====
+
+        function rgbToHex(rgb) {
+            if (!rgb || rgb === 'transparent' || rgb.includes('rgba(0, 0, 0, 0)')) return '#ffffff';
+            const res = rgb.match(/\d+/g);
+            return res ? "#" + res.slice(0,3).map(x => parseInt(x).toString(16).padStart(2, '0')).join('') : '#ffffff';
+        }
+
+        // ===== COPY/PASTE STYLE FUNCTIONALITY =====
+        
+        // Copy Style Button
+        document.getElementById('copyStyleBtn').addEventListener('click', () => {
+            if (!selectedElement) return;
+            document.getElementById('copyStyleModal').classList.add('active');
+        });
+
+        // Select All/None
+        document.getElementById('selectAllBtn').addEventListener('click', () => {
+            document.querySelectorAll('.style-categories input[type="checkbox"]').forEach(cb => cb.checked = true);
+        });
+        
+        document.getElementById('selectNoneBtn').addEventListener('click', () => {
+            document.querySelectorAll('.style-categories input[type="checkbox"]').forEach(cb => cb.checked = false);
+        });
+
+        // Copy Selected Styles
+        document.getElementById('copySelectedBtn').addEventListener('click', () => {
+            if (!selectedElement) return;
+            
+            const style = window.getComputedStyle(selectedElement);
+            const inlineStyle = selectedElement.style;
+            
+            copiedStyles = {
+                categories: {},
+                element: selectedElement.tagName
+            };
+            
+            // Colors
+            if (document.getElementById('cat-colors').checked) {
+                copiedStyles.categories.colors = {
+                    color: inlineStyle.color || style.color,
+                    backgroundColor: inlineStyle.backgroundColor || style.backgroundColor
+                };
+            }
+            
+            // Typography
+            if (document.getElementById('cat-typography').checked) {
+                copiedStyles.categories.typography = {
+                    fontFamily: inlineStyle.fontFamily || style.fontFamily,
+                    fontSize: inlineStyle.fontSize || style.fontSize,
+                    fontWeight: inlineStyle.fontWeight || style.fontWeight,
+                    textAlign: inlineStyle.textAlign || style.textAlign
+                };
+            }
+            
+            // Spacing
+            if (document.getElementById('cat-spacing').checked) {
+                copiedStyles.categories.spacing = {
+                    padding: inlineStyle.padding || style.padding,
+                    margin: inlineStyle.margin || style.margin
+                };
+            }
+            
+            // Dimensions
+            if (document.getElementById('cat-dimensions').checked) {
+                copiedStyles.categories.dimensions = {
+                    width: inlineStyle.width || style.width,
+                    height: inlineStyle.height || style.height
+                };
+            }
+            
+            // Border
+            if (document.getElementById('cat-border').checked) {
+                copiedStyles.categories.border = {
+                    borderWidth: inlineStyle.borderWidth || style.borderWidth,
+                    borderStyle: inlineStyle.borderStyle || style.borderStyle,
+                    borderColor: inlineStyle.borderColor || style.borderColor
+                };
+            }
+            
+            // Border Radius
+            if (document.getElementById('cat-radius').checked) {
+                copiedStyles.categories.radius = {
+                    borderRadius: inlineStyle.borderRadius || style.borderRadius
+                };
+            }
+            
+            // Display
+            if (document.getElementById('cat-display').checked) {
+                copiedStyles.categories.display = {
+                    display: inlineStyle.display || style.display
+                };
+            }
+            
+            // Close modal and show paste button
+            document.getElementById('copyStyleModal').classList.remove('active');
+            document.getElementById('pasteStyleBtn').style.display = 'block';
+            
+            // Add to clipboard history
+            addToClipboardHistory(copiedStyles);
+            
+            // Show indicator
+            const indicator = document.getElementById('copyIndicator');
+            indicator.textContent = 'STYLE COPIED!';
+            indicator.style.display = 'block';
+            setTimeout(() => indicator.style.display = 'none', 2000);
+        });
+
+        // Cancel Copy
+        document.getElementById('cancelCopyBtn').addEventListener('click', () => {
+            document.getElementById('copyStyleModal').classList.remove('active');
+        });
+
+        // Paste Style Button
+        document.getElementById('pasteStyleBtn').addEventListener('click', () => {
+            if (!copiedStyles || !selectedElement) return;
+            
+            // Check compatibility
+            checkCompatibility(selectedElement, copiedStyles);
+            
+            // Populate paste modal with available categories
+            const pasteCategories = document.getElementById('pasteCategories');
+            pasteCategories.innerHTML = '';
+            
+            Object.keys(copiedStyles.categories).forEach(cat => {
+                const label = document.createElement('label');
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = true;
+                checkbox.dataset.category = cat;
+                
+                const catNames = {
+                    colors: 'Colors',
+                    typography: 'Typography',
+                    spacing: 'Spacing',
+                    dimensions: 'Dimensions',
+                    border: 'Border',
+                    radius: 'Border Radius',
+                    display: 'Display & Alignment'
+                };
+                
+                label.appendChild(checkbox);
+                label.appendChild(document.createTextNode(' ' + catNames[cat]));
+                pasteCategories.appendChild(label);
+            });
+            
+            document.getElementById('pasteStyleModal').classList.add('active');
+        });
+
+        // Check compatibility and show warnings
+        function checkCompatibility(element, styles) {
+            const warnings = [];
+            const display = window.getComputedStyle(element).display;
+            const tagName = element.tagName.toLowerCase();
+            
+            // Check if element is inline
+            if (display === 'inline' && styles.categories.spacing) {
+                warnings.push('This element is inline. Padding and margin may not work as expected. Consider changing display to inline-block or block.');
+            }
+            
+            // Check if pasting dimensions to inline
+            if (display === 'inline' && styles.categories.dimensions) {
+                warnings.push('Width and height don\'t apply to inline elements. Change display to block or inline-block first.');
+            }
+            
+            // Check if hiding element
+            if (styles.categories.display && styles.categories.display.display === 'none') {
+                warnings.push('This will hide the element completely (display: none).');
+            }
+            
+            // Check typography on non-text elements
+            if (styles.categories.typography && ['img', 'hr', 'br', 'input'].includes(tagName)) {
+                warnings.push('Typography styles may not apply to this element type.');
+            }
+            
+            // Show warnings
+            const warningDiv = document.getElementById('compatWarning');
+            const warningMsg = document.getElementById('compatMessage');
+            
+            if (warnings.length > 0) {
+                warningMsg.innerHTML = warnings.join('<br>');
+                warningDiv.classList.add('show');
+            } else {
+                warningDiv.classList.remove('show');
+            }
+        }
+        
+        // Check for DESTRUCTIVE pastes (more severe)
+        function checkDestructivePaste(element, styles) {
+            const warnings = [];
+            const computed = window.getComputedStyle(element);
+            const tagName = element.tagName.toLowerCase();
+            
+            // Check if pasting small dimensions to large container
+            if (styles.categories.dimensions) {
+                const currentWidth = parseInt(computed.width);
+                const newWidth = parseInt(styles.categories.dimensions.width);
+                
+                if (currentWidth > 500 && newWidth < 200) {
+                    warnings.push('⚠️ DANGER: Pasting small width (' + newWidth + 'px) to large container (' + currentWidth + 'px). This may collapse the layout!');
+                }
+            }
+            
+            // Check if hiding critical elements
+            if (styles.categories.display && styles.categories.display.display === 'none') {
+                if (['body', 'main', 'section', 'article', 'div'].includes(tagName)) {
+                    warnings.push('⚠️ DANGER: Hiding a container element! This may hide large portions of the page.');
+                }
+            }
+            
+            // Check if pasting button styles to containers
+            if (styles.categories.dimensions) {
+                const newWidth = parseInt(styles.categories.dimensions.width);
+                const newHeight = parseInt(styles.categories.dimensions.height);
+                
+                if (newWidth < 200 && newHeight < 100 && ['div', 'section', 'article'].includes(tagName)) {
+                    warnings.push('⚠️ DANGER: Pasting small button-like dimensions to a container element!');
+                }
+            }
+            
+            // Check if changing display from flex/grid
+            if (styles.categories.display && ['flex', 'grid'].includes(computed.display)) {
+                if (styles.categories.display.display !== computed.display) {
+                    warnings.push('⚠️ WARNING: Changing display from ' + computed.display + ' may break child element layouts.');
+                }
+            }
+            
+            return warnings;
+        }
+
+        // Paste Selected
+        document.getElementById('pasteSelectedBtn').addEventListener('click', () => {
+            if (!copiedStyles || !selectedElement) return;
+            
+            const checkboxes = document.querySelectorAll('#pasteCategories input[type="checkbox"]:checked');
+            
+            checkboxes.forEach(cb => {
+                const cat = cb.dataset.category;
+                const styles = copiedStyles.categories[cat];
+                
+                Object.keys(styles).forEach(prop => {
+                    selectedElement.style[prop] = styles[prop];
+                });
+            });
+            
+            document.getElementById('pasteStyleModal').classList.remove('active');
+            saveState();
+            
+            // Show indicator
+            const indicator = document.getElementById('copyIndicator');
+            indicator.textContent = 'STYLE PASTED!';
+            indicator.style.display = 'block';
+            setTimeout(() => indicator.style.display = 'none', 2000);
+            
+            // Refresh editor to show new values
+            showEditor(selectedElement);
+        });
+
+        // Paste All
+        document.getElementById('pasteAllBtn').addEventListener('click', () => {
+            if (!copiedStyles || !selectedElement) return;
+            
+            Object.keys(copiedStyles.categories).forEach(cat => {
+                const styles = copiedStyles.categories[cat];
+                Object.keys(styles).forEach(prop => {
+                    selectedElement.style[prop] = styles[prop];
+                });
+            });
+            
+            document.getElementById('pasteStyleModal').classList.remove('active');
+            saveState();
+            
+            const indicator = document.getElementById('copyIndicator');
+            indicator.textContent = 'ALL STYLES PASTED!';
+            indicator.style.display = 'block';
+            setTimeout(() => indicator.style.display = 'none', 2000);
+            
+            showEditor(selectedElement);
+        });
+
+        // Cancel Paste
+        document.getElementById('cancelPasteBtn').addEventListener('click', () => {
+            document.getElementById('pasteStyleModal').classList.remove('active');
+        });
+
+        // ===== BATCH PASTE MODE =====
+        
+        // Batch Paste Button
+        document.getElementById('batchPasteBtn').addEventListener('click', () => {
+            if (!copiedStyles) return;
+            
+            // Close modal
+            document.getElementById('pasteStyleModal').classList.remove('active');
+            
+            // Enter batch mode
+            batchPasteMode = true;
+            batchPastedElements = [];
+            document.getElementById('batchModeBanner').classList.add('active');
+            document.getElementById('batchCounter').textContent = '0';
+            
+            // Change cursor
+            document.body.style.cursor = 'copy';
+        });
+        
+        // Batch Done
+        document.getElementById('batchDoneBtn').addEventListener('click', () => {
+            // Clear green outlines
+            batchPastedElements.forEach(el => {
+                el.classList.remove('batch-pasted');
+            });
+            
+            exitBatchMode();
+            
+            const indicator = document.getElementById('copyIndicator');
+            indicator.textContent = `PASTED TO ${batchPastedElements.length} ELEMENTS!`;
+            indicator.style.display = 'block';
+            setTimeout(() => indicator.style.display = 'none', 2000);
+            
+            saveState();
+        });
+        
+        // Batch Cancel
+        document.getElementById('batchCancelBtn').addEventListener('click', () => {
+            // Undo all batch pastes
+            batchPastedElements.forEach(el => {
+                // Restore original styles
+                if (el.dataset.originalStyles) {
+                    try {
+                        const originalStyles = JSON.parse(el.dataset.originalStyles);
+                        
+                        // Restore each saved property
+                        Object.keys(originalStyles).forEach(prop => {
+                            if (originalStyles[prop] === '') {
+                                // If it was empty, remove the inline style
+                                el.style[prop] = '';
+                            } else {
+                                // Otherwise restore the original value
+                                el.style[prop] = originalStyles[prop];
+                            }
+                        });
+                        
+                        delete el.dataset.originalStyles;
+                    } catch (e) {
+                        console.error('Failed to restore styles:', e);
+                    }
+                }
+                el.classList.remove('batch-pasted');
+            });
+            
+            exitBatchMode();
+            
+            const indicator = document.getElementById('copyIndicator');
+            indicator.textContent = 'BATCH PASTE CANCELLED!';
+            indicator.style.display = 'block';
+            setTimeout(() => indicator.style.display = 'none', 2000);
+        });
+        
+        // Batch Undo Last
+        document.getElementById('batchUndoBtn').addEventListener('click', () => {
+            if (batchPastedElements.length === 0) return;
+            
+            const lastElement = batchPastedElements.pop();
+            
+            // Check if element still exists in DOM
+            if (!lastElement || !lastElement.parentNode) {
+                console.warn('Element no longer exists');
+                document.getElementById('batchCounter').textContent = batchPastedElements.length;
+                return;
+            }
+            
+            // Restore original styles
+            if (lastElement.dataset.originalStyles) {
+                try {
+                    const originalStyles = JSON.parse(lastElement.dataset.originalStyles);
+                    
+                    // Restore each saved property
+                    Object.keys(originalStyles).forEach(prop => {
+                        if (originalStyles[prop] === '') {
+                            // If it was empty, remove the inline style
+                            lastElement.style[prop] = '';
+                        } else {
+                            // Otherwise restore the original value
+                            lastElement.style[prop] = originalStyles[prop];
+                        }
+                    });
+                    
+                    delete lastElement.dataset.originalStyles;
+                } catch (e) {
+                    console.error('Failed to restore styles:', e);
+                }
+            }
+            
+            lastElement.classList.remove('batch-pasted');
+            
+            // Update counter
+            document.getElementById('batchCounter').textContent = batchPastedElements.length;
+            
+            // Show feedback
+            const indicator = document.getElementById('copyIndicator');
+            indicator.textContent = 'UNDONE!';
+            indicator.style.display = 'block';
+            setTimeout(() => indicator.style.display = 'none', 1000);
+        });
+        
+        function exitBatchMode() {
+            batchPasteMode = false;
+            batchPastedElements = [];
+            document.getElementById('batchModeBanner').classList.remove('active');
+            document.body.style.cursor = '';
+        }
+        
+        // ===== DRAG & DROP FUNCTIONALITY =====
+        let draggedElement = null;
+        let dragOffset = { x: 0, y: 0 };
+        let isDragging = false;
+        let dragStartPos = { x: 0, y: 0 };
+        let hasMoved = false;
+        const DRAG_THRESHOLD = 5;
+        
+        function enableDragDrop(doc) {
+            doc.body.addEventListener('mousedown', (e) => {
+                if (batchPasteMode || multiSelectMode || e.button !== 0) return;
+                
+                const element = e.target;
+                if (!element || element.nodeType !== 1) return;
+                if (isElementLocked(element)) return;
+                if (['BODY', 'HTML', 'SCRIPT', 'STYLE'].includes(element.tagName)) return;
+                
+                draggedElement = element;
+                dragStartPos.x = e.clientX;
+                dragStartPos.y = e.clientY;
+                hasMoved = false;
+                
+                const rect = element.getBoundingClientRect();
+                dragOffset.x = e.clientX - rect.left;
+                dragOffset.y = e.clientY - rect.top;
+                
+                e.preventDefault();
+            }, true);
+            
+            doc.body.addEventListener('mousemove', (e) => {
+                if (!draggedElement) return;
+                
+                const deltaX = Math.abs(e.clientX - dragStartPos.x);
+                const deltaY = Math.abs(e.clientY - dragStartPos.y);
+                
+                if (!isDragging && (deltaX > DRAG_THRESHOLD || deltaY > DRAG_THRESHOLD)) {
+                    isDragging = true;
+                    hasMoved = true;
+                    
+                    const computed = window.getComputedStyle(draggedElement);
+                    if (computed.position === 'static' || computed.position === 'relative') {
+                        const rect = draggedElement.getBoundingClientRect();
+                        const scrollX = doc.documentElement.scrollLeft || doc.body.scrollLeft;
+                        const scrollY = doc.documentElement.scrollTop || doc.body.scrollTop;
+                        
+                        draggedElement.dataset.originalPosition = computed.position;
+                        draggedElement.dataset.originalTop = draggedElement.style.top || '';
+                        draggedElement.dataset.originalLeft = draggedElement.style.left || '';
+                        
+                        draggedElement.style.position = 'absolute';
+                        draggedElement.style.left = (rect.left + scrollX) + 'px';
+                        draggedElement.style.top = (rect.top + scrollY) + 'px';
+                        draggedElement.style.width = rect.width + 'px';
+                        draggedElement.style.height = rect.height + 'px';
+                        draggedElement.style.margin = '0';
+                    }
+                    
+                    draggedElement.classList.add('dragging');
+                    draggedElement.style.zIndex = '9999';
+                }
+                
+                if (!isDragging) return;
+                
+                e.preventDefault();
+                
+                const scrollX = doc.documentElement.scrollLeft || doc.body.scrollLeft;
+                const scrollY = doc.documentElement.scrollTop || doc.body.scrollTop;
+                
+                draggedElement.style.left = (e.clientX - dragOffset.x + scrollX) + 'px';
+                draggedElement.style.top = (e.clientY - dragOffset.y + scrollY) + 'px';
+            }, true);
+            
+            doc.body.addEventListener('mouseup', (e) => {
+                if (!draggedElement) return;
+                
+                if (!hasMoved) {
+                    draggedElement = null;
+                    isDragging = false;
+                    return;
+                }
+                
+                if (isDragging) {
+                    isDragging = false;
+                    draggedElement.classList.remove('dragging');
+                    
+                    saveState();
+                    
+                    const indicator = document.getElementById('copyIndicator');
+                    indicator.textContent = 'ELEMENT MOVED!';
+                    indicator.style.display = 'block';
+                    setTimeout(() => indicator.style.display = 'none', 1500);
+                }
+                
+                draggedElement = null;
+            }, true);
+            
+            document.addEventListener('mouseup', () => {
+                if (isDragging && draggedElement) {
+                    isDragging = false;
+                    draggedElement.classList.remove('dragging');
+                    draggedElement = null;
+                }
+            });
+        }
+        // ===== END DRAG & DROP =====
+        
+        // Modify inspector to handle batch paste
+        function initInspector(doc) {
+            // Remove old inspector styles if they exist
+            const oldStyle = doc.querySelector('style[data-inspector="true"]');
+            if (oldStyle) oldStyle.remove();
+            
+            const style = doc.createElement('style');
+            style.setAttribute('data-inspector', 'true');
+            style.textContent = `
+                * { transition: outline 0.1s; }
+                *.active-inspect { outline: 3px solid #ff9800 !important; outline-offset: -3px; }
+                *.batch-pasted { outline: 3px solid #4caf50 !important; outline-offset: -3px; animation: batchFlash 0.5s; }
+                *.locked-element { outline: 2px dashed #ff5722 !important; outline-offset: -2px; pointer-events: none; }
+                *.locked-element::before { content: '🔒'; position: absolute; top: 2px; right: 2px; background: #ff5722; color: white; font-size: 10px; padding: 2px 4px; border-radius: 2px; z-index: 10000; pointer-events: none; }
+                *.multi-selected { outline: 3px solid #2196f3 !important; outline-offset: -3px; background: rgba(33, 150, 243, 0.1) !important; }
+                @keyframes batchFlash {
+                    0%, 100% { outline-color: #4caf50; }
+                    50% { outline-color: #8bc34a; }
+                }
+                body *:not(.dragging):not(.active-inspect):not(.batch-pasted):not(.locked-element):not(.multi-selected):hover { 
+                    outline: 2px dashed #ff9800 !important; 
+                    cursor: pointer; 
+                }
+                .dragging { cursor: move !important; }
+            `;
+            doc.head.appendChild(style);
+
+            // Remove old event listeners by cloning
+            const oldBody = doc.body;
+            const newBody = oldBody.cloneNode(true);
+            oldBody.parentNode.replaceChild(newBody, oldBody);
+
+            newBody.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const clickedElement = e.target;
+                
+                // Check if element is locked (but allow selection to show it's locked)
+                const isLocked = isElementLocked(clickedElement);
+                
+                // Handle multi-select mode
+                if (multiSelectMode) {
+                    // Don't select locked elements in multi-select
+                    if (isLocked) {
+                        alert('Cannot select locked element!');
+                        return;
+                    }
+                    
+                    // Toggle selection with Ctrl, or just add
+                    const index = selectedElements.indexOf(clickedElement);
+                    
+                    if (index > -1) {
+                        // Deselect
+                        selectedElements.splice(index, 1);
+                        clickedElement.classList.remove('multi-selected');
+                    } else {
+                        // Select
+                        selectedElements.push(clickedElement);
+                        clickedElement.classList.add('multi-selected');
+                    }
+                    
+                    document.getElementById('multiselectCounter').textContent = selectedElements.length;
+                    return;
+                }
+                
+                // Handle arrange mode
+                if (arrangeMode && arrangeTargetElement) {
+                    const targetElement = clickedElement;
+                    
+                    // Don't arrange if clicking the same element
+                    if (targetElement === arrangeTargetElement) {
+                        return;
+                    }
+                    
+                    // Don't arrange locked elements
+                    if (isElementLocked(arrangeTargetElement)) {
+                        alert('Cannot arrange locked element!');
+                        return;
+                    }
+                    
+                    // Save original z-index for undo
+                    if (arrangeTargetElement.dataset.originalZIndex === undefined) {
+                        arrangeTargetElement.dataset.originalZIndex = arrangeTargetElement.style.zIndex || '';
+                    }
+                    
+                    // Get target element's z-index
+                    const targetZ = normalizeZIndex(targetElement);
+                    
+                    // Set our element's z-index to be 1 higher than target
+                    arrangeTargetElement.style.zIndex = targetZ + 1;
+                    
+                    // Add to arranged list (only once)
+                    if (!arrangedElements.includes(targetElement)) {
+                        arrangedElements.push(arrangeTargetElement);
+                    }
+                    
+                    // Visual feedback
+                    arrangeTargetElement.classList.add('arrange-applied');
+                    
+                    // Update counter
+                    document.getElementById('arrangeCounter').textContent = arrangedElements.length;
+                    
+                    // Flash animation on target element
+                    targetElement.style.transition = 'background 0.3s';
+                    const originalBg = targetElement.style.background;
+                    targetElement.style.background = 'rgba(2, 136, 209, 0.2)';
+                    setTimeout(() => {
+                        targetElement.style.background = originalBg;
+                        setTimeout(() => targetElement.style.transition = '', 300);
+                    }, 300);
+                    
+                    return;
+                }
+                
+                // Handle batch paste mode
+                if (batchPasteMode && copiedStyles) {
+                    const element = clickedElement;
+                    
+                    // Don't paste to locked elements
+                    if (isLocked) {
+                        alert('Cannot paste to locked element!');
+                        return;
+                    }
+                    
+                    // SAFETY CHECK: Warn about destructive pastes
+                    const warnings = checkDestructivePaste(element, copiedStyles);
+                    if (warnings.length > 0) {
+                        const proceed = confirm(
+                            '⚠️ WARNING: This paste may break the layout!\n\n' +
+                            warnings.join('\n\n') +
+                            '\n\nDo you want to continue?'
+                        );
+                        if (!proceed) return;
+                    }
+                    
+                    // Store original inline styles for undo (BEFORE applying new styles)
+                    if (!element.dataset.originalStyles) {
+                        // Save the current inline styles as a backup
+                        const originalInlineStyles = {};
+                        
+                        // Get selected categories to know which properties we'll change
+                        const checkboxes = document.querySelectorAll('#pasteCategories input[type="checkbox"]:checked');
+                        
+                        checkboxes.forEach(cb => {
+                            const cat = cb.dataset.category;
+                            const styles = copiedStyles.categories[cat];
+                            
+                            // For each property we're about to change, save its current inline value
+                            Object.keys(styles).forEach(prop => {
+                                originalInlineStyles[prop] = element.style[prop] || '';
+                            });
+                        });
+                        
+                        element.dataset.originalStyles = JSON.stringify(originalInlineStyles);
+                    }
+                    
+                    // Get selected categories from last paste modal
+                    const checkboxes = document.querySelectorAll('#pasteCategories input[type="checkbox"]:checked');
+                    
+                    checkboxes.forEach(cb => {
+                        const cat = cb.dataset.category;
+                        const styles = copiedStyles.categories[cat];
+                        
+                        Object.keys(styles).forEach(prop => {
+                            element.style[prop] = styles[prop];
+                        });
+                    });
+                    
+                    // Add to batch list
+                    batchPastedElements.push(element);
+                    element.classList.add('batch-pasted');
+                    
+                    // Update counter
+                    document.getElementById('batchCounter').textContent = batchPastedElements.length;
+                    
+                    return;
+                }
+                
+                // Normal selection mode
+                if(selectedElement) selectedElement.classList.remove('active-inspect');
+                
+                selectedElement = clickedElement;
+                selectedElement.classList.add('active-inspect');
+                
+                // Show locked warning if element is locked
+                if (isLocked) {
+                    const indicator = document.getElementById('copyIndicator');
+                    indicator.textContent = '🔒 ELEMENT IS LOCKED';
+                    indicator.style.background = '#ff5722';
+                    indicator.style.display = 'block';
+                    setTimeout(() => {
+                        indicator.style.display = 'none';
+                        indicator.style.background = '#2e7d32';
+                    }, 2000);
+                }
+                
+                showEditor(selectedElement);
+            }, true);
+
+            // Hover effects for arrange mode
+            newBody.addEventListener('mouseover', (e) => {
+                if (arrangeMode && arrangeTargetElement) {
+                    const element = e.target;
+                    // Only apply to element nodes, not text nodes or other node types
+                    if (element && element.nodeType === 1 && element !== arrangeTargetElement) {
+                        element.classList.add('arrange-hover');
+                    }
+                }
+            }, true);
+            
+            newBody.addEventListener('mouseout', (e) => {
+                if (arrangeMode) {
+                    const element = e.target;
+                    // Only remove from element nodes
+                    if (element && element.nodeType === 1) {
+                        element.classList.remove('arrange-hover');
+                    }
+                }
+            }, true);
+
+            // Double-click to copy HTML
+            newBody.addEventListener('dblclick', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (batchPasteMode || arrangeMode) return; // Ignore in batch/arrange mode
+                
+                const element = e.target;
+                element.classList.remove('active-inspect');
+                const code = element.outerHTML;
+                element.classList.add('active-inspect');
+                
+                navigator.clipboard.writeText(code).then(() => {
+                    const indicator = document.getElementById('copyIndicator');
+                    indicator.textContent = 'COPIED VIA DOUBLE-CLICK!';
+                    indicator.style.display = 'block';
+                    setTimeout(() => indicator.style.display = 'none', 2000);
+                });
+            }, true);
+            
+            enableDragDrop(doc);
+        }
+        
+        // ===== END BATCH PASTE MODE =====
+
+        // Close modals on ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.getElementById('copyStyleModal').classList.remove('active');
+                document.getElementById('pasteStyleModal').classList.remove('active');
+                document.getElementById('distributeModal').classList.remove('active');
+            }
+        });
+
+        // ===== END COPY/PASTE STYLE =====
+
+        // ===== CLIPBOARD HISTORY =====
+        
+        function addToClipboardHistory(styleData) {
+            // Generate auto name
+            const categories = Object.keys(styleData.categories);
+            const name = generateStyleName(styleData);
+            
+            const historyItem = {
+                id: Date.now(),
+                name: name,
+                data: JSON.parse(JSON.stringify(styleData)), // Deep clone
+                timestamp: new Date().toLocaleTimeString()
+            };
+            
+            // Add to beginning of array
+            styleClipboardHistory.unshift(historyItem);
+            
+            // Keep only last 10
+            if (styleClipboardHistory.length > MAX_CLIPBOARD_HISTORY) {
+                styleClipboardHistory.pop();
+            }
+            
+            // Update UI
+            renderClipboardHistory();
+            
+            // Show history panel
+            document.getElementById('clipboardHistory').style.display = 'flex';
+        }
+        
+        function generateStyleName(styleData) {
+            const cats = Object.keys(styleData.categories);
+            if (cats.length === 0) return 'Empty Style';
+            if (cats.length === 7) return 'Complete Style';
+            
+            // Get primary color if available
+            let colorInfo = '';
+            if (styleData.categories.colors) {
+                const bg = styleData.categories.colors.backgroundColor;
+                if (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') {
+                    colorInfo = bg.includes('rgb') ? 'Colored ' : '';
+                }
+            }
+            
+            return colorInfo + cats.map(c => c.charAt(0).toUpperCase() + c.slice(1)).join(' + ');
+        }
+        
+        function renderClipboardHistory() {
+            const historyList = document.getElementById('historyList');
+            const historyCount = document.getElementById('historyCount');
+            
+            historyCount.textContent = styleClipboardHistory.length;
+            historyList.innerHTML = '';
+            
+            styleClipboardHistory.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                
+                const categories = Object.keys(item.data.categories);
+                const tags = categories.map(cat => {
+                    const catNames = {
+                        colors: '🎨',
+                        typography: '🔤',
+                        spacing: '📏',
+                        dimensions: '📐',
+                        border: '🔲',
+                        radius: '⭕',
+                        display: '📊'
+                    };
+                    return `<span class="history-item-tag">${catNames[cat] || cat}</span>`;
+                }).join('');
+                
+                div.innerHTML = `
+                    <div class="history-item-header">
+                        <span class="history-item-name" data-id="${item.id}">${item.name}</span>
+                        <span style="font-size: 10px; color: #666;">${item.timestamp}</span>
+                    </div>
+                    <div class="history-item-preview">${tags}</div>
+                    <div class="history-item-actions">
+                        <button class="history-item-btn paste" data-id="${item.id}">Paste</button>
+                        <button class="history-item-btn" data-id="${item.id}" onclick="renameHistoryItem(${item.id})">Rename</button>
+                        <button class="history-item-btn delete" data-id="${item.id}">Delete</button>
+                    </div>
+                `;
+                
+                historyList.appendChild(div);
+            });
+            
+            // Add event listeners
+            document.querySelectorAll('.history-item-btn.paste').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = parseInt(e.target.dataset.id);
+                    pasteFromHistory(id);
+                });
+            });
+            
+            document.querySelectorAll('.history-item-btn.delete').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = parseInt(e.target.dataset.id);
+                    deleteFromHistory(id);
+                });
+            });
+            
+            document.querySelectorAll('.history-item-name').forEach(name => {
+                name.addEventListener('dblclick', (e) => {
+                    const id = parseInt(e.target.dataset.id);
+                    renameHistoryItem(id);
+                });
+            });
+        }
+        
+        function pasteFromHistory(id) {
+            const item = styleClipboardHistory.find(i => i.id === id);
+            if (!item || !selectedElement) return;
+            
+            // Set as current copied style
+            copiedStyles = item.data;
+            
+            // Show paste button
+            document.getElementById('pasteStyleBtn').style.display = 'block';
+            
+            // Open paste modal
+            document.getElementById('pasteStyleBtn').click();
+        }
+        
+        function deleteFromHistory(id) {
+            styleClipboardHistory = styleClipboardHistory.filter(i => i.id !== id);
+            renderClipboardHistory();
+            
+            if (styleClipboardHistory.length === 0) {
+                document.getElementById('clipboardHistory').style.display = 'none';
+            }
+        }
+        
+        function renameHistoryItem(id) {
+            const item = styleClipboardHistory.find(i => i.id === id);
+            if (!item) return;
+            
+            const newName = prompt('Enter new name:', item.name);
+            if (newName && newName.trim()) {
+                item.name = newName.trim();
+                renderClipboardHistory();
+            }
+        }
+        
+        // Toggle history panel
+        document.getElementById('toggleHistoryBtn').addEventListener('click', () => {
+            const historyList = document.getElementById('historyList');
+            const btn = document.getElementById('toggleHistoryBtn');
+            
+            if (historyList.style.display === 'none') {
+                historyList.style.display = 'flex';
+                btn.textContent = '▼';
+            } else {
+                historyList.style.display = 'none';
+                btn.textContent = '▶';
+            }
+        });
+        
+        // ===== END CLIPBOARD HISTORY =====
+
+        // Initialize everything when DOM is ready
+        window.addEventListener('load', () => {
+            // Try to load lucide icons, but don't break if it fails
+            try {
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+            } catch(e) {
+                console.warn('Lucide icons failed to load:', e);
+            }
+            
+            // Setup button listeners
+            document.getElementById('undoBtn').addEventListener('click', undo);
+            document.getElementById('redoBtn').addEventListener('click', redo);
+            
+            // Setup style listeners
+            setupStyleListeners();
+            
+            // Setup paste code feature
+            setupPasteCodeFeature();
+            
+            // DON'T auto-load from localStorage on startup
+            // loadFromLocalStorage();
+        });
+        
+        // ===== PASTE CODE FEATURE =====
+        
+        function setupPasteCodeFeature() {
+            const toggleBtn = document.getElementById('togglePasteCodeBtn');
+            const pastePanel = document.getElementById('pasteCodePanel');
+            const renderBtn = document.getElementById('pasteCodeRenderBtn');
+            const clearBtn = document.getElementById('pasteCodeClearBtn');
+            const textarea = document.getElementById('pasteCodeTextarea');
+            
+            // Toggle paste panel
+            toggleBtn.addEventListener('click', () => {
+                pastePanel.classList.toggle('active');
+                
+                if (pastePanel.classList.contains('active')) {
+                    toggleBtn.textContent = '− Paste Code';
+                    textarea.focus();
+                } else {
+                    toggleBtn.textContent = '+ Paste Code';
+                }
+            });
+            
+            // Render button
+            renderBtn.addEventListener('click', () => {
+                renderPastedCode();
+            });
+            
+            // Clear button
+            clearBtn.addEventListener('click', () => {
+                if (confirm('Clear pasted code?')) {
+                    textarea.value = '';
+                    textarea.focus();
+                }
+            });
+            
+            // Auto-render on paste (after 100ms delay)
+            textarea.addEventListener('paste', () => {
+                setTimeout(() => {
+                    renderPastedCode();
+                }, 100);
+            });
+            
+            // Keyboard shortcut: Ctrl+Enter to render
+            textarea.addEventListener('keydown', (e) => {
+                if (e.ctrlKey && e.key === 'Enter') {
+                    e.preventDefault();
+                    renderPastedCode();
+                }
+            });
+        }
+        
+        function renderPastedCode() {
+            const textarea = document.getElementById('pasteCodeTextarea');
+            const code = textarea.value.trim();
+            
+            if (!code) {
+                alert('Please paste some code first!');
+                return;
+            }
+            
+            try {
+                // Load the code into the viewer
+                const doc = viewer.contentWindow.document;
+                doc.open();
+                doc.write(code);
+                doc.close();
+                
+                // Re-initialize inspector after rendering
+                setTimeout(() => {
+                    initInspector(doc);
+                    saveState();
+                    
+                    // Show feedback
+                    const indicator = document.getElementById('copyIndicator');
+                    indicator.textContent = 'CODE RENDERED!';
+                    indicator.style.display = 'block';
+                    setTimeout(() => indicator.style.display = 'none', 1500);
+                }, 200);
+            } catch (error) {
+                alert('Error rendering code: ' + error.message);
+            }
+        }
+        
+        // ===== END PASTE CODE FEATURE =====
+    </script>
+</body>
+</html>
