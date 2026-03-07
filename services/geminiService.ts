@@ -28,7 +28,7 @@ const loadGoogleGenAI = async () => {
 };
 
 export const getEmbeddings = async (texts: string[], apiKey?: string): Promise<number[][]> => {
-  const key = apiKey || import.meta.env.VITE_GEMINI_API_KEY || process.env.API_KEY;
+  const key = apiKey || (import.meta as any).env?.VITE_GEMINI_API_KEY;
   
   if (!key) {
     throw new Error("Gemini API key not configured");
@@ -81,7 +81,7 @@ export const streamChatResponse = async (
   model: string = DEFAULT_CHAT_MODEL,
   imageBase64?: string // Add image support
 ) => {
-  const key = apiKey || import.meta.env.VITE_GEMINI_API_KEY || process.env.API_KEY;
+  const key = apiKey || (import.meta as any).env?.VITE_GEMINI_API_KEY;
   
   if (!key) {
     throw new Error("Gemini API key not configured");
@@ -107,7 +107,46 @@ CRITICAL INSTRUCTIONS:
 7. For construction images: analyze materials, techniques, safety, code compliance
 8. For blueprints: identify dimensions, systems, potential issues
 
-Keep responses professional, objective, and detailed for construction context.`;
+Keep responses professional, objective, and detailed for construction context.
+
+CANVAS COMPONENT GENERATION:
+When users ask for UI components, layouts, dashboards, or pages, generate React components for immediate Canvas rendering.
+
+DO NOT INCLUDE:
+- ❌ "Create a new React project" or "Save this as..."
+- ❌ "Run npm install" or setup instructions
+- ❌ Folder structures or multiple files
+- ❌ package.json or build instructions
+
+REQUIRED FORMAT:
+1. Single self-contained React component
+2. Functional component with default export
+3. Imports at top: React, hooks, Framer Motion, Wouter, Lucide React
+4. Tailwind CSS for styling
+5. Realistic content (not Lorem ipsum)
+6. Responsive and production-ready
+
+RESPONSE STRUCTURE:
+Brief explanation → Single code block → Optional notes
+
+EXAMPLE:
+\`\`\`tsx
+import React, { useState } from "react";
+import { Mail, Lock } from "lucide-react";
+
+export default function LoginPage() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <div className="bg-white p-8 rounded-lg shadow-md w-96">
+        <h1 className="text-2xl font-bold mb-6">Login</h1>
+        {/* Component content */}
+      </div>
+    </div>
+  );
+}
+\`\`\`
+
+Canvas renders this immediately - no setup needed.`;
 
   const fullPrompt = contextString 
     ? `Context Information:\n${contextString}\n\nUser Question: ${message}`
@@ -130,7 +169,7 @@ Keep responses professional, objective, and detailed for construction context.`;
     contents: [{ parts }],
     generationConfig: {
       temperature: 0.7,
-      maxOutputTokens: 2048,
+      maxOutputTokens: 8192,
     }
   };
 

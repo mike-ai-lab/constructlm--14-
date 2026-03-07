@@ -34,6 +34,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [editedCodeBlocks, setEditedCodeBlocks] = useState<{[blockId: string]: string}>({});
   const [iframeKey, setIframeKey] = useState(0);
   const [codeVersionHistory, setCodeVersionHistory] = useState<{[blockId: string]: {versions: string[], currentIndex: number}}>({});
+  const [autoOpenedBlocks, setAutoOpenedBlocks] = useState<Set<string>>(new Set());
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -257,6 +258,59 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Auto-open Canvas for React components
+  useEffect(() => {
+    if (isStreaming || messages.length === 0) return;
+    
+    const lastMessage = messages[messages.length - 1];
+    if (lastMessage.role !== 'model' || lastMessage.isStreaming) return;
+    
+    // Extract code blocks from the message
+    const codeBlockRegex = /```(\w+)\n([\s\S]*?)```/g;
+    let match;
+    
+    while ((match = codeBlockRegex.exec(lastMessage.content)) !== null) {
+      const language = match[1];
+      const code = match[2];
+      const blockId = `${lastMessage.id}-${code.substring(0, 20)}`;
+      
+      // Check if already auto-opened
+      if (autoOpenedBlocks.has(blockId)) continue;
+      
+      // Check if it's a React component
+      const isTsx = language === 'tsx' || language === 'jsx' || 
+                    language === 'typescript' || language === 'javascript' || language === 'ts' || language === 'js';
+      const isReactComponent = isTsx && (
+        code.includes('export default') || 
+        (code.includes('function') && code.includes('return')) ||
+        code.includes('const') && code.includes('=>') && code.includes('return')
+      );
+      
+      // Auto-open only for React components
+      if (isReactComponent) {
+        const html = generateReactPreviewHtml(code, language);
+        setCanvasContent({html, code, language, blockId});
+        setCanvasEditedCode(code);
+        setCanvasOpen(true);
+        setCanvasShowCode(false);
+        
+        // Initialize version history
+        if (!codeVersionHistory[blockId]) {
+          setCodeVersionHistory(prev => ({
+            ...prev,
+            [blockId]: {versions: [code], currentIndex: 0}
+          }));
+        }
+        
+        // Mark as auto-opened
+        setAutoOpenedBlocks(prev => new Set(prev).add(blockId));
+        
+        // Only auto-open the first React component found
+        break;
+      }
+    }
+  }, [messages, isStreaming]);
+
   return (
     <div className="flex h-full bg-white relative overflow-hidden">
       {/* Main Chat Area */}
@@ -336,12 +390,100 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                             const blockState = codeBlockStates[blockId] || {showRendered: false};
                             const isCopied = copiedBlocks[blockId];
                             
+                            // Check if this block is currently open in Canvas
+                            const isOpenInCanvas = canvasOpen && canvasContent?.blockId === blockId;
+                            
                             const generatePreviewHtml = () => {
                               if (isHtml) return code;
                               if (isReactComponent) return generateReactPreviewHtml(code, language);
                               return code;
                             };
                             
+                            // If this React component is open in Canvas, show a compact card instead
+                            if (isReactComponent && isOpenInCanvas) {
+                              return (
+                                <div className="border-2 border-black p-4 my-4 flex items-center justify-between group hover:bg-gray-50 transition-all">
+                                  <div className="flex items-center gap-3">
+                                    <div className="border-2 border-black p-2 bg-black text-white">
+                                      <Code size={18} />
+                                    </div>
+                                    <div>
+                                      <h4 className="text-sm font-bold uppercase tracking-tight">React Component</h4>
+                                      <p className="text-[10px] text-gray-500 font-bold uppercase">{language} • Currently in Canvas</p>
+                                    </div>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={() => copyCode(code, blockId)}
+                                      className="p-2 border-2 border-black bg-white hover:bg-gray-100 text-[10px] font-mono flex items-center gap-1"
+                                      title="Copy Code"
+                                    >
+                                      {isCopied ? <Check size={14} /> : <Copy size={14} />}
+                                    </button>
+                                    <button
+                                      onClick={() => downloadCode(code, language)}
+                                      className="p-2 border-2 border-black bg-white hover:bg-gray-100 text-[10px] font-mono flex items-center gap-1"
+                                      title="Download"
+                                    >
+                                      <Download size={14} />
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            }
+                            
+                            // If it's a React component but Canvas is closed, show card with "Open Canvas" button
+                            if (isReactComponent && !canvasOpen) {
+                              return (
+                                <div className="border-2 border-black p-4 my-4 flex items-center justify-between group hover:bg-gray-50 transition-all">
+                                  <div className="flex items-center gap-3">
+                                    <div className="border-2 border-black p-2 bg-black text-white">
+                                      <Code size={18} />
+                                    </div>
+                                    <div>
+                                      <h4 className="text-sm font-bold uppercase tracking-tight">React Component</h4>
+                                      <p className="text-[10px] text-gray-500 font-bold uppercase">{language} • Ready to render</p>
+                                    </div>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={() => copyCode(code, blockId)}
+                                      className="p-2 border-2 border-black bg-white hover:bg-gray-100"
+                                      title="Copy Code"
+                                    >
+                                      {isCopied ? <Check size={14} /> : <Copy size={14} />}
+                                    </button>
+                                    <button
+                                      onClick={() => downloadCode(code, language)}
+                                      className="p-2 border-2 border-black bg-white hover:bg-gray-100"
+                                      title="Download"
+                                    >
+                                      <Download size={14} />
+                                    </button>
+                                    <button
+                                      onClick={() => {
+                                        setCanvasContent({html: generatePreviewHtml(), code, language, blockId});
+                                        setCanvasEditedCode(code);
+                                        setCanvasOpen(true);
+                                        setCanvasShowCode(false);
+                                        
+                                        if (!codeVersionHistory[blockId]) {
+                                          setCodeVersionHistory(prev => ({
+                                            ...prev,
+                                            [blockId]: {versions: [code], currentIndex: 0}
+                                          }));
+                                        }
+                                      }}
+                                      className="border-2 border-black px-4 py-2 text-xs font-black uppercase bg-white hover:bg-black hover:text-white transition-all flex items-center gap-2"
+                                    >
+                                      Open Canvas <Play size={12} />
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            }
+                            
+                            // For non-React code blocks, show normal code view
                             return (
                               <div className="relative my-2">
                                 <div className="absolute left-2 top-2 z-10">
@@ -364,43 +506,21 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                   >
                                     <Download size={12} />
                                   </button>
-                                  {isPreviewable && (
-                                    <>
-                                      <button
-                                        onClick={() => {
-                                          setCanvasContent({html: generatePreviewHtml(), code, language, blockId});
-                                          setCanvasEditedCode(code);
-                                          setCanvasOpen(true);
-                                          setCanvasShowCode(false);
-                                          
-                                          // Initialize version history if not exists
-                                          if (!codeVersionHistory[blockId]) {
-                                            setCodeVersionHistory(prev => ({
-                                              ...prev,
-                                              [blockId]: {versions: [code], currentIndex: 0}
-                                            }));
-                                          }
-                                        }}
-                                        className="p-1 bg-white border border-black hover:bg-gray-100 text-[10px] font-mono flex items-center gap-1"
-                                        title="Open in Canvas"
-                                      >
-                                        <Maximize2 size={12} />
-                                      </button>
-                                      <button
-                                        onClick={() => setCodeBlockStates(prev => ({
-                                          ...prev,
-                                          [blockId]: {showRendered: !blockState.showRendered}
-                                        }))}
-                                        className="p-1 bg-white border border-black hover:bg-gray-100 text-[10px] font-mono flex items-center gap-1"
-                                        title="Toggle View"
-                                      >
-                                        <Code size={12} />
-                                        {blockState.showRendered ? 'CODE' : 'PREVIEW'}
-                                      </button>
-                                    </>
+                                  {isHtml && (
+                                    <button
+                                      onClick={() => setCodeBlockStates(prev => ({
+                                        ...prev,
+                                        [blockId]: {showRendered: !blockState.showRendered}
+                                      }))}
+                                      className="p-1 bg-white border border-black hover:bg-gray-100 text-[10px] font-mono flex items-center gap-1"
+                                      title="Toggle View"
+                                    >
+                                      <Code size={12} />
+                                      {blockState.showRendered ? 'CODE' : 'PREVIEW'}
+                                    </button>
                                   )}
                                 </div>
-                                {blockState.showRendered ? (
+                                {blockState.showRendered && isHtml ? (
                                   <div className="border border-gray-300 bg-white mt-8">
                                     <iframe
                                       srcDoc={generatePreviewHtml()}

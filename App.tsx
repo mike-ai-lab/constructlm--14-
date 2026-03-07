@@ -62,6 +62,17 @@ const App: React.FC = () => {
     setGeminiApiKey(storedGeminiKey);
     setCerebrasApiKey(storedCerebrasKey);
 
+    // Load saved AI provider and model preferences
+    const savedAiModel = localStorage.getItem('ai_model') as 'gemini' | 'cerebras' | null;
+    const savedSelectedModel = localStorage.getItem('selected_model');
+    
+    if (savedAiModel) {
+      setAiModel(savedAiModel);
+    }
+    if (savedSelectedModel) {
+      setSelectedModel(savedSelectedModel);
+    }
+
     // Load chat sessions
     const sessions = ChatStorage.getAllChatSessions();
     setChatSessions(sessions);
@@ -71,7 +82,8 @@ const App: React.FC = () => {
       const lastSession = sessions[0];
       setCurrentChatId(lastSession.id);
       setMessages(lastSession.messages);
-      setAiModel(lastSession.aiModel);
+      // Don't override user's saved preferences with session data
+      // setAiModel(lastSession.aiModel);
     } else {
       // Create initial chat if none exists
       const initialChatId = crypto.randomUUID();
@@ -463,7 +475,28 @@ const App: React.FC = () => {
           <span className="text-[10px] font-mono">{files.length} FILES</span>
           <select 
             value={aiModel}
-            onChange={(e) => setAiModel(e.target.value as 'gemini' | 'cerebras')}
+            onChange={(e) => {
+              const provider = e.target.value as 'gemini' | 'cerebras';
+              setAiModel(provider);
+              localStorage.setItem('ai_model', provider);
+              
+              // Auto-select a compatible model for the provider
+              if (provider === 'gemini') {
+                const isGeminiModel = GeminiService.GEMINI_MODELS.some(model => model.id === selectedModel);
+                if (!isGeminiModel) {
+                  const defaultGemini = 'gemini-2.5-flash';
+                  setSelectedModel(defaultGemini);
+                  localStorage.setItem('selected_model', defaultGemini);
+                }
+              } else {
+                const isCerebrasModel = GeminiService.CEREBRAS_MODELS.some(model => model.id === selectedModel);
+                if (!isCerebrasModel) {
+                  const defaultCerebras = 'llama3.1-8b';
+                  setSelectedModel(defaultCerebras);
+                  localStorage.setItem('selected_model', defaultCerebras);
+                }
+              }
+            }}
             className="text-[10px] font-mono font-bold px-2 py-1 border border-black bg-white"
           >
             <option value="gemini">GEMINI</option>
@@ -606,6 +639,9 @@ const App: React.FC = () => {
                         setSelectedModel(model.id);
                         setAiModel('cerebras');
                         setIsModelDropdownOpen(false);
+                        // Persist to localStorage
+                        localStorage.setItem('selected_model', model.id);
+                        localStorage.setItem('ai_model', 'cerebras');
                       }}
                       className={`w-full text-left px-4 py-2 text-[10px] font-mono hover:bg-gray-100 ${
                         selectedModel === model.id ? 'bg-gray-100 font-bold' : ''
@@ -630,6 +666,9 @@ const App: React.FC = () => {
                         setSelectedModel(model.id);
                         setAiModel('gemini');
                         setIsModelDropdownOpen(false);
+                        // Persist to localStorage
+                        localStorage.setItem('selected_model', model.id);
+                        localStorage.setItem('ai_model', 'gemini');
                       }}
                       className={`w-full text-left px-4 py-2 text-[10px] font-mono hover:bg-gray-100 ${
                         selectedModel === model.id ? 'bg-gray-100 font-bold' : ''
@@ -656,7 +695,32 @@ const App: React.FC = () => {
               {['GEMINI', 'CEREBRAS'].map(m => (
                 <button 
                   key={m}
-                  onClick={() => setAiModel(m.toLowerCase() as 'gemini' | 'cerebras')}
+                  onClick={() => {
+                    const provider = m.toLowerCase() as 'gemini' | 'cerebras';
+                    setAiModel(provider);
+                    localStorage.setItem('ai_model', provider);
+                    
+                    // Auto-select a compatible model for the provider
+                    if (provider === 'gemini') {
+                      // Check if current model is a Gemini model
+                      const isGeminiModel = GeminiService.GEMINI_MODELS.some(model => model.id === selectedModel);
+                      if (!isGeminiModel) {
+                        // Switch to default Gemini model
+                        const defaultGemini = 'gemini-2.5-flash';
+                        setSelectedModel(defaultGemini);
+                        localStorage.setItem('selected_model', defaultGemini);
+                      }
+                    } else {
+                      // Check if current model is a Cerebras model
+                      const isCerebrasModel = GeminiService.CEREBRAS_MODELS.some(model => model.id === selectedModel);
+                      if (!isCerebrasModel) {
+                        // Switch to default Cerebras model
+                        const defaultCerebras = 'llama3.1-8b';
+                        setSelectedModel(defaultCerebras);
+                        localStorage.setItem('selected_model', defaultCerebras);
+                      }
+                    }
+                  }}
                   className={`h-9 px-4 text-[10px] font-black uppercase transition-all duration-75 border-2 ${
                     aiModel === m.toLowerCase()
                     ? 'bg-white border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] translate-x-[-1px] translate-y-[-1px] text-black' 
