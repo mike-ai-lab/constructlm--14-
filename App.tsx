@@ -216,41 +216,57 @@ const App: React.FC = () => {
     const session = ChatStorage.getChatSession(id);
     if (!session) return;
     
-    let markdown = `# ${session.title}\n\n`;
-    markdown += `**Exported:** ${new Date().toLocaleString()}\n\n---\n\n`;
+    // Create clean title for filename
+    const cleanTitle = session.title.replace(/[^a-z0-9\s]/gi, '').replace(/\s+/g, '_').substring(0, 50);
     
-    session.messages.forEach((msg) => {
+    let markdown = `# ${session.title}\n\n`;
+    markdown += `**Exported:** ${new Date().toLocaleString()}\n`;
+    markdown += `**Model:** ${session.aiModel}\n`;
+    markdown += `**Messages:** ${session.messages.length}\n\n`;
+    markdown += `---\n\n`;
+    
+    session.messages.forEach((msg, index) => {
       if (msg.role === 'user') {
-        markdown += `## User\n\n${msg.content}\n\n`;
+        markdown += `## 💬 User Message ${Math.floor(index / 2) + 1}\n\n`;
+        markdown += `${msg.content}\n\n`;
+        
         if (msg.metadata) {
           if (msg.metadata.imageBase64) {
-            markdown += `*[Image attached]*\n\n`;
+            const imageCount = msg.metadata.imageBase64.split(',').length;
+            markdown += `📎 *${imageCount} image${imageCount > 1 ? 's' : ''} attached*\n\n`;
           }
           if (msg.metadata.activeSources && msg.metadata.activeSources.length > 0) {
-            markdown += `*Active sources (${msg.metadata.activeSources.length}): ${msg.metadata.activeSources.join(', ')}*\n\n`;
+            markdown += `📚 *Active sources (${msg.metadata.activeSources.length}):* ${msg.metadata.activeSources.join(', ')}\n\n`;
           }
         }
       } else {
-        markdown += `## Assistant\n\n${msg.content}\n\n`;
+        markdown += `## 🤖 Assistant Response ${Math.floor(index / 2) + 1}\n\n`;
+        markdown += `${msg.content}\n\n`;
+        
         if (msg.citations && msg.citations.length > 0) {
-          markdown += `### Sources\n\n`;
+          markdown += `### 📖 Sources Referenced\n\n`;
           msg.citations.forEach((cite, i) => {
             markdown += `${i + 1}. **${cite.docName}** (similarity: ${cite.similarity.toFixed(3)})\n`;
           });
           markdown += `\n`;
         }
+        
         if (msg.inputTokens || msg.outputTokens) {
-          markdown += `*Token Usage: Input ${msg.inputTokens || 0} • Output ${msg.outputTokens || 0}*\n\n`;
+          markdown += `*📊 Token Usage: Input ${msg.inputTokens || 0} • Output ${msg.outputTokens || 0}*\n\n`;
         }
       }
+      
       markdown += `---\n\n`;
     });
     
-    const blob = new Blob([markdown], { type: 'text/markdown' });
+    // Add footer
+    markdown += `\n*Exported from ConstructLM - ${new Date().toISOString()}*\n`;
+    
+    const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `${session.title.replace(/[^a-z0-9]/gi, '_')}_${Date.now()}.md`;
+    a.download = `${cleanTitle || 'chat'}_${Date.now()}.md`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

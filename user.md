@@ -1,214 +1,130 @@
-## user:
-Create a React UI component for a login form.
 
+  /** Form submit handler */
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (validate()) {
+      onSubmit({ email, password });
+    }
+  };
 
-## CONSTRUCT_LM:
-Below is a self‑contained, functional‑component implementation of a typical login form in React. It includes basic state handling, client‑side validation, and a simple visual lauser:t that user: can easily adapt or extend.
-tsx
+  return (
+    <form onSubmit={handleSubmit} noValidate>
+      <div style={{ marginBottom: "1rem" }}>
+        <label htmlFor="login-email" style={{ display: "block" }}>
+          Email
+        </label>
+        <input
+          id="login-email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          disabled={disabled}
+          aria-invalid={!!errors.email}
+          aria-describedby={errors.email ? "email-error" : undefined}
+          style={{ width: "100%", padding: "0.5rem" }}
+        />
+        {errors.email && (
+          <p id="email-error" style={{ color: "red", marginTop: "0.25rem" }}>
+            {errors.email}
+          </p>
+        )}
+      </div>
 
+      <div style={{ marginBottom: "1rem" }}>
+        <label htmlFor="login-password" style={{ display: "block" }}>
+          Password
+        </label>
+        <input
+          id="login-password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          disabled={disabled}
+          aria-invalid={!!errors.password}
+          aria-describedby={errors.password ? "password-error" : undefined}
+          style={{ width: "100%", padding: "0.5rem" }}
+        />
+        {errors.password && (
+          <p
+            id="password-error"
+            style={{ color: "red", marginTop: "0.25rem" }}
+          >
+            {errors.password}
+          </p>
+        )}
+      </div>
 
-CODE
+      <button
+        type="submit"
+        disabled={disabled}
+        style={{
+          padding: "0.5rem 1rem",
+          backgroundColor: "#0069d9",
+          color: "#fff",
+          border: "none",
+          cursor: disabled ? "not-allowed" : "pointer",
+        }}
+      >
+        {disabled ? "Signing in…" : "Sign In"}
+      </button>
+    </form>
+  );
+};
+```
 
-How to use it
-tsx
+### How to use it
 
-// App.tsx
-import React from "react";
-import LoginForm from "./LoginForm";
+```tsx
+import React, { useState } from "react";
+import { LoginForm } from "./LoginForm";
 
-const mockLogin = async ({ email, password }: { email: string; password: string }) => {
-  // Simulated async call (replace with real API request)
-  await new Promise((r) => setTimeout(r, 1000));
+export const App: React.FC = () => {
+  const [loading, setLoading] = useState(false);
 
-  if (email !== "user@example.com" || password !== "secret") {
-    throw new Error("Invalid email or password.");
-  }
+  const handleLogin = async ({ email, password }: { email: string; password: string }) => {
+    setLoading(true);
+    try {
+      // Replace with your actual authentication call
+      await fakeAuthApi(email, password);
+      alert("Login successful!");
+    } catch (err) {
+      alert("Login failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  alert("Login successful!");
+  return (
+    <div style={{ maxWidth: "400px", margin: "2rem auto" }}>
+      <h2>Login</h2>
+      <LoginForm onSubmit={handleLogin} disabled={loading} />
+    </div>
+  );
 };
 
-export const App: React.FC = () => (
-  <div style={{ padding: "2rem" }}>
-    <LoginForm onSubmit={mockLogin} />
-  </div>
-);
-Customisation tips
-What user: might want to change	How to do it
-Styling	Swap the
-text
+/* Mock API – replace with real implementation */
+const fakeAuthApi = (email: string, password: string) =>
+  new Promise<void>((resolve, reject) => {
+    setTimeout(() => (email === "test@example.com" && password === "secret"
+      ? resolve()
+      : reject()), 1000);
+  });
+```
 
-styles
-object for CSS Modules, Styled‑Components, Tailwind, etc.
-Validation rules	Extend the
-text
+### Key points
 
-validate
-function (e.g., add password‑strength checks).
-Remember‑me checkbox	Add another piece of state and include it in the
-text
+| Feature | Implementation |
+|---------|----------------|
+| **State handling** | `useState` for email, password, and validation errors |
+| **Validation** | Simple client‑side checks (required fields, email format, min password length) |
+| **Accessibility** | `<label>` linked via `htmlFor`, `aria-invalid`, and descriptive error IDs |
+| **Disabled / loading** | Prop `disabled` disables inputs and button, useful while awaiting a request |
+| **Styling** | Inline styles for brevity; replace with CSS modules, Tailwind, or a UI library as needed |
+| **Reusability** | The component receives an `onSubmit` callback, keeping it UI‑only and easy to test |
 
-onSubmit
-payload.
-Redirect after login	Replace the
-text
+Feel free to adapt the styling or validation logic to match your project's design system or security requirements.
 
-alert
-in
-text
+*Token Usage: Input 12 • Output 1302*
 
-mockLogin
-with
-text
+---
 
-navigate("/dashboard")
-(React Router).
-Loading spinner	Replace the button text with a spinner component when
-text
-
-isSubmitting
-is true.
-The component is intentionally lightweight and framework‑agnostic, making it easy to drop into any React project (Create React App, Vite, Next.js, etc.). Feel free to adapt the props, styling, or validation logic to match user:r specific UI/UX requirements.
-Input: 12 tokens • Output: 1728 tokens
-
-
-## user:
-Component Error
-Unexpected token 'export'
-
-SyntaxError: Unexpected token 'export'
-    at new Function (<anonymous>)
-    at initComponent (about:srcdoc:94:31)
-    at HTMLDocument.checkLibrariesLoaded (about:srcdoc:51:11)
-
-
-## CONSTRUCT_LM:
-written as an ES‑module / TypeScript component:
-tsx
-
-
-PREVIEW
-export const LoginForm: React.FC<LoginFormProps> = …
-export default LoginForm;
-If user: paste that code straight into a plain
-text
-
-<script>
-tag inside an HTML page, the browser tries to interpret it as plain JavaScript (not a module) and it doesn’t understand the
-text
-
-export
-keyword--------------------|------------------| | A. Use a bundler (Create‑React‑App, Vite, Next.js, etc.) | user: are building a real React application that will be compiled/minified for production. | Keep the
-text
-
-export
-syntax, place the file under
-text
-
-src/
-, import it from another component, and run the bundler (
-text
-
-npm start
-,
-text
-
-npm run dev
-, …). | | B. Run a quick demo with only CDN scripts (no build step) | user: just want to see the component live in a single HTML file or in a teaching environment. | Rewrite the component as plain JavaScript (no
-text
-
-export
-) and let Babel transpile the JSX on‑the‑fly. Use
-text
-
-<script type="module">
-(or the Babel‑in‑the‑browser approach) to make
-text
-
-import
-/
-text
-
-export
-work. |
-Below is a complete, copy‑and‑paste‑ready HTML example that uses option B. It:
-Loads React, ReactDOM, and Babel from a CDN.
-Declares the
-text
-
-LoginForm
-component in the same file (no
-text
-
-export
-).
-Renders the component into a
-text
-
-<div id="root">
-.
-Shows a mock login handler that user: can replace with a real API call.
-📄 Full HTML Demo (no build step)
-html
-
-
-CODE
-
-How it works
-Step	What happens
-1️⃣ Load React & ReactDOM	The two
-text
-
-<script>
-tags pull the development builds from unpkg.com.
-2️⃣ Load Babel	
-text
-
-@babel/standalone
-reads any
-text
-
-<script type="text/babel">
-block, transforms JSX/ES6 to plain ES5, and injects it into the page.
-3️⃣ Component code	Inside the
-text
-
-type="text/babel"
-block we write plain JavaScript (no
-text
-
-export
-). The component uses
-text
-
-React.useState
-etc., exactly like the TypeScript version but without type annotations.
-4️⃣ Mock login	
-text
-
-mockLogin
-pretends to talk to a server; user: can replace its body with a real
-text
-
-fetch('/api/login', …)
-call.
-5️⃣ Render	
-text
-
-ReactDOM.createRoot(...).render(<LoginForm …/>)
-mounts the component into
-text
-
-<div id="root">
-.
-🎯 If user: prefer a proper build system (Create‑React‑App, Vite, etc.)
-Create a new project
-bash
-
-npx create-react-app my-app   # or: npm create vite@latest my-app -- --template react
-cd my-app
-Add the component file (
-text
-
-src/LoginForm.tsx
-) – keep the original
-Input: 55 tokens • Output: 1804 tokens
