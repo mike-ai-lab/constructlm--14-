@@ -27,6 +27,7 @@ export interface ChatMessage {
   citations?: Citation[];
   inputTokens?: number;
   outputTokens?: number;
+  reasoning?: string; // Thinking/reasoning process for reasoning models
   metadata?: {
     imageBase64?: string;
     activeSources?: string[];
@@ -39,7 +40,7 @@ export interface ChatSession {
   messages: ChatMessage[];
   createdAt: number;
   updatedAt: number;
-  aiModel: 'gemini' | 'cerebras';
+  aiModel: 'gemini' | 'cerebras' | 'groq' | 'openrouter';
 }
 
 export interface Citation {

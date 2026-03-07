@@ -6,6 +6,8 @@ import { FileDocument, ChatMessage, ChatSession } from './types';
 import * as VectorDB from './services/vectorDb';
 import * as GeminiService from './services/geminiService';
 import * as CerebrasService from './services/cerebrasService';
+import * as GroqService from './services/groqService';
+import * as OpenRouterService from './services/openrouterService';
 import * as ChatStorage from './services/chatStorage';
 import { Settings, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
 
@@ -15,14 +17,16 @@ const App: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
-  const [aiModel, setAiModel] = useState<'gemini' | 'cerebras'>('gemini');
-  const [selectedModel, setSelectedModel] = useState('gemini-2.5-flash');
+  const [aiModel, setAiModel] = useState<'gemini' | 'cerebras' | 'groq' | 'openrouter'>('cerebras');
+  const [selectedModel, setSelectedModel] = useState('llama3.1-8b');
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(320);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [geminiApiKey, setGeminiApiKey] = useState('');
   const [cerebrasApiKey, setCerebrasApiKey] = useState('');
+  const [groqApiKey, setGroqApiKey] = useState('');
+  const [openrouterApiKey, setOpenrouterApiKey] = useState('');
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -59,11 +63,15 @@ const App: React.FC = () => {
     // Load API keys from localStorage
     const storedGeminiKey = localStorage.getItem('gemini_api_key') || '';
     const storedCerebrasKey = localStorage.getItem('cerebras_api_key') || '';
+    const storedGroqKey = localStorage.getItem('groq_api_key') || '';
+    const storedOpenRouterKey = localStorage.getItem('openrouter_api_key') || '';
     setGeminiApiKey(storedGeminiKey);
     setCerebrasApiKey(storedCerebrasKey);
+    setGroqApiKey(storedGroqKey);
+    setOpenrouterApiKey(storedOpenRouterKey);
 
     // Load saved AI provider and model preferences
-    const savedAiModel = localStorage.getItem('ai_model') as 'gemini' | 'cerebras' | null;
+    const savedAiModel = localStorage.getItem('ai_model') as 'gemini' | 'cerebras' | 'groq' | 'openrouter' | null;
     const savedSelectedModel = localStorage.getItem('selected_model');
     
     if (savedAiModel) {
@@ -92,7 +100,7 @@ const App: React.FC = () => {
     }
 
     // Show settings if no keys are configured
-    if (!storedGeminiKey && !storedCerebrasKey) {
+    if (!storedGeminiKey && !storedCerebrasKey && !storedGroqKey && !storedOpenRouterKey) {
       setIsSettingsOpen(true);
     }
   }, []);
@@ -159,11 +167,15 @@ const App: React.FC = () => {
     ));
   };
 
-  const handleSaveKeys = (gemini: string, cerebras: string) => {
+  const handleSaveKeys = (gemini: string, cerebras: string, groq: string, openrouter: string) => {
     localStorage.setItem('gemini_api_key', gemini);
     localStorage.setItem('cerebras_api_key', cerebras);
+    localStorage.setItem('groq_api_key', groq);
+    localStorage.setItem('openrouter_api_key', openrouter);
     setGeminiApiKey(gemini);
     setCerebrasApiKey(cerebras);
+    setGroqApiKey(groq);
+    setOpenrouterApiKey(openrouter);
   };
 
   const saveCurrentChat = () => {
@@ -324,6 +336,16 @@ const App: React.FC = () => {
       setIsSettingsOpen(true);
       return;
     }
+    if (aiModel === 'groq' && !groqApiKey) {
+      alert('Please configure your Groq API key in Settings');
+      setIsSettingsOpen(true);
+      return;
+    }
+    if (aiModel === 'openrouter' && !openrouterApiKey) {
+      alert('Please configure your OpenRouter API key in Settings');
+      setIsSettingsOpen(true);
+      return;
+    }
     
     // Get active sources
     const activeSources = files.filter(f => f.isEnabled !== false).map(f => f.name);
@@ -368,21 +390,40 @@ const App: React.FC = () => {
 
       // 3. Stream Response
       let accumulatedText = '';
+      let accumulatedReasoning = '';
       
-      const streamService = aiModel === 'gemini' ? GeminiService : CerebrasService;
-      const apiKey = aiModel === 'gemini' ? geminiApiKey : cerebrasApiKey;
+      const streamService = 
+        aiModel === 'gemini' ? GeminiService :
+        aiModel === 'cerebras' ? CerebrasService :
+        aiModel === 'groq' ? GroqService :
+        OpenRouterService;
+      
+      const apiKey = 
+        aiModel === 'gemini' ? geminiApiKey :
+        aiModel === 'cerebras' ? cerebrasApiKey :
+        aiModel === 'groq' ? groqApiKey :
+        openrouterApiKey;
       
       await streamService.streamChatResponse(
         text, 
         messages, 
         citations, 
-        (chunk) => {
-          accumulatedText += chunk;
-          setMessages(prev => prev.map(msg => 
-            msg.id === modelMsgId 
-              ? { ...msg, content: accumulatedText }
-              : msg
-          ));
+        (chunk, isReasoning = false) => {
+          if (isReasoning) {
+            accumulatedReasoning += chunk;
+            setMessages(prev => prev.map(msg => 
+              msg.id === modelMsgId 
+                ? { ...msg, reasoning: accumulatedReasoning }
+                : msg
+            ));
+          } else {
+            accumulatedText += chunk;
+            setMessages(prev => prev.map(msg => 
+              msg.id === modelMsgId 
+                ? { ...msg, content: accumulatedText }
+                : msg
+            ));
+          }
         },
         apiKey,
         selectedModel,
@@ -476,31 +517,31 @@ const App: React.FC = () => {
           <select 
             value={aiModel}
             onChange={(e) => {
-              const provider = e.target.value as 'gemini' | 'cerebras';
+              const provider = e.target.value as 'gemini' | 'cerebras' | 'groq' | 'openrouter';
               setAiModel(provider);
               localStorage.setItem('ai_model', provider);
               
               // Auto-select a compatible model for the provider
-              if (provider === 'gemini') {
-                const isGeminiModel = GeminiService.GEMINI_MODELS.some(model => model.id === selectedModel);
-                if (!isGeminiModel) {
-                  const defaultGemini = 'gemini-2.5-flash';
-                  setSelectedModel(defaultGemini);
-                  localStorage.setItem('selected_model', defaultGemini);
-                }
-              } else {
-                const isCerebrasModel = GeminiService.CEREBRAS_MODELS.some(model => model.id === selectedModel);
-                if (!isCerebrasModel) {
-                  const defaultCerebras = 'llama3.1-8b';
-                  setSelectedModel(defaultCerebras);
-                  localStorage.setItem('selected_model', defaultCerebras);
-                }
+              const modelLists = {
+                gemini: GeminiService.GEMINI_MODELS,
+                cerebras: GeminiService.CEREBRAS_MODELS,
+                groq: GeminiService.GROQ_MODELS,
+                openrouter: GeminiService.OPENROUTER_MODELS
+              };
+              
+              const isCompatible = modelLists[provider].some(model => model.id === selectedModel);
+              if (!isCompatible) {
+                const defaultModel = modelLists[provider][0].id;
+                setSelectedModel(defaultModel);
+                localStorage.setItem('selected_model', defaultModel);
               }
             }}
             className="text-[10px] font-mono font-bold px-2 py-1 border border-black bg-white"
           >
             <option value="gemini">GEMINI</option>
             <option value="cerebras">CEREBRAS</option>
+            <option value="groq">GROQ</option>
+            <option value="openrouter">OPENROUTER</option>
           </select>
         </div>
       </header>
@@ -630,7 +671,7 @@ const App: React.FC = () => {
               </button>
               
               {isModelDropdownOpen && (
-                <div className="absolute top-full left-0 mt-1 bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] z-50 min-w-[280px]">
+                <div className="absolute top-full left-0 mt-1 bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] z-50 min-w-[280px] max-h-[500px] overflow-y-auto">
                   <div className="p-2 border-b border-gray-200 text-[8px] font-bold text-gray-500">CEREBRAS</div>
                   {GeminiService.CEREBRAS_MODELS.map(model => (
                     <button
@@ -639,7 +680,6 @@ const App: React.FC = () => {
                         setSelectedModel(model.id);
                         setAiModel('cerebras');
                         setIsModelDropdownOpen(false);
-                        // Persist to localStorage
                         localStorage.setItem('selected_model', model.id);
                         localStorage.setItem('ai_model', 'cerebras');
                       }}
@@ -658,6 +698,7 @@ const App: React.FC = () => {
                       </div>
                     </button>
                   ))}
+                  
                   <div className="p-2 border-b border-t border-gray-200 text-[8px] font-bold text-gray-500">GEMINI</div>
                   {GeminiService.GEMINI_MODELS.map(model => (
                     <button
@@ -666,9 +707,62 @@ const App: React.FC = () => {
                         setSelectedModel(model.id);
                         setAiModel('gemini');
                         setIsModelDropdownOpen(false);
-                        // Persist to localStorage
                         localStorage.setItem('selected_model', model.id);
                         localStorage.setItem('ai_model', 'gemini');
+                      }}
+                      className={`w-full text-left px-4 py-2 text-[10px] font-mono hover:bg-gray-100 ${
+                        selectedModel === model.id ? 'bg-gray-100 font-bold' : ''
+                      }`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <span>{model.id}</span>
+                        <span className="text-[8px] text-gray-500">{model.context}</span>
+                      </div>
+                      <div className="flex gap-1 mt-1">
+                        {model.tags.map(tag => (
+                          <span key={tag} className="text-[7px] px-1 py-0.5 bg-gray-200 text-gray-700">{tag}</span>
+                        ))}
+                      </div>
+                    </button>
+                  ))}
+                  
+                  <div className="p-2 border-b border-t border-gray-200 text-[8px] font-bold text-gray-500">GROQ</div>
+                  {GeminiService.GROQ_MODELS.map(model => (
+                    <button
+                      key={model.id}
+                      onClick={() => {
+                        setSelectedModel(model.id);
+                        setAiModel('groq');
+                        setIsModelDropdownOpen(false);
+                        localStorage.setItem('selected_model', model.id);
+                        localStorage.setItem('ai_model', 'groq');
+                      }}
+                      className={`w-full text-left px-4 py-2 text-[10px] font-mono hover:bg-gray-100 ${
+                        selectedModel === model.id ? 'bg-gray-100 font-bold' : ''
+                      }`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <span>{model.id}</span>
+                        <span className="text-[8px] text-gray-500">{model.context}</span>
+                      </div>
+                      <div className="flex gap-1 mt-1">
+                        {model.tags.map(tag => (
+                          <span key={tag} className="text-[7px] px-1 py-0.5 bg-gray-200 text-gray-700">{tag}</span>
+                        ))}
+                      </div>
+                    </button>
+                  ))}
+                  
+                  <div className="p-2 border-b border-t border-gray-200 text-[8px] font-bold text-gray-500">OPENROUTER</div>
+                  {GeminiService.OPENROUTER_MODELS.map(model => (
+                    <button
+                      key={model.id}
+                      onClick={() => {
+                        setSelectedModel(model.id);
+                        setAiModel('openrouter');
+                        setIsModelDropdownOpen(false);
+                        localStorage.setItem('selected_model', model.id);
+                        localStorage.setItem('ai_model', 'openrouter');
                       }}
                       className={`w-full text-left px-4 py-2 text-[10px] font-mono hover:bg-gray-100 ${
                         selectedModel === model.id ? 'bg-gray-100 font-bold' : ''
@@ -692,39 +786,33 @@ const App: React.FC = () => {
           
           <div className="flex items-center gap-4">
             <div className="flex gap-2">
-              {['GEMINI', 'CEREBRAS'].map(m => (
+              {['GEMINI', 'CEREBRAS', 'GROQ', 'OPENROUTER'].map(m => (
                 <button 
                   key={m}
                   onClick={() => {
-                    const provider = m.toLowerCase() as 'gemini' | 'cerebras';
+                    const provider = m.toLowerCase() as 'gemini' | 'cerebras' | 'groq' | 'openrouter';
                     setAiModel(provider);
                     localStorage.setItem('ai_model', provider);
                     
                     // Auto-select a compatible model for the provider
-                    if (provider === 'gemini') {
-                      // Check if current model is a Gemini model
-                      const isGeminiModel = GeminiService.GEMINI_MODELS.some(model => model.id === selectedModel);
-                      if (!isGeminiModel) {
-                        // Switch to default Gemini model
-                        const defaultGemini = 'gemini-2.5-flash';
-                        setSelectedModel(defaultGemini);
-                        localStorage.setItem('selected_model', defaultGemini);
-                      }
-                    } else {
-                      // Check if current model is a Cerebras model
-                      const isCerebrasModel = GeminiService.CEREBRAS_MODELS.some(model => model.id === selectedModel);
-                      if (!isCerebrasModel) {
-                        // Switch to default Cerebras model
-                        const defaultCerebras = 'llama3.1-8b';
-                        setSelectedModel(defaultCerebras);
-                        localStorage.setItem('selected_model', defaultCerebras);
-                      }
+                    const modelLists = {
+                      gemini: GeminiService.GEMINI_MODELS,
+                      cerebras: GeminiService.CEREBRAS_MODELS,
+                      groq: GeminiService.GROQ_MODELS,
+                      openrouter: GeminiService.OPENROUTER_MODELS
+                    };
+                    
+                    const isCompatible = modelLists[provider].some(model => model.id === selectedModel);
+                    if (!isCompatible) {
+                      const defaultModel = modelLists[provider][0].id;
+                      setSelectedModel(defaultModel);
+                      localStorage.setItem('selected_model', defaultModel);
                     }
                   }}
-                  className={`h-9 px-4 text-[10px] font-black uppercase transition-all duration-75 border-2 ${
+                  className={`h-9 px-3 text-[10px] font-black uppercase border-2 transition-all ${
                     aiModel === m.toLowerCase()
-                    ? 'bg-white border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] translate-x-[-1px] translate-y-[-1px] text-black' 
-                    : 'bg-white border-gray-100 text-black'
+                      ? 'bg-black text-white border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] translate-x-[-1px] translate-y-[-1px]'
+                      : 'bg-white text-black border-black hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px]'
                   }`}
                 >
                   {m}
@@ -738,6 +826,7 @@ const App: React.FC = () => {
           messages={messages} 
           onSendMessage={handleSendMessage}
           isStreaming={isStreaming}
+          aiModel={aiModel}
         />
       </main>
 
@@ -747,6 +836,8 @@ const App: React.FC = () => {
         onClose={() => setIsSettingsOpen(false)}
         geminiKey={geminiApiKey}
         cerebrasKey={cerebrasApiKey}
+        groqKey={groqApiKey}
+        openrouterKey={openrouterApiKey}
         onSaveKeys={handleSaveKeys}
       />
       </div>

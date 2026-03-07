@@ -6,7 +6,9 @@ interface SettingsModalProps {
   onClose: () => void;
   geminiKey: string;
   cerebrasKey: string;
-  onSaveKeys: (gemini: string, cerebras: string) => void;
+  groqKey: string;
+  openrouterKey: string;
+  onSaveKeys: (gemini: string, cerebras: string, groq: string, openrouter: string) => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -14,12 +16,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onClose,
   geminiKey,
   cerebrasKey,
+  groqKey,
+  openrouterKey,
   onSaveKeys
 }) => {
   const [localGeminiKey, setLocalGeminiKey] = useState(geminiKey);
   const [localCerebrasKey, setLocalCerebrasKey] = useState(cerebrasKey);
+  const [localGroqKey, setLocalGroqKey] = useState(groqKey);
+  const [localOpenRouterKey, setLocalOpenRouterKey] = useState(openrouterKey);
   const [showGeminiKey, setShowGeminiKey] = useState(false);
   const [showCerebrasKey, setShowCerebrasKey] = useState(false);
+  const [showGroqKey, setShowGroqKey] = useState(false);
+  const [showOpenRouterKey, setShowOpenRouterKey] = useState(false);
   const [testingGemini, setTestingGemini] = useState(false);
   const [testingCerebras, setTestingCerebras] = useState(false);
   const [geminiStatus, setGeminiStatus] = useState<'idle' | 'success' | 'error'>('idle');
@@ -31,7 +39,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   React.useEffect(() => {
     setLocalGeminiKey(geminiKey);
     setLocalCerebrasKey(cerebrasKey);
-  }, [geminiKey, cerebrasKey]);
+    setLocalGroqKey(groqKey);
+    setLocalOpenRouterKey(openrouterKey);
+  }, [geminiKey, cerebrasKey, groqKey, openrouterKey]);
 
   if (!isOpen) return null;
 
@@ -117,7 +127,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   const handleSave = () => {
-    onSaveKeys(localGeminiKey, localCerebrasKey);
+    onSaveKeys(localGeminiKey, localCerebrasKey, localGroqKey, localOpenRouterKey);
     onClose();
   };
 
@@ -242,6 +252,72 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               className="text-blue-600 hover:underline text-xs font-mono"
             >
               Get Cerebras API Key →
+            </a>
+          </div>
+
+          {/* Groq API Key */}
+          <div>
+            <label className="block font-mono text-sm font-bold mb-2">
+              GROQ API KEY
+            </label>
+            <div className="flex gap-2 mb-2">
+              <div className="flex-1 relative">
+                <input
+                  type={showGroqKey ? 'text' : 'password'}
+                  value={localGroqKey}
+                  onChange={(e) => setLocalGroqKey(e.target.value)}
+                  placeholder="Enter your Groq API key"
+                  className="w-full px-3 py-2 border border-gray-300 focus:border-black outline-none font-mono text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowGroqKey(!showGroqKey)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black"
+                >
+                  {showGroqKey ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+            <a 
+              href="https://console.groq.com/keys" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline text-xs font-mono"
+            >
+              Get Groq API Key →
+            </a>
+          </div>
+
+          {/* OpenRouter API Key */}
+          <div>
+            <label className="block font-mono text-sm font-bold mb-2">
+              OPENROUTER API KEY
+            </label>
+            <div className="flex gap-2 mb-2">
+              <div className="flex-1 relative">
+                <input
+                  type={showOpenRouterKey ? 'text' : 'password'}
+                  value={localOpenRouterKey}
+                  onChange={(e) => setLocalOpenRouterKey(e.target.value)}
+                  placeholder="Enter your OpenRouter API key"
+                  className="w-full px-3 py-2 border border-gray-300 focus:border-black outline-none font-mono text-sm"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowOpenRouterKey(!showOpenRouterKey)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black"
+                >
+                  {showOpenRouterKey ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+            <a 
+              href="https://openrouter.ai/keys" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline text-xs font-mono"
+            >
+              Get OpenRouter API Key →
             </a>
           </div>
         </div>

@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ConstructLM - Interface Design Demo</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: 'JetBrains Mono', 'Courier New', monospace;
+      background: #ffffff;
+      color: #000000;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    ::-webkit-scrollbar {
+      width: 12px;
+      height: 12px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f0f0f0;
+      border-left: 1px solid black;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: black;
+      border-radius: 0px;
+      border: 2px solid #f0f0f0;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #333;
+    }
+
+    ::selection {
+      background-color: black;
+      color: white;
+    }
+
+    .app-container {
+      display: flex;
+      height: 100vh;
+      width: 100%;
+      background: #f5f5f5;
+      color: #1a1a1a;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      border-right: 2px solid black;
+      background: white;
+      width: 320px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 50;
+      flex-shrink: 0;
+    }
+
+    .sidebar.collapsed {
+      width: 0;
+      overflow: hidden;
+    }
+
+    .sidebar-header {
+      display: flex;
+      border-bottom: 2px solid black;
+      height: 64px;
+      align-items: center;
+      padding: 0 16px;
+      gap: 16px;
+      background: white;
+      flex-shrink: 0;
+    }
+
+    .tab-button {
+      flex: 1;
+      height: 36px;
+      font-weight: 900;
+      font-size: 10px;
+      text-transform: uppercase;
+      transition: all 0.075s;
+      border: 2px solid;
+      background: white;
+      cursor: pointer;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .tab-button.active {
+      border-color: black;
+      box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
+      transform: translate(-2px, -2px);
+    }
+
+    .tab-button.inactive {
+      border-color: #f3f4f6;
+    }
+
+    .sidebar-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 16px 24px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .add-button {
+      width: 100%;
+      border: 2px dashed black;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      background: white;
+      transition: background 0.2s;
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 12px;
+    }
+
+    .add-button:hover {
+      background: #f9fafb;
+    }
+
+    .add-button svg {
+      margin-bottom: 8px;
+      transition: transform 0.2s;
+    }
+
+    .add-button:hover svg {
+      transform: rotate(90deg);
+    }
+
+    .add-button-text {
+      font-size: 10px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .sidebar-item {
+      border: 2px solid;
+      padding: 16px;
+      background: white;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .sidebar-item.active {
+      border-color: black;
+      box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
+      transform: translate(-2px, -2px);
+    }
+
+    .sidebar-item.inactive {
+      border-color: transparent;
+      opacity: 0.4;
+    }
+
+    .sidebar-item.inactive:hover {
+      opacity: 1;
+    }
+
+    .item-title {
+      font-weight: bold;
+      font-size: 11px;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      word-break: break-word;
+    }
+
+    .item-meta {
+      font-size: 9px;
+      color: #9ca3af;
+      font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .sidebar-footer {
+      height: 88px;
+      padding: 16px;
+      border-top: 2px solid black;
+      background: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .context-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 10px;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .context-bar {
+      width: 100%;
+      background: #e5e7eb;
+      height: 8px;
+      border: 2px solid black;
+      position: relative;
+    }
+
+    .context-fill {
+      background: black;
+      height: 100%;
+      width: 0.75%;
+      transition: width 0.5s;
+    }
+
+    /* MAIN CONTENT */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: white;
+      overflow: hidden;
+      transition: all 0.3s;
+      min-width: 0;
+    }
+
+    .main.canvas-open {
+      width: 50%;
+    }
+
+    .header {
+      height: 64px;
+      border-bottom: 2px solid black;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      background: white;
+      flex-shrink: 0;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .header-icon {
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 18px;
+      height: 18px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    .header-icon:hover {
+      transform: scale(1.1);
+    }
+
+    .header-title {
+      font-size: 18px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: -0.02em;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .file-count {
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .model-select {
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: bold;
+      padding: 4px 8px;
+      border: 1px solid black;
+      background: white;
+      cursor: pointer;
+    }
+
+    .chat-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 48px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: white;
+    }
+
+    .chat-messages {
+      width: 100%;
+      max-width: 768px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .empty-state {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #d1d5db;
+      opacity: 0.5;
+      user-select: none;
+    }
+
+    .empty-icon {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 12px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    .empty-text {
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    .message {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .message.user {
+      align-items: flex-end;
+    }
+
+    .message.ai {
+      align-items: flex-start;
+    }
+
+    .message-label {
+      font-size: 10px;
+      color: #9ca3af;
+      text-transform: uppercase;
+    }
+
+    .message-content {
+      border: 2px solid;
+      padding: 14px;
+      max-width: 80%;
+      font-size: 13px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .message.user .message-content {
+      background: black;
+      color: white;
+      border-color: black;
+    }
+
+    .message.ai .message-content {
+      background: white;
+      color: black;
+      border-color: black;
+      box-shadow: 8px 8px 0px 0px rgba(0,0,0,1);
+      max-width: 100%;
+    }
+
+    .code-block-card {
+      border: 2px solid black;
+      padding: 16px;
+      margin: 16px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: white;
+      transition: all 0.2s;
+      width: 100%;
+    }
+
+    .code-block-card:hover {
+      background: #f9fafb;
+    }
+
+    .code-block-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+    }
+
+    .code-icon {
+      border: 2px solid black;
+      padding: 8px;
+      background: black;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .code-info h4 {
+      font-size: 14px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: -0.01em;
+      margin-bottom: 2px;
+    }
+
+    .code-info p {
+      font-size: 10px;
+      color: #6b7280;
+      font-weight: bold;
+      text-transform: uppercase;
+    }
+
+    .code-block-right {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .code-button {
+      padding: 8px;
+      border: 2px solid black;
+      background: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .code-button:hover {
+      background: #f3f4f6;
+    }
+
+    .code-button.primary {
+      border: 2px solid black;
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: 900;
+      text-transform: uppercase;
+      background: white;
+      color: black;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .code-button.primary:hover {
+      background: black;
+      color: white;
+    }
+
+    /* INPUT AREA */
+    .input-area {
+      border-top: 2px solid black;
+      padding: 24px;
+      background: white;
+      flex-shrink: 0;
+    }
+
+    .input-wrapper {
+      max-width: 768px;
+      margin: 0 auto;
+      display: flex;
+      gap: 12px;
+    }
+
+    .input-field {
+      flex: 1;
+      padding: 12px;
+      border: 2px solid black;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      resize: none;
+      transition: all 0.2s;
+      background: white;
+      color: black;
+    }
+
+    .input-field:focus {
+      outline: none;
+      box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
+    }
+
+    .send-button {
+      padding: 12px 16px;
+      border: 2px solid black;
+      background: black;
+      color: white;
+      font-weight: 900;
+      text-transform: uppercase;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+      font-family: 'JetBrains Mono', monospace;
+      flex-shrink: 0;
+    }
+
+    .send-button:hover {
+      box-shadow: 4px 4px 0px 0px rgba(0,0,0,1);
+      transform: translate(-2px, -2px);
+    }
+
+    /* CANVAS PANEL */
+    .canvas {
+      width: 50%;
+      border-left: 2px solid black;
+      display: flex;
+      flex-direction: column;
+      background: white;
+      transition: all 0.3s;
+      flex-shrink: 0;
+    }
+
+    .canvas.hidden {
+      width: 0;
+      overflow: hidden;
+    }
+
+    .canvas-header {
+      height: 64px;
+      border-bottom: 2px solid black;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      background: white;
+      flex-shrink: 0;
+    }
+
+    .canvas-title {
+      font-weight: 900;
+      text-transform: uppercase;
+      font-size: 14px;
+    }
+
+    .close-button {
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0 8px;
+      transition: all 0.2s;
+    }
+
+    .close-button:hover {
+      background: #f3f4f6;
+    }
+
+    .canvas-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .canvas-preview {
+      flex: 1;
+      background: #f9fafb;
+      border-bottom: 2px solid black;
+      overflow: auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #d1d5db;
+    }
+
+    .canvas-code {
+      height: 192px;
+      border-top: 2px solid black;
+      background: white;
+      overflow: auto;
+      padding: 16px;
+      font-size: 12px;
+      color: #374151;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* SIDEBAR TOGGLE */
+    .sidebar-toggle {
+      position: fixed;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 24px;
+      height: 64px;
+      background: white;
+      border: 2px solid black;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 40;
+      transition: all 0.2s;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .sidebar-toggle:hover {
+      box-shadow: 2px 2px 0px 0px rgba(0,0,0,1);
+      transform: translateY(-50%) translate(-1px, -1px);
+    }
+
+    .tab-content {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <button class="tab-button active" onclick="switchTab('sources')">SOURCES</button>
+        <button class="tab-button inactive" onclick="switchTab('chats')">CHATS</button>
+      </div>
+
+      <div class="sidebar-content" id="sidebarContent">
+        <!-- SOURCES TAB -->
+        <div id="sourcesTab" class="tab-content">
+          <div class="add-button">
+            <svg width="20" height="20" viewBox="0 0 24 24">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <div class="add-button-text">Add Source</div>
+          </div>
+
+          <div class="sidebar-item active">
+            <div class="item-title">
+              <span>document_1.pdf</span>
+            </div>
+            <div class="item-meta">
+              <span>~2500 TOKENS</span>
+            </div>
+          </div>
+
+          <div class="sidebar-item inactive">
+            <div class="item-title">
+              <span>document_2.pdf</span>
+            </div>
+            <div class="item-meta">
+              <span>~5000 TOKENS</span>
+            </div>
+          </div>
+
+          <div class="sidebar-item inactive">
+            <div class="item-title">
+              <span>document_3.pdf</span>
+            </div>
+            <div class="item-meta">
+              <span>~7500 TOKENS</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- CHATS TAB -->
+        <div id="chatsTab" class="tab-content" style="display: none;">
+          <div class="add-button">
+            <svg width="20" height="20" viewBox="0 0 24 24">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <div class="add-button-text">+ New Chat</div>
+          </div>
+
+          <div class="sidebar-item active">
+            <div class="item-title">
+              <span>Chat about React hooks</span>
+            </div>
+            <div class="item-meta">
+              <span>12 MSGS</span>
+              <span>Mar 7</span>
+            </div>
+          </div>
+
+          <div class="sidebar-item inactive">
+            <div class="item-title">
+              <span>Performance optimization</span>
+            </div>
+            <div class="item-meta">
+              <span>8 MSGS</span>
+              <span>Mar 6</span>
+            </div>
+          </div>
+
+          <div class="sidebar-item inactive">
+            <div class="item-title">
+              <span>TypeScript best practices</span>
+            </div>
+            <div class="item-meta">
+              <span>15 MSGS</span>
+              <span>Mar 5</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <div class="context-label">
+          <span>CONTEXT USAGE</span>
+          <span>7,500 / 1M</span>
+        </div>
+        <div class="context-bar">
+          <div class="context-fill"></div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="main" id="main">
+      <header class="header">
+        <div class="header-left">
+          <svg class="header-icon" viewBox="0 0 24 24">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+          </svg>
+          <svg class="header-icon" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="1"></circle>
+            <circle cx="19" cy="12" r="1"></circle>
+            <circle cx="5" cy="12" r="1"></circle>
+          </svg>
+          <div class="header-title">Construct_LM</div>
+        </div>
+        <div class="header-right">
+          <span class="file-count">3 FILES</span>
+          <select class="model-select">
+            <option>CEREBRAS</option>
+            <option>GEMINI</option>
+            <option>GROQ</option>
+            <option>OPENROUTER</option>
+          </select>
+        </div>
+      </header>
+
+      <div class="chat-area">
+        <div class="chat-messages">
+          <div class="empty-state">
+            <svg class="empty-icon" viewBox="0 0 24 24">
+              <path stroke-linecap="square" stroke-linejoin="miter" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+            </svg>
+            <p class="empty-text">AWAITING INPUT QUERY...</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-area">
+        <div class="input-wrapper">
+          <textarea class="input-field" placeholder="Ask a question..." rows="3"></textarea>
+          <button class="send-button" onclick="toggleCanvas()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="22" y1="2" x2="11" y2="13"></line>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+            </svg>
+            SEND
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <!-- CANVAS PANEL -->
+    <div class="canvas hidden" id="canvas">
+      <div class="canvas-header">
+        <div class="canvas-title">Canvas Preview</div>
+        <button class="close-button" onclick="toggleCanvas()">×</button>
+      </div>
+      <div class="canvas-content">
+        <div class="canvas-preview">
+          <div style="text-align: center; color: #d1d5db;">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin: 0 auto 8px; opacity: 0.5;">
+              <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+            </svg>
+            <p style="font-size: 12px; font-family: monospace;">Component Preview</p>
+          </div>
+        </div>
+        <div class="canvas-code">export default function Button() {
+  return (
+    &lt;button className="px-4 py-2 border-2 border-black"&gt;
+      Click me
+    &lt;/button&gt;
+  );
+}</div>
+      </div>
+    </div>
+
+    <!-- SIDEBAR TOGGLE -->
+    <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">◀</button>
+  </div>
+
+  <script>
+    let sidebarOpen = true;
+    let canvasOpen = false;
+
+    function toggleSidebar() {
+      sidebarOpen = !sidebarOpen;
+      const sidebar = document.getElementById('sidebar');
+      const toggle = document.getElementById('sidebarToggle');
+
+      if (sidebarOpen) {
+        sidebar.classList.remove('collapsed');
+        toggle.textContent = '◀';
+      } else {
+        sidebar.classList.add('collapsed');
+        toggle.textContent = '▶';
+      }
+    }
+
+    function toggleCanvas() {
+      canvasOpen = !canvasOpen;
+      const canvas = document.getElementById('canvas');
+      const main = document.getElementById('main');
+
+      if (canvasOpen) {
+        canvas.classList.remove('hidden');
+        main.classList.add('canvas-open');
+      } else {
+        canvas.classList.add('hidden');
+        main.classList.remove('canvas-open');
+      }
+    }
+
+    function switchTab(tab) {
+      const sourcesTab = document.getElementById('sourcesTab');
+      const chatsTab = document.getElementById('chatsTab');
+      const buttons = document.querySelectorAll('.tab-button');
+
+      if (tab === 'sources') {
+        sourcesTab.style.display = 'flex';
+        chatsTab.style.display = 'none';
+        buttons[0].classList.add('active');
+        buttons[0].classList.remove('inactive');
+        buttons[1].classList.remove('active');
+        buttons[1].classList.add('inactive');
+      } else {
+        sourcesTab.style.display = 'none';
+        chatsTab.style.display = 'flex';
+        buttons[0].classList.remove('active');
+        buttons[0].classList.add('inactive');
+        buttons[1].classList.add('active');
+        buttons[1].classList.remove('inactive');
+      }
+    }
+  </script>
+</body>
+</html>

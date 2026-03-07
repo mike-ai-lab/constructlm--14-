@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ConstructLM Interface Demo</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Courier New', monospace; background: #f5f5f5; color: #1a1a1a; height: 100vh; overflow: hidden; }
+    
+    /* Layout */
+    .app-container { display: flex; height: 100vh; }
+    .sidebar { width: 320px; background: white; border-right: 2px solid black; box-shadow: 4px 0 0 0 black; display: flex; flex-direction: column; transition: width 0.3s ease; flex-shrink: 0; }
+    .sidebar.collapsed { width: 0; overflow: hidden; }
+    .main-content { flex: 1; display: flex; flex-direction: column; background: white; }
+    .content-wrapper { display: flex; flex: 1; overflow: hidden; position: relative; }
+    .chat-container { flex: 1; display: flex; flex-direction: column; transition: margin-right 0.3s ease; }
+    .chat-container.canvas-open { margin-right: 50%; }
+    
+    /* Sidebar */
+    .sidebar-tabs { display: flex; border-bottom: 2px solid black; height: 64px; align-items: center; padding: 0 16px; gap: 16px; }
+    .tab-button { flex: 1; height: 36px; font-weight: 900; font-size: 10px; text-transform: uppercase; border: 2px solid #f0f0f0; background: white; cursor: pointer; }
+    .tab-button.active { border-color: black; box-shadow: 4px 4px 0 0 black; transform: translate(-2px, -2px); }
+    .sidebar-content { flex: 1; overflow-y: auto; padding: 24px; }
+    .add-source-btn { width: 100%; border: 2px dashed black; padding: 24px; text-align: center; background: white; cursor: pointer; margin-bottom: 24px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+    .source-item { border: 2px solid transparent; padding: 16px; margin-bottom: 12px; cursor: pointer; opacity: 0.4; }
+    .source-item.active { border-color: black; background: white; box-shadow: 4px 4px 0 0 black; transform: translate(-2px, -2px); opacity: 1; }
+    .source-name { font-weight: bold; font-size: 11px; text-transform: uppercase; }
+    .source-tokens { font-size: 9px; color: #999; font-weight: bold; }
+    .sidebar-footer { height: 88px; padding: 16px; border-top: 2px solid black; }
+    .context-label { display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 8px; font-weight: 600; }
+    .progress-bar { width: 100%; background: #e5e5e5; height: 8px; border: 2px solid black; }
+    .progress-fill { background: black; height: 100%; width: 15%; }
+    
+    /* Header */
+    .header { height: 64px; border-bottom: 2px solid black; display: flex; align-items: center; padding: 0 32px; gap: 24px; }
+    .sidebar-toggle-btn { width: 32px; height: 32px; border: 2px solid black; background: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; flex-shrink: 0; }
+    .sidebar-toggle-btn:hover { background: #f9f9f9; }
+    .header-title { font-size: 18px; font-weight: 900; text-transform: uppercase; }
+    .model-selector { height: 36px; padding: 0 16px; font-size: 10px; font-weight: 900; text-transform: uppercase; border: 2px solid black; background: white; cursor: pointer; font-family: inherit; }
+    
+    /* Chat */
+    .chat-area { flex: 1; overflow-y: auto; padding: 48px; }
+    .chat-messages { max-width: 768px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+    .message-label { font-size: 10px; color: #999; text-transform: uppercase; margin-bottom: 4px; }
+    .message.user .message-label { text-align: right; }
+    .message-content { padding: 14px; border: 2px solid black; font-size: 14px; line-height: 1.6; }
+    .message.user .message-content { background: black; color: white; margin-left: auto; max-width: 70%; }
+    .message.assistant .message-content { background: white; box-shadow: 8px 8px 0 0 black; padding: 40px; }
+    
+    /* Citations */
+    .citation-badge { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; background: black; color: white; font-size: 10px; font-weight: bold; margin: 0 2px; cursor: pointer; position: relative; vertical-align: middle; }
+    .citation-tooltip { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: white; border: 2px solid black; box-shadow: 4px 4px 0 0 black; padding: 12px; min-width: 300px; max-width: 400px; z-index: 1000; opacity: 0; pointer-events: none; }
+    .citation-badge:hover .citation-tooltip { opacity: 1; }
+    .citation-tooltip-header { font-size: 9px; font-weight: bold; text-transform: uppercase; color: #666; margin-bottom: 8px; display: flex; justify-content: space-between; }
+    .citation-tooltip-text { font-size: 11px; line-height: 1.5; max-height: 200px; overflow-y: auto; }
+    .citations-list { margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e5e5; font-size: 10px; }
+    .citation-item { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; padding: 4px; cursor: pointer; }
+    .citation-number { width: 18px; height: 18px; background: black; color: white; font-size: 9px; font-weight: bold; display: flex; align-items: center; justify-content: center; }
+    
+    /* Code Block */
+    .code-block-card { border: 2px solid black; padding: 16px; margin: 16px 0; background: #f9f9f9; }
+    .code-block-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .code-block-title { display: flex; align-items: center; gap: 12px; }
+    .code-block-icon { width: 36px; height: 36px; border: 2px solid black; background: black; color: white; display: flex; align-items: center; justify-content: center; }
+    .code-block-info h4 { font-size: 14px; font-weight: bold; text-transform: uppercase; }
+    .code-block-info p { font-size: 10px; color: #666; font-weight: bold; text-transform: uppercase; }
+    .code-block-actions { display: flex; gap: 8px; }
+    .code-action-btn { padding: 8px 16px; border: 2px solid black; background: white; font-size: 10px; font-weight: 900; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+    .code-action-btn.primary { background: black; color: white; }
+    
+    /* Canvas */
+    .canvas-panel { position: absolute; right: 0; top: 0; bottom: 0; width: 0; background: white; border-left: 2px solid black; display: flex; flex-direction: column; transition: width 0.3s ease; overflow: hidden; }
+    .canvas-panel.open { width: 50%; }
+    .canvas-header { height: 56px; border-bottom: 2px solid black; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; }
+    .canvas-title { font-size: 11px; font-weight: 900; text-transform: uppercase; }
+    .canvas-controls { display: flex; gap: 8px; }
+    .canvas-btn { height: 32px; padding: 0 12px; font-size: 9px; font-weight: 900; text-transform: uppercase; border: 2px solid black; background: white; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+    .canvas-btn.active { background: black; color: white; }
+    .canvas-close-btn { width: 32px; height: 32px; border: 2px solid black; background: white; cursor: pointer; font-size: 18px; font-weight: bold; }
+    .canvas-content { flex: 1; overflow: hidden; }
+    .canvas-preview { height: 100%; }
+    .canvas-preview iframe { width: 100%; height: 100%; border: none; }
+    .canvas-code-editor { height: 100%; background: #1e1e1e; color: #d4d4d4; font-size: 13px; padding: 16px; overflow: auto; display: none; }
+    .canvas-code-editor.active { display: block; }
+    
+    /* Input */
+    .input-area { border-top: 2px solid black; padding: 24px; }
+    .input-wrapper { max-width: 768px; margin: 0 auto; display: flex; gap: 12px; }
+    .input-box { flex: 1; min-height: 48px; max-height: 120px; padding: 12px 16px; border: 2px solid black; font-family: inherit; font-size: 14px; resize: none; }
+    .send-btn { width: 48px; height: 48px; border: 2px solid black; background: black; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    
+    code { background: #f0f0f0; color: #c7254e; padding: 2px 6px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <aside class="sidebar">
+      <div class="sidebar-tabs">
+        <button class="tab-button">CHATS</button>
+        <button class="tab-button active">SOURCES</button>
+      </div>
+      <div class="sidebar-content">
+        <div class="add-source-btn">+ ADD SOURCE</div>
+        <div class="source-item active">
+          <div class="source-name">PROJECT_DOCUMENTATION.PDF</div>
+          <div class="source-tokens">~12,450 TOKENS</div>
+        </div>
+        <div class="source-item active">
+          <div class="source-name">API_REFERENCE.MD</div>
+          <div class="source-tokens">~8,320 TOKENS</div>
+        </div>
+        <div class="source-item">
+          <div class="source-name">MEETING_NOTES.TXT</div>
+          <div class="source-tokens">~3,150 TOKENS</div>
+        </div>
+      </div>
+      <div class="sidebar-footer">
+        <div class="context-label"><span>CONTEXT USAGE</span><span>23,920 / 1M</span></div>
+        <div class="progress-bar"><div class="progress-fill"></div></div>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="header">
+        <button class="sidebar-toggle-btn" onclick="toggleSidebar()" id="sidebarToggle">☰</button>
+        <h1 class="header-title">Construct_LM</h1>
+        <select class="model-selector">
+          <option>LLAMA3.1-8B</option>
+          <option>GEMINI-2.0-FLASH</option>
+        </select>
+      </header>
+
+      <div class="content-wrapper">
+        <div class="chat-container" id="chatContainer">
+          <div class="chat-area">
+            <div class="chat-messages">
+              <div class="message user">
+                <div class="message-label">YOU</div>
+                <div class="message-content">What are the main features of the API and how does authentication work?</div>
+              </div>
+
+              <div class="message assistant">
+                <div class="message-label">CONSTRUCT_LM</div>
+                <div class="message-content">
+                  Based on the documentation, the API includes several key features:
+                  <br><br>
+                  <strong>Core Features:</strong><br>
+                  1. RESTful endpoints for data access<span class="citation-badge">1
+                    <div class="citation-tooltip">
+                      <div class="citation-tooltip-header"><span>API_REFERENCE.MD</span><span style="font-size:8px;background:black;color:white;padding:2px 6px;">0.892</span></div>
+                      <div class="citation-tooltip-text">The API provides RESTful endpoints following standard HTTP methods (GET, POST, PUT, DELETE). All endpoints return JSON responses and support pagination for large datasets.</div>
+                    </div>
+                  </span><br>
+                  2. Authentication via API keys<span class="citation-badge">2
+                    <div class="citation-tooltip">
+                      <div class="citation-tooltip-header"><span>PROJECT_DOCUMENTATION.PDF</span><span style="font-size:8px;background:black;color:white;padding:2px 6px;">0.876</span></div>
+                      <div class="citation-tooltip-text">Authentication is handled through API keys passed in the Authorization header. Each key is associated with a specific user account and can be revoked at any time.</div>
+                    </div>
+                  </span><br>
+                  3. Rate limiting at 1000 requests/hour<br>
+                  4. JSON response format with consistent structure
+                  <br><br>
+                  <strong>Authentication Process:</strong><br>
+                  To authenticate, include your API key in the request header as <code>Authorization: Bearer YOUR_API_KEY</code>. The API validates the key on each request.
+
+                  <div class="citations-list">
+                    <div style="font-weight:bold;text-transform:uppercase;margin-bottom:8px;font-size:9px;color:#666;">📖 SOURCES REFERENCED</div>
+                    <div class="citation-item">
+                      <div class="citation-number">1</div>
+                      <div style="font-weight:bold;font-size:10px;">API_REFERENCE.MD</div>
+                      <div style="margin-left:auto;font-size:8px;color:#666;">0.892</div>
+                    </div>
+                    <div class="citation-item">
+                      <div class="citation-number">2</div>
+                      <div style="font-weight:bold;font-size:10px;">PROJECT_DOCUMENTATION.PDF</div>
+                      <div style="margin-left:auto;font-size:8px;color:#666;">0.876</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="message user">
+                <div class="message-label">YOU</div>
+                <div class="message-content">Can you create a React component that demonstrates API authentication?</div>
+              </div>
+
+              <div class="message assistant">
+                <div class="message-label">CONSTRUCT_LM</div>
+                <div class="message-content">
+                  Here's a React component that demonstrates API authentication:
+
+                  <div class="code-block-card">
+                    <div class="code-block-header">
+                      <div class="code-block-title">
+                        <div class="code-block-icon">⚛</div>
+                        <div class="code-block-info">
+                          <h4>React Component</h4>
+                          <p>TSX • Ready to render</p>
+                        </div>
+                      </div>
+                      <div class="code-block-actions">
+                        <button class="code-action-btn">COPY</button>
+                        <button class="code-action-btn">DOWNLOAD</button>
+                        <button class="code-action-btn primary" onclick="toggleCanvas()">OPEN CANVAS ▶</button>
+                      </div>
+                    </div>
+                  </div>
+
+                  This component includes state management, error handling, and loading states for a complete authentication flow.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="input-area">
+            <div class="input-wrapper">
+              <textarea class="input-box" placeholder="Ask a question about your documents..." rows="1"></textarea>
+              <button class="send-btn">▲</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="canvas-panel" id="canvasPanel">
+          <div class="canvas-header">
+            <div class="canvas-title">Interactive Canvas</div>
+            <div class="canvas-controls">
+              <button class="canvas-btn active" id="previewBtn" onclick="showPreview()">▶ PREVIEW</button>
+              <button class="canvas-btn" id="codeBtn" onclick="showCode()">{ } CODE</button>
+              <button class="canvas-close-btn" onclick="toggleCanvas()">×</button>
+            </div>
+          </div>
+          <div class="canvas-content">
+            <div class="canvas-preview" id="canvasPreview">
+              <iframe srcdoc="<!DOCTYPE html><html><head><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:system-ui;padding:40px;background:linear-gradient(135deg,#667eea,#764ba2);min-height:100vh;display:flex;align-items:center;justify-content:center}.auth{background:white;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.3);padding:40px;max-width:400px}h2{margin-bottom:24px;font-size:24px}label{display:block;margin:16px 0 8px;color:#666;font-size:14px}input{width:100%;padding:12px;border:2px solid #e5e5e5;border-radius:8px;font-size:14px}button{width:100%;padding:14px;margin-top:20px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer}</style></head><body><div class='auth'><h2>🔐 API Authentication</h2><form><label>API Key</label><input type='password' placeholder='Enter your API key'/><label>API Endpoint</label><input type='text' value='https://api.example.com/v1'/><button type='submit'>Authenticate</button></form></div></body></html>"></iframe>
+            </div>
+            <div class="canvas-code-editor" id="canvasCode">
+              <pre>import React, { useState } from 'react';
+
+export default function AuthComponent() {
+  const [apiKey, setApiKey] = useState('');
+  const [endpoint, setEndpoint] = useState('https://api.example.com/v1');
+  const [status, setStatus] = useState(null);
+
+  const handleAuth = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(endpoint, {
+        headers: { 'Authorization': `Bearer ${apiKey}` }
+      });
+      setStatus(response.ok ? 'success' : 'error');
+    } catch (error) {
+      setStatus('error');
+    }
+  };
+
+  return (
+    &lt;form onSubmit={handleAuth}&gt;
+      &lt;input type="password" value={apiKey} 
+        onChange={(e) => setApiKey(e.target.value)} /&gt;
+      &lt;button type="submit"&gt;Authenticate&lt;/button&gt;
+    &lt;/form&gt;
+  );
+}</pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const textarea = document.querySelector('.input-box');
+    textarea.addEventListener('input', function() {
+      this.style.height = '48px';
+      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+
+    document.querySelectorAll('.source-item').forEach(item => {
+      item.addEventListener('click', () => item.classList.toggle('active'));
+    });
+
+    document.querySelectorAll('.tab-button').forEach(button => {
+      button.addEventListener('click', function() {
+        document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+      });
+    });
+
+    function toggleSidebar() {
+      const sidebar = document.querySelector('.sidebar');
+      const toggleBtn = document.getElementById('sidebarToggle');
+      sidebar.classList.toggle('collapsed');
+      toggleBtn.textContent = sidebar.classList.contains('collapsed') ? '☰' : '✕';
+    }
+
+    function toggleCanvas() {
+      document.getElementById('canvasPanel').classList.toggle('open');
+      document.getElementById('chatContainer').classList.toggle('canvas-open');
+    }
+
+    function showPreview() {
+      document.getElementById('canvasPreview').style.display = 'block';
+      document.getElementById('canvasCode').classList.remove('active');
+      document.getElementById('previewBtn').classList.add('active');
+      document.getElementById('codeBtn').classList.remove('active');
+    }
+
+    function showCode() {
+      document.getElementById('canvasPreview').style.display = 'none';
+      document.getElementById('canvasCode').classList.add('active');
+      document.getElementById('previewBtn').classList.remove('active');
+      document.getElementById('codeBtn').classList.add('active');
+    }
+  </script>
+</body>
+</html>

@@ -10,12 +10,14 @@ interface ChatInterfaceProps {
   messages: ChatMessage[];
   onSendMessage: (msg: string, imageBase64?: string) => void;
   isStreaming: boolean;
+  aiModel: 'gemini' | 'cerebras' | 'groq' | 'openrouter';
 }
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({ 
   messages, 
   onSendMessage, 
-  isStreaming
+  isStreaming,
+  aiModel
 }) => {
   const [input, setInput] = useState('');
   const [isInputFocused, setIsInputFocused] = useState(false);
@@ -362,6 +364,23 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 <div className="flex flex-col items-start w-full">
                   <div className="mb-1 font-mono text-[10px] text-gray-400 uppercase">CONSTRUCT_LM</div>
                   <div className="w-full bg-white border-2 border-black p-6 md:p-10 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                    
+                    {/* Reasoning/Thinking Display */}
+                    {msg.reasoning && (
+                      <details className="mb-4 border-2 border-blue-500 bg-blue-50">
+                        <summary className="cursor-pointer p-3 font-mono text-xs font-bold uppercase bg-blue-100 hover:bg-blue-200 transition-colors flex items-center gap-2">
+                          <span className="text-blue-600">💭</span>
+                          Thinking Process
+                          <span className="text-[10px] text-blue-600 font-normal ml-auto">
+                            {msg.isStreaming ? 'Streaming...' : 'Click to expand'}
+                          </span>
+                        </summary>
+                        <div className="p-4 text-xs font-mono text-gray-700 leading-relaxed whitespace-pre-wrap border-t-2 border-blue-200">
+                          {msg.reasoning}
+                        </div>
+                      </details>
+                    )}
+                    
                     <div className="leading-relaxed text-sm font-mono overflow-x-auto">
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
@@ -570,9 +589,23 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     </div>
 
                     {!msg.isStreaming && msg.outputTokens && (
-                      <div className="mt-4 pt-3 border-t border-gray-200 text-[10px] text-gray-500 italic font-mono">
-                        {msg.inputTokens && `Input: ${msg.inputTokens} tokens • `}
-                        Output: {msg.outputTokens} tokens
+                      <div className="mt-4 pt-3 border-t border-gray-200 flex items-center justify-between">
+                        <div className="text-[10px] text-gray-500 italic font-mono">
+                          {msg.inputTokens && `Input: ~${msg.inputTokens} tokens • `}
+                          Output: ~{msg.outputTokens} tokens
+                          <span className="ml-2 text-[9px] text-gray-400">(estimates)</span>
+                        </div>
+                        {aiModel === 'gemini' && (msg.inputTokens || 0) + (msg.outputTokens || 0) > 5000 && (
+                          <a
+                            href="https://aistudio.google.com/app/apikey"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[9px] px-2 py-1 bg-yellow-100 border border-yellow-400 text-yellow-800 hover:bg-yellow-200 transition-colors"
+                            title="High token usage - check your quota"
+                          >
+                            ⚠️ Check Quota
+                          </a>
+                        )}
                       </div>
                     )}
 

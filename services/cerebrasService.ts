@@ -1,4 +1,5 @@
 import { ChatMessage, Citation } from "../types";
+import { validateAndFixCitations, logCitationValidation } from "./citationValidator";
 
 const CEREBRAS_API_URL = "https://api.cerebras.ai/v1/chat/completions";
 
@@ -6,7 +7,7 @@ export const streamChatResponse = async (
   message: string,
   history: ChatMessage[],
   context: Citation[],
-  onChunk: (text: string) => void,
+  onChunk: (text: string, isReasoning?: boolean) => void,
   apiKey?: string,
   model: string = "llama3.1-8b",
   imageBase64?: string // Accept but ignore (Cerebras doesn't support vision)
@@ -32,14 +33,36 @@ ${c.text}
 
   const systemInstruction = `You are ConstructLM, an intelligent research assistant.
 
-CRITICAL INSTRUCTIONS:
+CRITICAL INSTRUCTIONS FOR CITATIONS:
 1. You have been provided with ${context.length} SOURCES from DIFFERENT FILES below
 2. Each source is clearly marked with [SOURCE N - filename]
 3. You MUST review ALL sources before answering
-4. If information exists in ANY source, use it - don't say you don't have information if it's in one of the sources
-5. When citing, mention the source number AND filename (e.g., "According to Source 2 (technical_spec.txt)...")
-6. If multiple sources have relevant info, synthesize them together
-7. Only say you don't know if the information is truly not in ANY of the provided sources
+4. When referencing information from sources, use this EXACT format:
+   {{citation:filename|location|quote}}
+
+CITATION FORMAT SPECIFICATION:
+- filename: The exact document name (e.g., "Market Pricing Survey.pdf")
+- location: Page number or section (e.g., "Page 3", "Section 2.1")
+- quote: The exact text from the source (keep concise, max 100 chars)
+
+EXAMPLES OF CORRECT FORMAT:
+✅ "The supplier is {{citation:Market Pricing Survey.pdf|Page 3|AlSarif Group (Riyadh)}}"
+✅ "The unit is {{citation:pricing.pdf|Section 2|Terrazzo Tile, 30×30×3 cm}}"
+✅ "According to {{citation:document.pdf|Page 5|the pricing data}}, the cost is..."
+
+EXAMPLES OF WRONG FORMAT:
+❌ "According to Source 1..."
+❌ "{{citation:file.pdf}}" (missing location and quote)
+❌ "[cite:file.pdf]"
+❌ "{{citation:file.pdf|Page 3}}" (missing quote)
+
+CITATION RULES:
+- Always include page/section number
+- Always include exact quote from source
+- Use filename exactly as provided in sources
+- One citation per fact
+- No nested citations
+- If multiple sources support same fact, cite the most relevant one
 
 Keep responses professional, objective, and concise.
 
@@ -101,7 +124,8 @@ ${contextString}`;
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "Authorization": `Bearer ${key}`
+      "Authorization": `Bearer ${key}`,
+      "X-Cerebras-Version-Patch": "2" // API version 2 (default since July 2026)
     },
     body: JSON.stringify({
       model: model,
@@ -113,7 +137,9 @@ ${contextString}`;
   });
 
   if (!response.ok) {
-    throw new Error(`Cerebras API error: ${response.statusText}`);
+    const errorText = await response.text();
+    console.error('Cerebras API error details:', errorText);
+    throw new Error(`Cerebras API error (${response.status}): ${response.statusText} - ${errorText}`);
   }
 
   const reader = response.body?.getReader();
@@ -122,6 +148,10 @@ ${contextString}`;
   if (!reader) {
     throw new Error("No response body");
   }
+
+  let isInReasoningBlock = false;
+  let reasoningBuffer = '';
+  let answerBuffer = '';
 
   while (true) {
     const { done, value } = await reader.read();
@@ -138,8 +168,32 @@ ${contextString}`;
         try {
           const parsed = JSON.parse(data);
           const content = parsed.choices?.[0]?.delta?.content;
+          
           if (content) {
-            onChunk(content);
+            // Check for reasoning markers (common patterns in reasoning models)
+            if (content.includes('<think>') || content.includes('<reasoning>')) {
+              isInReasoningBlock = true;
+              reasoningBuffer += content.replace(/<think>|<reasoning>/g, '');
+              continue;
+            }
+            
+            if (content.includes('</think>') || content.includes('</reasoning>')) {
+              isInReasoningBlock = false;
+              reasoningBuffer += content.replace(/<\/think>|<\/reasoning>/g, '');
+              // Send accumulated reasoning
+              if (reasoningBuffer.trim()) {
+                onChunk(reasoningBuffer, true);
+                reasoningBuffer = '';
+              }
+              continue;
+            }
+            
+            if (isInReasoningBlock) {
+              reasoningBuffer += content;
+            } else {
+              // Regular content
+              onChunk(content, false);
+            }
           }
         } catch (e) {
           console.error("Parse error:", e);
@@ -147,4 +201,27 @@ ${contextString}`;
       }
     }
   }
+  
+  // Flush any remaining reasoning
+  if (reasoningBuffer.trim()) {
+    onChunk(reasoningBuffer, true);
+  }
+};
+
+/**
+ * Validate and fix response citations
+ * Called after streaming completes to ensure consistency
+ */
+export const validateResponseCitations = (text: string): string => {
+  const { text: fixedText, result } = validateAndFixCitations(text);
+  
+  // Log validation for monitoring
+  logCitationValidation(fixedText, 'Cerebras');
+  
+  // If there were fixes, log them
+  if (result.fixedText) {
+    console.warn('[Cerebras] Citations were auto-fixed:', result.errors);
+  }
+  
+  return fixedText;
 };

@@ -1,0 +1,6 @@
+Date,Slug,Usage,BYOK Usage,Requests,Prompt Tokens,Completion Tokens,Reasoning Tokens
+"2026-03-07 00:00:00","nvidia/nemotron-nano-12b-v2-vl:free","0","0","7","4994","9062","9447"
+"2026-03-07 00:00:00","meta-llama/llama-3.3-70b-instruct:free","0","0","1","45","2","0"
+"2026-03-07 00:00:00","stepfun/step-3.5-flash:free","0","0","1","22","20","17"
+"2026-03-07 00:00:00","openai/gpt-oss-120b:free","0","0","1","79","20","14"
+"2026-03-07 00:00:00","arcee-ai/trinity-large-preview:free","0","0","3","1225","353","0"

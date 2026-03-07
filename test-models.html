@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Cerebras Models</title>
+    <style>
+        body { font-family: monospace; padding: 20px; background: #f5f5f5; }
+        .test { margin: 20px 0; padding: 15px; background: white; border: 2px solid black; }
+        .success { border-color: green; }
+        .error { border-color: red; }
+        button { padding: 10px 20px; background: black; color: white; border: none; cursor: pointer; margin: 5px; }
+        button:hover { background: #333; }
+        pre { background: #f0f0f0; padding: 10px; overflow-x: auto; }
+        .status { font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Cerebras Models Test</h1>
+    <p>Testing all 5 Cerebras models with reasoning detection</p>
+    
+    <div>
+        <label>API Key: <input type="text" id="apiKey" placeholder="Enter Cerebras API key" style="width: 400px; padding: 5px;"></label>
+    </div>
+    
+    <div style="margin: 20px 0;">
+        <button onclick="testAllModels()">Test All Models</button>
+        <button onclick="testReasoningModels()">Test Reasoning Models Only</button>
+    </div>
+    
+    <div id="results"></div>
+
+    <script>
+        const MODELS = [
+            { id: "llama3.1-8b", name: "Llama 3.1 8B", reasoning: false },
+            { id: "llama3.3-70b", name: "Llama 3.3 70B", reasoning: false },
+            { id: "llama-glm-4-9b", name: "GLM-4 9B", reasoning: true },
+            { id: "gpt-oss-120b", name: "GPT OSS 120B", reasoning: true },
+            { id: "qwen-3-235b-a22b-instruct-2507", name: "Qwen 3 235B", reasoning: false }
+        ];
+
+        async function testModel(modelId, modelName, hasReasoning) {
+            const apiKey = document.getElementById('apiKey').value;
+            if (!apiKey) {
+                alert('Please enter your Cerebras API key');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('results');
+            const testDiv = document.createElement('div');
+            testDiv.className = 'test';
+            testDiv.innerHTML = `
+                <h3>${modelName} (${modelId})</h3>
+                <div class="status">Testing...</div>
+            `;
+            resultsDiv.appendChild(testDiv);
+
+            try {
+                const response = await fetch('https://api.cerebras.ai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${apiKey}`
+                    },
+                    body: JSON.stringify({
+                        model: modelId,
+                        messages: [
+                            { role: 'system', content: 'You are a helpful assistant.' },
+                            { role: 'user', content: 'Say "Hello! I am working correctly." in exactly those words.' }
+                        ],
+                        max_tokens: 100,
+                        temperature: 0.7
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+
+                const data = await response.json();
+                const content = data.choices[0].message.content;
+                
+                testDiv.className = 'test success';
+                testDiv.innerHTML = `
+                    <h3>✅ ${modelName} (${modelId})</h3>
+                    <div class="status">SUCCESS</div>
+                    <p><strong>Reasoning Support:</strong> ${hasReasoning ? 'YES' : 'NO'}</p>
+                    <p><strong>Response:</strong></p>
+                    <pre>${content}</pre>
+                    <p><strong>Tokens:</strong> ${data.usage.prompt_tokens} in / ${data.usage.completion_tokens} out</p>
+                `;
+            } catch (error) {
+                testDiv.className = 'test error';
+                testDiv.innerHTML = `
+                    <h3>❌ ${modelName} (${modelId})</h3>
+                    <div class="status">ERROR</div>
+                    <pre>${error.message}</pre>
+                `;
+            }
+        }
+
+        async function testAllModels() {
+            document.getElementById('results').innerHTML = '';
+            for (const model of MODELS) {
+                await testModel(model.id, model.name, model.reasoning);
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Rate limit
+            }
+        }
+
+        async function testReasoningModels() {
+            document.getElementById('results').innerHTML = '';
+            const reasoningModels = MODELS.filter(m => m.reasoning);
+            for (const model of reasoningModels) {
+                await testModel(model.id, model.name, model.reasoning);
+                await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+        }
+    </script>
+</body>
+</html>

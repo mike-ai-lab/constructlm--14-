@@ -149,8 +149,17 @@ export function generateBundledPreview(code: string, language: string): BundleRe
   }
   
   try {
-    const imports = parseImports(code);
-    const transformedCode = transformCode(code, imports);
+    // Fix common syntax errors before processing
+    let fixedCode = code;
+    
+    // Fix "default export" -> "export default"
+    fixedCode = fixedCode.replace(/\bdefault\s+export\s+/g, 'export default ');
+    
+    // Fix "export function default" -> "export default function"
+    fixedCode = fixedCode.replace(/\bexport\s+function\s+default\s+/g, 'export default function ');
+    
+    const imports = parseImports(fixedCode);
+    const transformedCode = transformCode(fixedCode, imports);
     
     return {
       html: `<!DOCTYPE html>
