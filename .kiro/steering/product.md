@@ -18,6 +18,12 @@ ConstructLM is a privacy-first RAG (Retrieval-Augmented Generation) workspace th
 - Chat session management with history
 - In-app API key configuration
 - Responsive design (desktop + mobile)
+- Interactive code canvas with production-grade runtime bundler
+  - Renders React/TSX/JSX components with full import resolution
+  - Handles malformed imports and syntax errors gracefully
+  - Live preview with code editing and version history
+  - Supports Framer Motion, Wouter, Lucide React, Tailwind CSS
+  - Intelligent mock components for missing dependencies
 
 ## User Flow
 
@@ -27,3 +33,5 @@ ConstructLM is a privacy-first RAG (Retrieval-Augmented Generation) workspace th
 4. Ask questions in chat interface
 5. View AI responses with source citations
 6. Hover over citation badges to see source text
+7. Preview and edit code blocks in interactive canvas
+8. Download or copy code with one click

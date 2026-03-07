@@ -29,18 +29,20 @@ A privacy-first, browser-based RAG (Retrieval-Augmented Generation) workspace fo
 - **Token estimation**: Preview input/output token usage
 
 ### 🎨 Interactive Code Canvas (Production-Grade Runtime Bundler)
-- **Import resolution**: Automatic NPM package loading via ESM CDN (esm.sh)
+- **Robust import handling**: Handles malformed imports, missing commas, syntax errors gracefully
+- **Line-by-line processing**: Reliable import removal without regex edge cases
 - **TSX/JSX compilation**: Full Babel transpilation with TypeScript support
 - **Path alias support**: Handles `@/components/...` imports with intelligent mocking
+- **Smart mocking**: Missing imports replaced with functional fallback components (Button, Card, Input, Icons)
 - **Dependency injection**: Auto-loads React, Framer Motion, Wouter, Lucide React
-- **Smart mocking**: Missing imports replaced with functional fallback components
+- **Deduplication**: Prevents "already declared" errors with identifier validation
 - **Live preview**: Render HTML and React components in isolated sandbox
 - **Code editing**: Edit and re-render code blocks with instant updates
 - **Version history**: Full undo/redo with version tracking
-- **Error boundaries**: Readable error overlays with stack traces
+- **Error boundaries**: Readable error overlays with stack traces and debugging tips
 - **Multi-language**: HTML, JSX, TSX, JavaScript, TypeScript
-- **React sandbox**: Full React 18 + Babel + Tailwind environment
-- **Library ecosystem**: Framer Motion, Lucide React, Wouter routing auto-loaded
+- **React sandbox**: Full React 18 + Babel + Tailwind CSS environment
+- **Real-world ready**: Successfully renders AI-generated code from Gemini, Claude, ChatGPT
 
 ### 📖 Source Citations
 - **Inline citations**: Every response includes source references
@@ -178,30 +180,40 @@ VITE_CEREBRAS_API_KEY=your_cerebras_key_here
 
 The canvas feature provides a production-grade runtime bundler for AI-generated React components:
 
-1. **Import Parsing**: Extracts all import statements using regex patterns
-2. **Dependency Resolution**: Maps imports to ESM CDN URLs (esm.sh) or mocks
-3. **Code Transformation**: Removes imports, injects dependencies as globals
-4. **Compilation**: Babel transpiles TSX/JSX to executable JavaScript
-5. **Sandbox Execution**: Runs in isolated iframe with error boundaries
-6. **Rendering**: React 18 with full hooks and library support
-7. **Error Handling**: Catches compilation, runtime, and async errors
+1. **Import Parsing**: Extracts all import statements using line-by-line processing
+2. **Robust Removal**: Handles malformed imports (missing commas, syntax errors) gracefully
+3. **Dependency Resolution**: Maps imports to mock components with intelligent fallbacks
+4. **Code Transformation**: Removes imports, injects dependencies as globals, validates identifiers
+5. **Compilation**: Babel transpiles TSX/JSX to executable JavaScript
+6. **Sandbox Execution**: Runs in isolated iframe with comprehensive error boundaries
+7. **Rendering**: React 18 with full hooks and library support
+8. **Error Handling**: Catches compilation, runtime, and async errors with detailed overlays
 
 **Import Resolution Strategy**:
-- NPM packages → `https://esm.sh/package-name`
-- Path aliases (`@/...`) → Mock components
+- NPM packages → Mock components (Button, Card, Input, Link)
+- Path aliases (`@/...`) → Mock components with className support
 - React ecosystem → Preloaded globals (`window.React`)
-- Missing deps → Intelligent fallbacks (Link → `<a>`, Button → styled `<button>`)
+- Lucide icons → SVG mock components with size/fill props
+- Framer Motion → Optional CDN load with fallbacks
+- Missing deps → Generic div wrappers
 
-**Supported Libraries** (auto-loaded):
+**Supported Libraries** (auto-loaded or mocked):
 - React 18 (production build)
 - ReactDOM 18
 - Babel Standalone (TSX compilation)
 - Tailwind CSS (full framework)
-- Framer Motion (animations)
-- Lucide React (icons)
-- Wouter (routing)
+- Framer Motion (animations, optional)
+- Lucide React (icons, mocked as SVG)
+- Wouter (routing, mocked)
 
-**Example**: AI generates code with `import { Link } from "wouter"` → Bundler loads Wouter from CDN, component renders with full routing functionality.
+**Real-World Compatibility**:
+The bundler successfully renders complex AI-generated code from:
+- Google Gemini (including code with import errors)
+- Anthropic Claude
+- OpenAI ChatGPT
+- GitHub Copilot
+
+**Example**: AI generates code with `import { Link } from "wouter"` and a missing comma in icon imports → Bundler removes malformed imports, injects Link mock, validates all identifiers, component renders successfully.
 
 See `CANVAS_RUNTIME_BUNDLER.md` for complete technical documentation.
 

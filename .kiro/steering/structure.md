@@ -15,7 +15,8 @@ constructlm/
 │   ├── geminiService.ts       # Gemini API integration
 │   ├── cerebrasService.ts     # Cerebras API integration
 │   ├── chatStorage.ts         # Chat session persistence
-│   └── pdfParser.ts           # PDF text extraction
+│   ├── pdfParser.ts           # PDF text extraction
+│   └── runtimeBundler.ts      # Canvas TSX/JSX compilation & import resolution
 ├── App.tsx             # Main application component
 ├── index.tsx           # React entry point
 ├── types.ts            # TypeScript type definitions
@@ -46,6 +47,12 @@ Services are organized by domain:
 - **geminiService/cerebrasService**: API integrations with streaming support
 - **chatStorage**: Chat session persistence in localStorage
 - **pdfParser**: File parsing utilities
+- **runtimeBundler**: Production-grade TSX/JSX compilation with import resolution
+  - Line-by-line import parsing and removal
+  - Handles malformed imports and syntax errors
+  - Intelligent mock component injection
+  - Identifier validation and deduplication
+  - Babel transpilation in isolated iframe sandbox
 
 ### Data Flow
 
@@ -55,6 +62,8 @@ Services are organized by domain:
 4. User asks question → vectorDb.searchVectors()
 5. Top chunks retrieved → passed to AI service
 6. AI streams response → UI updates incrementally
+7. Code blocks detected → runtimeBundler.generateBundledPreview()
+8. User opens canvas → Component rendered in isolated iframe
 
 ## File Naming Conventions
 
