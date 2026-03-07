@@ -1,318 +1,214 @@
-Good. The way to break a runtime canvas is to target **four weak layers**: compilation, React lifecycle, DOM APIs, and performance loops.
-Use these **stress tests**.
+## user:
+Create a React UI component for a login form.
 
----
 
-# 1. Massive React Reconciliation Stress
+## CONSTRUCT_LM:
+Below is a self‑contained, functional‑component implementation of a typical login form in React. It includes basic state handling, client‑side validation, and a simple visual lauser:t that user: can easily adapt or extend.
+tsx
 
-Forces thousands of elements + state updates.
 
-```tsx
-import React, { useState, useEffect } from "react";
+CODE
 
-export default function StressList() {
-  const [items, setItems] = useState<number[]>([]);
+How to use it
+tsx
 
-  useEffect(() => {
-    const arr = Array.from({ length: 5000 }, (_, i) => i);
-    setItems(arr);
-  }, []);
-
-  return (
-    <div className="p-10 space-y-1 text-xs">
-      {items.map(i => (
-        <div
-          key={i}
-          className="border border-white/10 p-1 hover:bg-blue-500/10"
-        >
-          Row #{i}
-        </div>
-      ))}
-    </div>
-  );
-}
-```
-
-Breaks weak renderers with:
-
-* slow reconciliation
-* memory spikes
-
----
-
-# 2. Infinite State Update Loop
-
-Tests React safety handling.
-
-```tsx
-import React, { useState, useEffect } from "react";
-
-export default function InfiniteLoop() {
-  const [count, setCount] = useState(0);
-
-  useEffect(() => {
-    setCount(c => c + 1);
-  });
-
-  return (
-    <div className="p-10 text-white">
-      Loop Count: {count}
-    </div>
-  );
-}
-```
-
-Weak runtimes:
-
-* freeze iframe
-* crash execution
-
----
-
-# 3. 20k Particle Canvas Physics
-
-Heavy **CPU + animation loop**.
-
-```ts
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
-
-const particles = [];
-
-for (let i = 0; i < 20000; i++) {
-  particles.push({
-    x: Math.random() * canvas.width,
-    y: Math.random() * canvas.height,
-    vx: Math.random() * 2 - 1,
-    vy: Math.random() * 2 - 1
-  });
-}
-
-function animate() {
-  ctx.fillStyle = "black";
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-
-  ctx.fillStyle = "lime";
-
-  for (let p of particles) {
-    p.x += p.vx;
-    p.y += p.vy;
-    ctx.fillRect(p.x,p.y,2,2);
-  }
-
-  requestAnimationFrame(animate);
-}
-
-animate();
-```
-
-Tests:
-
-* DOM bridge
-* animation stability
-* frame rate
-
----
-
-# 4. Recursive Component Explosion
-
-```tsx
+// App.tsx
 import React from "react";
+import LoginForm from "./LoginForm";
 
-function Node({ depth }) {
-  if (depth > 10) return null;
+const mockLogin = async ({ email, password }: { email: string; password: string }) => {
+  // Simulated async call (replace with real API request)
+  await new Promise((r) => setTimeout(r, 1000));
 
-  return (
-    <div className="ml-2 border-l border-white/10 pl-2">
-      Node {depth}
-      <Node depth={depth + 1} />
-      <Node depth={depth + 1} />
-    </div>
-  );
-}
-
-export default function Tree() {
-  return <Node depth={0} />;
-}
-```
-
-Creates **2046 components** recursively.
-
-Tests:
-
-* stack safety
-* reconciliation
-
----
-
-# 5. Memory Leak Test
-
-```tsx
-import React, { useEffect } from "react";
-
-export default function Leak() {
-  useEffect(() => {
-    const arr = [];
-
-    const interval = setInterval(() => {
-      arr.push(new Array(10000).fill(Math.random()));
-      console.log("Memory blocks:", arr.length);
-    }, 50);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  return <div className="p-10">Memory leak running</div>;
-}
-```
-
-Tests:
-
-* cleanup handling
-* iframe isolation
-
----
-
-# 6. Event Flood Test
-
-```ts
-let count = 0;
-
-document.addEventListener("mousemove", () => {
-  count++;
-  if (count % 500 === 0) {
-    console.log("Events:", count);
-  }
-});
-```
-
-Move the mouse fast.
-
-Tests:
-
-* event throughput
-* main thread stability
-
----
-
-# 7. Import Parser Breaker
-
-Attempts to break the tolerant import parser.
-
-```tsx
-import { 
-  A,,,
-  B
-  C,
-  D,,,,,
-} from "lucide-react"
-
-import React,,,, from "react"
-
-export default function App() {
-  return <div>Parser Test</div>;
-}
-```
-
-Tests:
-
-* identifier filtering
-* syntax recovery
-
----
-
-# 8. Async Race Condition
-
-```tsx
-import React, { useEffect, useState } from "react";
-
-export default function AsyncRace() {
-  const [data,setData] = useState([]);
-
-  useEffect(() => {
-    for (let i=0;i<50;i++){
-      fetch("https://jsonplaceholder.typicode.com/todos/"+i)
-        .then(r=>r.json())
-        .then(d=>{
-          setData(prev=>[...prev,d])
-        });
-    }
-  },[]);
-
-  return (
-    <div className="p-10">
-      Loaded: {data.length}
-    </div>
-  );
-}
-```
-
-Tests:
-
-* async batching
-* state race safety
-
----
-
-# 9. Layout Thrashing
-
-```ts
-const box = document.createElement("div");
-document.body.appendChild(box);
-
-function thrash(){
-  for(let i=0;i<5000;i++){
-    box.style.width = Math.random()*500+"px";
-    box.offsetHeight;
+  if (email !== "user@example.com" || password !== "secret") {
+    throw new Error("Invalid email or password.");
   }
 
-  requestAnimationFrame(thrash);
-}
+  alert("Login successful!");
+};
 
-thrash();
-```
+export const App: React.FC = () => (
+  <div style={{ padding: "2rem" }}>
+    <LoginForm onSubmit={mockLogin} />
+  </div>
+);
+Customisation tips
+What user: might want to change	How to do it
+Styling	Swap the
+text
 
-Tests:
+styles
+object for CSS Modules, Styled‑Components, Tailwind, etc.
+Validation rules	Extend the
+text
 
-* layout performance
-* DOM stability
+validate
+function (e.g., add password‑strength checks).
+Remember‑me checkbox	Add another piece of state and include it in the
+text
 
----
+onSubmit
+payload.
+Redirect after login	Replace the
+text
 
-# 10. React + Canvas Hybrid (Most Important)
+alert
+in
+text
 
-```tsx
-import React, { useEffect } from "react";
+mockLogin
+with
+text
 
-export default function Hybrid() {
+navigate("/dashboard")
+(React Router).
+Loading spinner	Replace the button text with a spinner component when
+text
 
-  useEffect(() => {
-    const canvas = document.getElementById("canvas");
-    const ctx = canvas.getContext("2d");
+isSubmitting
+is true.
+The component is intentionally lightweight and framework‑agnostic, making it easy to drop into any React project (Create React App, Vite, Next.js, etc.). Feel free to adapt the props, styling, or validation logic to match user:r specific UI/UX requirements.
+Input: 12 tokens • Output: 1728 tokens
 
-    function draw() {
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      ctx.fillStyle="red";
-      ctx.fillRect(Math.random()*300,Math.random()*300,20,20);
-      requestAnimationFrame(draw);
-    }
 
-    draw();
-  },[]);
+## user:
+Component Error
+Unexpected token 'export'
 
-  return (
-    <div>
-      <canvas id="canvas" width="400" height="400"></canvas>
-    </div>
-  );
-}
-```
+SyntaxError: Unexpected token 'export'
+    at new Function (<anonymous>)
+    at initComponent (about:srcdoc:94:31)
+    at HTMLDocument.checkLibrariesLoaded (about:srcdoc:51:11)
 
-Tests:
 
-* React lifecycle
-* imperative bridge
-* animation loops
+## CONSTRUCT_LM:
+written as an ES‑module / TypeScript component:
+tsx
 
----
 
+PREVIEW
+export const LoginForm: React.FC<LoginFormProps> = …
+export default LoginForm;
+If user: paste that code straight into a plain
+text
+
+<script>
+tag inside an HTML page, the browser tries to interpret it as plain JavaScript (not a module) and it doesn’t understand the
+text
+
+export
+keyword--------------------|------------------| | A. Use a bundler (Create‑React‑App, Vite, Next.js, etc.) | user: are building a real React application that will be compiled/minified for production. | Keep the
+text
+
+export
+syntax, place the file under
+text
+
+src/
+, import it from another component, and run the bundler (
+text
+
+npm start
+,
+text
+
+npm run dev
+, …). | | B. Run a quick demo with only CDN scripts (no build step) | user: just want to see the component live in a single HTML file or in a teaching environment. | Rewrite the component as plain JavaScript (no
+text
+
+export
+) and let Babel transpile the JSX on‑the‑fly. Use
+text
+
+<script type="module">
+(or the Babel‑in‑the‑browser approach) to make
+text
+
+import
+/
+text
+
+export
+work. |
+Below is a complete, copy‑and‑paste‑ready HTML example that uses option B. It:
+Loads React, ReactDOM, and Babel from a CDN.
+Declares the
+text
+
+LoginForm
+component in the same file (no
+text
+
+export
+).
+Renders the component into a
+text
+
+<div id="root">
+.
+Shows a mock login handler that user: can replace with a real API call.
+📄 Full HTML Demo (no build step)
+html
+
+
+CODE
+
+How it works
+Step	What happens
+1️⃣ Load React & ReactDOM	The two
+text
+
+<script>
+tags pull the development builds from unpkg.com.
+2️⃣ Load Babel	
+text
+
+@babel/standalone
+reads any
+text
+
+<script type="text/babel">
+block, transforms JSX/ES6 to plain ES5, and injects it into the page.
+3️⃣ Component code	Inside the
+text
+
+type="text/babel"
+block we write plain JavaScript (no
+text
+
+export
+). The component uses
+text
+
+React.useState
+etc., exactly like the TypeScript version but without type annotations.
+4️⃣ Mock login	
+text
+
+mockLogin
+pretends to talk to a server; user: can replace its body with a real
+text
+
+fetch('/api/login', …)
+call.
+5️⃣ Render	
+text
+
+ReactDOM.createRoot(...).render(<LoginForm …/>)
+mounts the component into
+text
+
+<div id="root">
+.
+🎯 If user: prefer a proper build system (Create‑React‑App, Vite, etc.)
+Create a new project
+bash
+
+npx create-react-app my-app   # or: npm create vite@latest my-app -- --template react
+cd my-app
+Add the component file (
+text
+
+src/LoginForm.tsx
+) – keep the original
+Input: 55 tokens • Output: 1804 tokens

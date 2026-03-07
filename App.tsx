@@ -68,9 +68,15 @@ const App: React.FC = () => {
     
     // Load last active chat or create new one
     if (sessions.length > 0) {
-      setCurrentChatId(sessions[0].id);
-      setMessages(sessions[0].messages);
-      setAiModel(sessions[0].aiModel);
+      const lastSession = sessions[0];
+      setCurrentChatId(lastSession.id);
+      setMessages(lastSession.messages);
+      setAiModel(lastSession.aiModel);
+    } else {
+      // Create initial chat if none exists
+      const initialChatId = crypto.randomUUID();
+      setCurrentChatId(initialChatId);
+      setMessages([]);
     }
 
     // Show settings if no keys are configured
@@ -155,24 +161,39 @@ const App: React.FC = () => {
       id: currentChatId,
       title: ChatStorage.generateChatTitle(messages[0]?.content || 'New Chat'),
       messages: messages,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
+      createdAt: 0, // Will be set by storage service
+      updatedAt: 0, // Will be set by storage service
       aiModel: aiModel
     };
     
     ChatStorage.saveChatSession(session);
-    setChatSessions(ChatStorage.getAllChatSessions());
+    
+    // Update the sessions list in state
+    const updatedSessions = ChatStorage.getAllChatSessions();
+    setChatSessions(updatedSessions);
   };
 
   const handleNewChat = () => {
-    saveCurrentChat();
+    // Save current chat if it has messages
+    if (currentChatId && messages.length > 0) {
+      saveCurrentChat();
+    }
+    
+    // Create new chat
     const newChatId = crypto.randomUUID();
     setCurrentChatId(newChatId);
     setMessages([]);
+    
+    // Refresh chat sessions list
+    setChatSessions(ChatStorage.getAllChatSessions());
   };
 
   const handleSelectChat = (id: string) => {
-    saveCurrentChat();
+    // Save current chat if it has messages
+    if (currentChatId && messages.length > 0) {
+      saveCurrentChat();
+    }
+    
     const session = ChatStorage.getChatSession(id);
     if (session) {
       setCurrentChatId(id);

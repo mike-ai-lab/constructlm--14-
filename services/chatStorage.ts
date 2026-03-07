@@ -7,9 +7,20 @@ export const saveChatSession = (session: ChatSession): void => {
   const existingIndex = sessions.findIndex(s => s.id === session.id);
   
   if (existingIndex >= 0) {
-    sessions[existingIndex] = session;
+    // Preserve original createdAt when updating
+    const existingSession = sessions[existingIndex];
+    sessions[existingIndex] = {
+      ...session,
+      createdAt: existingSession.createdAt,
+      updatedAt: Date.now()
+    };
   } else {
-    sessions.unshift(session); // Add new chats at the beginning
+    // New session - add at the beginning
+    sessions.unshift({
+      ...session,
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    });
   }
   
   localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));

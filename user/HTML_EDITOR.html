@@ -356,6 +356,51 @@
             background: rgba(33, 150, 243, 0.1) !important;
         }
         
+        /* Destructive Move Banner */
+        .destructive-move-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(135deg, #ff5722, #f44336);
+            color: white;
+            padding: 15px;
+            z-index: 9999;
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            animation: slideDown 0.3s ease;
+        }
+        .destructive-move-banner.active {
+            display: flex;
+        }
+        .destructive-move-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .destructive-move-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .destructive-move-btn {
+            padding: 10px 25px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+        }
+        .destructive-move-btn.confirm {
+            background: #4caf50;
+            color: white;
+        }
+        .destructive-move-btn.undo {
+            background: rgba(255,255,255,0.9);
+            color: #f44336;
+        }
+        
         /* Drag Selection Box */
         .drag-select-box {
             position: fixed;
@@ -895,6 +940,21 @@
             <button class="multiselect-mode-btn distribute" id="distributeBtn">📐 Distribute</button>
             <button class="multiselect-mode-btn clear" id="clearSelectionBtn">Clear</button>
             <button class="multiselect-mode-btn cancel" id="multiselectCancelBtn">✗ Exit</button>
+        </div>
+    </div>
+
+    <!-- Destructive Move Confirmation Banner -->
+    <div id="destructiveMoveBanner" class="destructive-move-banner" style="display: none;">
+        <div class="destructive-move-info">
+            <span style="font-size: 20px;">⚠️</span>
+            <div>
+                <div style="font-weight: bold;">LAYOUT AFFECTED</div>
+                <div style="font-size: 12px; opacity: 0.9;" id="destructiveMoveDetails">Moving element affected parent layout</div>
+            </div>
+        </div>
+        <div class="destructive-move-actions">
+            <button class="destructive-move-btn confirm" id="confirmMoveBtn">✓ KEEP MOVE</button>
+            <button class="destructive-move-btn undo" id="undoMoveBtn">✗ UNDO</button>
         </div>
     </div>
 
@@ -2476,68 +2536,33 @@
         }
         
         function showDestructiveMoveConfirmation(doc, element, placeholder, parent, originalRect) {
-            // Create overlay on parent
-            const overlay = doc.createElement('div');
-            overlay.style.position = 'absolute';
-            overlay.style.top = '0';
-            overlay.style.left = '0';
-            overlay.style.right = '0';
-            overlay.style.bottom = '0';
-            overlay.style.backgroundColor = 'rgba(255, 87, 34, 0.15)';
-            overlay.style.border = '3px solid #ff5722';
-            overlay.style.zIndex = '10000';
-            overlay.style.pointerEvents = 'none';
-            overlay.className = 'destructive-move-overlay';
-            
-            // Create confirmation panel
-            const panel = doc.createElement('div');
-            panel.style.position = 'absolute';
-            panel.style.top = '50%';
-            panel.style.left = '50%';
-            panel.style.transform = 'translate(-50%, -50%)';
-            panel.style.backgroundColor = '#fff';
-            panel.style.border = '3px solid #ff5722';
-            panel.style.borderRadius = '8px';
-            panel.style.padding = '20px';
-            panel.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)';
-            panel.style.zIndex = '10001';
-            panel.style.pointerEvents = 'all';
-            panel.style.minWidth = '300px';
-            panel.style.fontFamily = 'monospace';
+            // Show banner in main UI (not in iframe)
+            const banner = document.getElementById('destructiveMoveBanner');
+            const details = document.getElementById('destructiveMoveDetails');
             
             const newRect = parent.getBoundingClientRect();
             const sizeChanged = Math.abs(newRect.width - originalRect.width) > 1 || Math.abs(newRect.height - originalRect.height) > 1;
             
-            panel.innerHTML = `
-                <div style="margin-bottom: 15px; font-weight: bold; color: #ff5722; font-size: 16px;">
-                    ⚠️ LAYOUT AFFECTED
-                </div>
-                <div style="margin-bottom: 15px; font-size: 13px; line-height: 1.5;">
-                    Moving this element ${sizeChanged ? 'changed parent size' : 'affected parent layout'}:<br>
-                    <strong>Parent:</strong> ${parent.tagName.toLowerCase()}<br>
-                    ${sizeChanged ? `<strong>Size:</strong> ${Math.round(originalRect.width)}×${Math.round(originalRect.height)} → ${Math.round(newRect.width)}×${Math.round(newRect.height)}` : ''}
-                </div>
-                <div style="display: flex; gap: 10px;">
-                    <button id="confirmMove" style="flex: 1; padding: 10px; background: #4caf50; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
-                        ✓ KEEP MOVE
-                    </button>
-                    <button id="undoMove" style="flex: 1; padding: 10px; background: #f44336; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
-                        ✗ UNDO
-                    </button>
-                </div>
-            `;
+            details.textContent = sizeChanged 
+                ? `Parent ${parent.tagName.toLowerCase()} size changed: ${Math.round(originalRect.width)}×${Math.round(originalRect.height)} → ${Math.round(newRect.width)}×${Math.round(newRect.height)}`
+                : `Parent ${parent.tagName.toLowerCase()} layout was affected by this move`;
             
-            // Make parent position relative if needed
-            const parentComputed = window.getComputedStyle(parent);
-            if (parentComputed.position === 'static') {
-                parent.style.position = 'relative';
-            }
+            banner.classList.add('active');
+            banner.style.display = 'flex';
             
-            parent.appendChild(overlay);
-            parent.appendChild(panel);
+            // Store references for button handlers
+            window.pendingMoveData = { element, placeholder, parent };
+            
+            // Remove old listeners
+            const confirmBtn = document.getElementById('confirmMoveBtn');
+            const undoBtn = document.getElementById('undoMoveBtn');
+            const newConfirmBtn = confirmBtn.cloneNode(true);
+            const newUndoBtn = undoBtn.cloneNode(true);
+            confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+            undoBtn.parentNode.replaceChild(newUndoBtn, undoBtn);
             
             // Handle confirm
-            panel.querySelector('#confirmMove').addEventListener('click', () => {
+            newConfirmBtn.addEventListener('click', () => {
                 // Remove visual feedback
                 parent.style.outline = '';
                 parent.style.outlineOffset = '';
@@ -2548,14 +2573,15 @@
                     placeholder.parentNode.removeChild(placeholder);
                 }
                 
-                // Remove overlay and panel
-                overlay.remove();
-                panel.remove();
+                // Hide banner
+                banner.classList.remove('active');
+                banner.style.display = 'none';
                 
                 // Reset globals
                 dragPlaceholder = null;
                 affectedParent = null;
                 originalParentRect = null;
+                window.pendingMoveData = null;
                 
                 saveState();
                 
@@ -2566,7 +2592,7 @@
             });
             
             // Handle undo
-            panel.querySelector('#undoMove').addEventListener('click', () => {
+            newUndoBtn.addEventListener('click', () => {
                 // Restore element to placeholder position
                 if (placeholder && placeholder.parentNode) {
                     placeholder.parentNode.insertBefore(element, placeholder);
@@ -2600,14 +2626,15 @@
                 parent.style.outlineOffset = '';
                 delete parent.dataset.affectedByDrag;
                 
-                // Remove overlay and panel
-                overlay.remove();
-                panel.remove();
+                // Hide banner
+                banner.classList.remove('active');
+                banner.style.display = 'none';
                 
                 // Reset globals
                 dragPlaceholder = null;
                 affectedParent = null;
                 originalParentRect = null;
+                window.pendingMoveData = null;
                 
                 const indicator = document.getElementById('copyIndicator');
                 indicator.textContent = 'MOVE UNDONE!';
