@@ -5,116 +5,203 @@
     <title>Muhamad's Design Studio: Inspector & Editor</title>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        :root { --panel-bg: #1e1e1e; --accent: #ff9800; --text: #eee; }
+        :root { --panel-bg: #1e1e1e; --accent: #0078d4; --text: #eee; --border: #333; --hover: #2d2d2d; --input-bg: #2b2b2b; }
         body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; display: flex; height: 100vh; background: #121212; color: var(--text); overflow: hidden; }
         
         /* Layout */
         #main { flex-grow: 1; display: flex; flex-direction: column; min-width: 0; }
-        #sidebar { width: 320px; min-width: 320px; max-width: 320px; background: var(--panel-bg); border-left: 2px solid #333; padding: 15px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; transition: margin-right 0.3s; }
-        #sidebar.collapsed { margin-right: -320px; }
+        #sidebar { width: 280px; min-width: 280px; max-width: 280px; background: var(--panel-bg); border-left: 2px solid var(--border); padding: 16px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; transition: margin-right 0.3s; }
+        #sidebar.collapsed { margin-right: -280px; }
+        #sidebar.floating { position: fixed; border: 2px solid #555; border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); z-index: 10000; resize: both; overflow: auto; max-height: 90vh; }
+        #sidebar.floating #sidebarHeader { cursor: move; background: #2b2b2b; margin: -16px -16px 12px -16px; padding: 10px 16px; border-radius: 6px 6px 0 0; display: flex; align-items: center; justify-content: space-between; }
+        #sidebar.floating #sidebarHeader h3 { margin: 0; font-size: 13px; }
+        #sidebarDragHandle { display: none; cursor: move; color: #888; font-size: 10px; user-select: none; }
+        #sidebar.floating #sidebarDragHandle { display: flex; align-items: center; gap: 5px; }
+        
+        /* Enhanced Number Inputs */
+        input[type="number"] {
+            -moz-appearance: textfield;
+            appearance: textfield;
+            text-align: center;
+            font-weight: 500;
+            font-size: 13px;
+        }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .number-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .number-input-wrapper input {
+            flex: 1;
+            padding-right: 24px;
+        }
+        .number-spinner {
+            position: absolute;
+            right: 4px;
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+        .spinner-btn {
+            width: 18px;
+            height: 14px;
+            background: var(--hover);
+            border: 1px solid var(--border);
+            color: var(--accent);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            transition: all 0.15s;
+            user-select: none;
+        }
+        .spinner-btn:hover {
+            background: var(--accent);
+            color: white;
+        }
+        .spinner-btn:active {
+            transform: scale(0.95);
+        }
+        .spinner-btn.up {
+            border-radius: 3px 3px 0 0;
+        }
+        .spinner-btn.down {
+            border-radius: 0 0 3px 3px;
+        }
         
         /* Paste Code Panel */
-        #pasteCodePanel { display: none; flex-direction: column; gap: 10px; margin-bottom: 15px; padding: 15px; background: #2b2b2b; border-radius: 6px; border: 1px solid #444; }
+        #pasteCodePanel { display: none; flex-direction: column; gap: 10px; margin-bottom: 15px; padding: 15px; background: var(--input-bg); border-radius: 6px; border: 1px solid var(--border); }
         #pasteCodePanel.active { display: flex; }
-        #pasteCodePanel h4 { margin: 0 0 10px 0; color: var(--accent); font-size: 13px; }
-        #pasteCodeTextarea { flex: 1; min-height: 200px; max-height: 300px; padding: 10px; background: #1e1e1e; border: 1px solid #444; color: white; border-radius: 4px; font-family: 'Monaco', 'Menlo', 'Courier New', monospace; font-size: 12px; resize: vertical; }
+        #pasteCodePanel h4 { margin: 0 0 10px 0; color: var(--accent); font-size: 13px; font-weight: 600; }
+        #pasteCodeTextarea { flex: 1; min-height: 200px; max-height: 300px; padding: 10px; background: #1a1a1a; border: 1px solid var(--border); color: white; border-radius: 4px; font-family: 'Monaco', 'Menlo', 'Courier New', monospace; font-size: 12px; resize: vertical; }
         #pasteCodeTextarea:focus { outline: none; border-color: var(--accent); }
         #pasteCodeActions { display: flex; gap: 8px; }
-        #pasteCodeRenderBtn { flex: 1; padding: 8px; background: var(--accent); color: black; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; }
-        #pasteCodeRenderBtn:hover { opacity: 0.9; }
-        #pasteCodeClearBtn { flex: 1; padding: 8px; background: #d32f2f; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; }
-        #pasteCodeClearBtn:hover { opacity: 0.9; }
-        #togglePasteCodeBtn { padding: 8px; background: #3b3b3b; color: white; border: 1px solid #555; border-radius: 4px; cursor: pointer; font-size: 12px; }
-        #togglePasteCodeBtn:hover { background: #4b4b4b; }
+        #pasteCodeRenderBtn { flex: 1; padding: 10px; background: var(--accent); color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 12px; transition: all 0.2s; }
+        #pasteCodeRenderBtn:hover { opacity: 0.9; transform: translateY(-1px); }
+        #pasteCodeClearBtn { flex: 1; padding: 10px; background: #d32f2f; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; font-size: 12px; transition: all 0.2s; }
+        #pasteCodeClearBtn:hover { opacity: 0.9; transform: translateY(-1px); }
+        #togglePasteCodeBtn { padding: 10px; background: var(--hover); color: white; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: 500; transition: all 0.2s; }
+        #togglePasteCodeBtn:hover { background: var(--accent); border-color: var(--accent); }
         
         /* Compact Controls */
-        #toolbar { padding: 6px 10px; background: var(--panel-bg); border-bottom: 1px solid #333; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 13px; }
-        .toolbar-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-        .icon-btn { background: #2b2b2b; border: 1px solid #444; color: white; padding: 4px 8px; border-radius: 3px; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; font-size: 12px; }
-        .icon-btn:hover { background: #3b3b3b; }
+        #toolbar { padding: 8px 12px; background: var(--panel-bg); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13px; }
+        .toolbar-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .icon-btn { background: var(--input-bg); border: 1px solid var(--border); color: white; padding: 6px 12px; border-radius: 4px; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap; font-size: 12px; font-weight: 500; transition: all 0.2s; }
+        .icon-btn:hover { background: var(--hover); border-color: var(--accent); }
         .icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .icon-btn:disabled:hover { background: var(--input-bg); border-color: var(--border); }
         .icon-btn svg { width: 14px; height: 14px; }
-        #urlInput { min-width: 200px; flex: 1; font-size: 12px; padding: 4px 6px; }
-        #baseUrl { min-width: 120px; font-size: 12px; padding: 4px 6px; }
+        #urlInput { min-width: 200px; flex: 1; font-size: 12px; padding: 6px 10px; }
+        #baseUrl { min-width: 120px; font-size: 12px; padding: 6px 10px; }
         #fileInput { font-size: 12px; }
         #viewer { flex-grow: 1; width: 100%; border: none; background: white; }
         
         /* Collapse Button */
-        #collapseBtn { position: absolute; top: 10px; right: 10px; z-index: 1000; background: var(--accent); color: black; border: none; padding: 6px; border-radius: 3px; cursor: pointer; }
-        #collapseBtn:hover { opacity: 0.8; }
+        #collapseBtn { position: absolute; top: 12px; right: 12px; z-index: 1000; background: var(--accent); color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; transition: all 0.2s; }
+        #collapseBtn:hover { opacity: 0.9; transform: scale(1.05); }
         
-        /* Editor UI */
+        /* Editor UI - Always Visible */
         .section-header { 
-            background: #2b2b2b; 
+            background: var(--input-bg); 
             color: var(--accent); 
-            padding: 8px 10px; 
+            padding: 10px 12px; 
             font-size: 11px; 
-            font-weight: bold; 
-            border-radius: 3px; 
-            margin: 10px 0 8px 0;
+            font-weight: 700; 
+            border-radius: 4px; 
+            margin: 16px 0 10px 0;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.8px;
+            border-left: 3px solid var(--accent);
         }
         .section-separator { 
-            height: 2px; 
-            background: linear-gradient(to right, transparent, #444, transparent); 
-            margin: 15px 0; 
+            height: 1px; 
+            background: var(--border);
+            margin: 20px 0; 
         }
         .editor-group { 
             display: flex; 
             flex-direction: column; 
-            gap: 5px; 
-            margin-bottom: 10px; 
+            gap: 6px; 
+            margin-bottom: 12px; 
         }
         label { 
-            font-size: 10px; 
+            font-size: 11px; 
             color: #aaa; 
             text-transform: uppercase; 
-            font-weight: bold; 
+            font-weight: 600;
+            letter-spacing: 0.5px;
         }
         input, select { 
-            background: #2b2b2b; 
-            border: 1px solid #444; 
+            background: var(--input-bg); 
+            border: 1px solid var(--border); 
             color: white; 
-            padding: 6px; 
-            border-radius: 3px; 
-            font-size: 12px; 
+            padding: 8px 10px; 
+            border-radius: 4px; 
+            font-size: 13px;
+            transition: all 0.2s;
         }
         input:focus, select:focus {
             outline: none;
             border-color: var(--accent);
+            background: #2d2d2d;
+        }
+        input:disabled, select:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
         #copyIndicator { 
             background: #2e7d32; 
             color: white; 
-            padding: 8px; 
-            border-radius: 3px; 
+            padding: 10px; 
+            border-radius: 4px; 
             text-align: center; 
             display: none; 
-            margin-top: 8px; 
-            font-size: 12px; 
+            margin-top: 10px; 
+            font-size: 12px;
+            font-weight: 600;
         }
         
         .empty-state { 
             color: #666; 
             font-style: italic; 
             text-align: center; 
-            margin-top: 50px; 
-            font-size: 13px; 
+            padding: 20px;
+            font-size: 12px;
+            background: var(--input-bg);
+            border-radius: 4px;
+            border: 1px dashed var(--border);
         }
         
         .action-btn { 
             border: none; 
-            padding: 10px; 
-            font-weight: bold; 
+            padding: 12px; 
+            font-weight: 600; 
             cursor: pointer; 
-            border-radius: 3px; 
-            margin-top: 5px; 
-            font-size: 12px; 
+            border-radius: 4px; 
+            margin-top: 6px; 
+            font-size: 12px;
+            transition: all 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         .action-btn:hover {
             opacity: 0.9;
             transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .action-btn:active {
+            transform: translateY(0);
+        }
+        .action-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
         }
         
         /* Modal Styles */
@@ -583,6 +670,33 @@
             0%, 100% { background: transparent; }
             50% { background: rgba(76, 175, 80, 0.3); }
         }
+        
+        /* Fullscreen Mode */
+        #main.fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 99998;
+            background: white;
+        }
+        #main.fullscreen #toolbar {
+            display: none;
+        }
+        #main.fullscreen #viewer {
+            width: 100%;
+            height: 100%;
+        }
+        #exitFullscreenBtn:hover {
+            background: rgba(0,0,0,0.85);
+            border-color: rgba(255,255,255,0.5);
+            transform: scale(1.05);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+        }
+        #exitFullscreenBtn:active {
+            transform: scale(0.98);
+        }
     </style>
 </head>
 <body>
@@ -607,15 +721,53 @@
             <button id="redoBtn" class="icon-btn" disabled>
                 <i data-lucide="redo"></i>
             </button>
+            <button id="toggleInteractiveBtn" class="icon-btn" style="background: #673ab7; margin-left: 10px;">
+                <i data-lucide="mouse-pointer"></i> Interactive Mode
+            </button>
+            <button id="fullscreenBtn" class="icon-btn" style="background: #2e7d32; margin-left: 10px;">
+                <i data-lucide="maximize"></i> Fullscreen
+            </button>
+            <button id="openNewTabBtn" class="icon-btn" style="background: #0288d1;">
+                <i data-lucide="external-link"></i> New Tab
+            </button>
         </div>
         <iframe id="viewer"></iframe>
+        
+        <!-- Fullscreen Exit Button -->
+        <button id="exitFullscreenBtn" style="display: none; position: fixed; top: 20px; right: 20px; z-index: 99999; background: rgba(0,0,0,0.7); color: white; border: 2px solid rgba(255,255,255,0.3); padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; backdrop-filter: blur(10px); transition: all 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+            <i data-lucide="minimize" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 6px;"></i>
+            Exit Fullscreen
+        </button>
     </div>
 
     <div id="sidebar">
         <button id="collapseBtn">
             <i data-lucide="chevron-right"></i>
         </button>
-        <h3>Element Editor</h3>
+        <div id="sidebarHeader">
+            <h3>Element Editor</h3>
+            <div id="sidebarDragHandle">
+                <i data-lucide="grip-vertical"></i>
+                <span>Drag to move</span>
+            </div>
+        </div>
+        
+        <!-- Element Info Display -->
+        <div id="elementInfo" style="background: var(--input-bg); padding: 12px; border-radius: 6px; margin-bottom: 12px; border: 1px solid var(--border);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                <div>
+                    <div style="font-size: 10px; color: #888; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px;">Selected Element</div>
+                    <div id="elementTag" style="font-size: 16px; font-weight: 700; color: var(--accent); font-family: monospace; margin-top: 4px;">None</div>
+                </div>
+                <button id="resetAnimationsBtn" class="icon-btn" style="background: #d32f2f; border-color: #d32f2f; padding: 8px 12px;" title="Reset animations, transforms, and transitions">
+                    <i data-lucide="rotate-ccw"></i> Reset
+                </button>
+            </div>
+            <div id="elementDetails" style="font-size: 11px; color: #aaa; display: flex; flex-wrap: wrap; gap: 8px;">
+                <span id="elementId" style="display: none;"></span>
+                <span id="elementClass" style="display: none;"></span>
+            </div>
+        </div>
         
         <!-- Paste Code Panel -->
         <div id="pasteCodePanel">
@@ -627,11 +779,11 @@
             </div>
         </div>
         
-        <button id="togglePasteCodeBtn">+ Paste Code</button>
+        <button id="togglePasteCodeBtn">Paste Code</button>
         
-        <div id="editorUI" style="display:none; flex-direction: column;">
+        <div id="editorUI" style="display:flex; flex-direction: column;">
             <!-- SECTION: TEXT & CONTENT -->
-            <div class="section-header">📝 TEXT & CONTENT</div>
+            <div class="section-header">Text & Content</div>
             <div class="editor-group">
                 <label>Text Content</label>
                 <input type="text" id="propText">
@@ -640,7 +792,7 @@
             <div class="section-separator"></div>
             
             <!-- SECTION: TYPOGRAPHY -->
-            <div class="section-header">🔤 TYPOGRAPHY</div>
+            <div class="section-header">Typography</div>
             <div class="editor-group">
                 <label>Font Family</label>
                 <select id="propFontFamily">
@@ -683,7 +835,7 @@
             <div class="section-separator"></div>
             
             <!-- SECTION: COLORS -->
-            <div class="section-header">🎨 COLORS</div>
+            <div class="section-header">Colors</div>
             <div class="editor-group">
                 <label>Text Color</label>
                 <input type="color" id="propColor">
@@ -692,31 +844,60 @@
                 <label>Background Color</label>
                 <input type="color" id="propBg">
             </div>
+            <div class="editor-group">
+                <label>Opacity</label>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <input type="range" id="propOpacity" min="0" max="100" value="100" style="flex: 1;">
+                    <span id="opacityValue" style="min-width: 40px; text-align: center; font-weight: 600; color: var(--accent);">100%</span>
+                </div>
+            </div>
             
             <div class="section-separator"></div>
             
             <!-- SECTION: SPACING -->
-            <div class="section-header">📏 SPACING</div>
+            <div class="section-header">Spacing</div>
             <div class="editor-group">
                 <label>Padding (px)</label>
-                <input type="number" id="propPadding">
+                <div class="number-input-wrapper">
+                    <input type="number" id="propPadding">
+                    <div class="number-spinner">
+                        <div class="spinner-btn up" data-target="propPadding">▲</div>
+                        <div class="spinner-btn down" data-target="propPadding">▼</div>
+                    </div>
+                </div>
             </div>
             <div class="editor-group">
                 <label>Margin (px)</label>
-                <input type="number" id="propMargin">
+                <div class="number-input-wrapper">
+                    <input type="number" id="propMargin">
+                    <div class="number-spinner">
+                        <div class="spinner-btn up" data-target="propMargin">▲</div>
+                        <div class="spinner-btn down" data-target="propMargin">▼</div>
+                    </div>
+                </div>
             </div>
             
             <div class="section-separator"></div>
             
             <!-- SECTION: DIMENSIONS -->
-            <div class="section-header">📐 DIMENSIONS</div>
+            <div class="section-header">Dimensions</div>
             <div class="editor-group">
-                <label>Width (px or auto)</label>
-                <input type="text" id="propWidth" placeholder="auto">
+                <label>Width</label>
+                <div style="display: flex; gap: 5px;">
+                    <input type="text" id="propWidth" placeholder="auto" style="flex: 1;">
+                    <button id="widthAutoBtn" class="icon-btn" style="padding: 6px 10px; font-size: 11px;" title="Toggle Auto Width">
+                        AUTO
+                    </button>
+                </div>
             </div>
             <div class="editor-group">
-                <label>Height (px or auto)</label>
-                <input type="text" id="propHeight" placeholder="auto">
+                <label>Height</label>
+                <div style="display: flex; gap: 5px;">
+                    <input type="text" id="propHeight" placeholder="auto" style="flex: 1;">
+                    <button id="heightAutoBtn" class="icon-btn" style="padding: 6px 10px; font-size: 11px;" title="Toggle Auto Height">
+                        AUTO
+                    </button>
+                </div>
             </div>
             <div class="editor-group">
                 <label>Display</label>
@@ -732,10 +913,16 @@
             <div class="section-separator"></div>
             
             <!-- SECTION: BORDER -->
-            <div class="section-header">🔲 BORDER</div>
+            <div class="section-header">Border</div>
             <div class="editor-group">
                 <label>Border Width (px)</label>
-                <input type="number" id="propBorderWidth" min="0">
+                <div class="number-input-wrapper">
+                    <input type="number" id="propBorderWidth" min="0">
+                    <div class="number-spinner">
+                        <div class="spinner-btn up" data-target="propBorderWidth">▲</div>
+                        <div class="spinner-btn down" data-target="propBorderWidth">▼</div>
+                    </div>
+                </div>
             </div>
             <div class="editor-group">
                 <label>Border Style</label>
@@ -753,37 +940,125 @@
             </div>
             <div class="editor-group">
                 <label>Border Radius (px)</label>
-                <input type="number" id="propBorderRadius" min="0">
+                <div class="number-input-wrapper">
+                    <input type="number" id="propBorderRadius" min="0">
+                    <div class="number-spinner">
+                        <div class="spinner-btn up" data-target="propBorderRadius">▲</div>
+                        <div class="spinner-btn down" data-target="propBorderRadius">▼</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section-separator"></div>
+            
+            <!-- SECTION: EFFECTS -->
+            <div class="section-header">Effects</div>
+            <div class="editor-group">
+                <label>Box Shadow</label>
+                <select id="propBoxShadow">
+                    <option value="none">None</option>
+                    <option value="0 1px 3px rgba(0,0,0,0.12)">Small</option>
+                    <option value="0 4px 6px rgba(0,0,0,0.1)">Medium</option>
+                    <option value="0 10px 25px rgba(0,0,0,0.15)">Large</option>
+                    <option value="0 20px 40px rgba(0,0,0,0.2)">Extra Large</option>
+                    <option value="inset 0 2px 4px rgba(0,0,0,0.1)">Inset</option>
+                </select>
+            </div>
+            <div class="editor-group">
+                <label>Blur (px)</label>
+                <div class="number-input-wrapper">
+                    <input type="number" id="propBlur" min="0" max="50" value="0">
+                    <div class="number-spinner">
+                        <div class="spinner-btn up" data-target="propBlur">▲</div>
+                        <div class="spinner-btn down" data-target="propBlur">▼</div>
+                    </div>
+                </div>
+            </div>
+            <div class="editor-group">
+                <label>Rotate (deg)</label>
+                <div class="number-input-wrapper">
+                    <input type="number" id="propRotate" min="-360" max="360" value="0">
+                    <div class="number-spinner">
+                        <div class="spinner-btn up" data-target="propRotate">▲</div>
+                        <div class="spinner-btn down" data-target="propRotate">▼</div>
+                    </div>
+                </div>
+            </div>
+            <div class="editor-group">
+                <label>Scale</label>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <input type="range" id="propScale" min="10" max="200" value="100" style="flex: 1;">
+                    <span id="scaleValue" style="min-width: 40px; text-align: center; font-weight: 600; color: var(--accent);">100%</span>
+                </div>
+            </div>
+            
+            <div class="section-separator"></div>
+            
+            <!-- SECTION: POSITION (ARROW CONTROLS) -->
+            <div class="section-header">Position</div>
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 10px;">
+                <div></div>
+                <button id="moveUpBtn" class="action-btn" style="background: #1976d2; color: white; padding: 8px; font-size: 16px;" title="Move Up (↑)">
+                    ↑
+                </button>
+                <div></div>
+                <button id="moveLeftBtn" class="action-btn" style="background: #1976d2; color: white; padding: 8px; font-size: 16px;" title="Move Left (←)">
+                    ←
+                </button>
+                <div style="display: flex; align-items: center; justify-content: center; font-size: 10px; color: #666;">
+                    MOVE
+                </div>
+                <button id="moveRightBtn" class="action-btn" style="background: #1976d2; color: white; padding: 8px; font-size: 16px;" title="Move Right (→)">
+                    →
+                </button>
+                <div></div>
+                <button id="moveDownBtn" class="action-btn" style="background: #1976d2; color: white; padding: 8px; font-size: 16px;" title="Move Down (↓)">
+                    ↓
+                </button>
+                <div></div>
+            </div>
+            <div class="editor-group">
+                <label>Move Step (px)</label>
+                <div class="number-input-wrapper">
+                    <input type="number" id="moveStep" value="10" min="1" max="100" style="text-align: center;">
+                    <div class="number-spinner">
+                        <div class="spinner-btn up" data-target="moveStep">▲</div>
+                        <div class="spinner-btn down" data-target="moveStep">▼</div>
+                    </div>
+                </div>
+            </div>
+            <div style="font-size: 10px; color: #666; text-align: center; margin-top: 5px;">
+                Use Arrow Keys on keyboard
             </div>
             
             <div class="section-separator"></div>
             
             <!-- SECTION: ARRANGE (Z-INDEX) -->
-            <div class="section-header">📚 ARRANGE (LAYERING)</div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px;">
-                <button id="bringToFrontBtn" class="action-btn" style="background: #1976d2; color: white; padding: 8px; font-size: 11px;">
-                    ⬆️ To Front
+            <div class="section-header">Arrange (Layering)</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                <button id="bringToFrontBtn" class="action-btn" style="background: var(--accent); color: white; padding: 10px; font-size: 11px;">
+                    To Front
                 </button>
-                <button id="bringForwardBtn" class="action-btn" style="background: #1976d2; color: white; padding: 8px; font-size: 11px;">
-                    ↑ Forward
+                <button id="bringForwardBtn" class="action-btn" style="background: var(--accent); color: white; padding: 10px; font-size: 11px;">
+                    Forward
                 </button>
-                <button id="sendBackwardBtn" class="action-btn" style="background: #1976d2; color: white; padding: 8px; font-size: 11px;">
-                    ↓ Backward
+                <button id="sendBackwardBtn" class="action-btn" style="background: var(--accent); color: white; padding: 10px; font-size: 11px;">
+                    Backward
                 </button>
-                <button id="sendToBackBtn" class="action-btn" style="background: #1976d2; color: white; padding: 8px; font-size: 11px;">
-                    ⬇️ To Back
+                <button id="sendToBackBtn" class="action-btn" style="background: var(--accent); color: white; padding: 10px; font-size: 11px;">
+                    To Back
                 </button>
             </div>
-            <button id="bringAboveElementBtn" class="action-btn" style="background: #0288d1; color: white; margin-top: 5px;">
-                🎯 BRING ABOVE ELEMENT
+            <button id="bringAboveElementBtn" class="action-btn" style="background: #0288d1; color: white; margin-top: 8px;">
+                Bring Above Element
             </button>
             
             <div class="section-separator"></div>
             
             <!-- SECTION: ACTIONS -->
-            <div class="section-header">⚡ ACTIONS</div>
+            <div class="section-header">Actions</div>
             <button id="lockBtn" class="action-btn" style="background: #ff5722; color: white;">
-                🔒 LOCK ELEMENT
+                Lock Element
             </button>
             <button id="groupBtn" class="action-btn" style="background: #9c27b0; color: white; display: none;">
                 📦 GROUP SELECTED
@@ -1025,6 +1300,17 @@
         let history = [];
         let historyIndex = -1;
         const MAX_HISTORY = 50;
+        let interactiveMode = false; // Track interactive mode state
+        let inspectorClickHandler = null; // Store reference to click handler
+        let inspectorDblClickHandler = null; // Store reference to dblclick handler
+        let inspectorMouseOverHandler = null; // Store reference to mouseover handler
+        let inspectorMouseOutHandler = null; // Store reference to mouseout handler
+        // Drag handlers removed - drag functionality disabled for stability
+
+        // Sidebar dragging variables
+        let sidebarDragging = false;
+        let sidebarDragOffset = { x: 0, y: 0 };
+        let sidebarFloating = false;
 
         function saveState() {
             const doc = viewer.contentWindow.document;
@@ -1319,24 +1605,140 @@
 
         // 3. Editor Logic
         function showEditor(el) {
-            emptyMsg.style.display = 'none';
-            editorUI.style.display = 'flex';
+            // Show element info
+            const elementInfo = document.getElementById('elementInfo');
+            const elementTag = document.getElementById('elementTag');
+            const elementId = document.getElementById('elementId');
+            const elementClass = document.getElementById('elementClass');
+            
+            // Display tag name
+            elementTag.textContent = `<${el.tagName.toLowerCase()}>`;
+            
+            // Display ID if exists
+            if (el.id) {
+                elementId.textContent = `#${el.id}`;
+                elementId.style.display = 'inline';
+                elementId.style.background = '#1976d2';
+                elementId.style.color = 'white';
+                elementId.style.padding = '2px 6px';
+                elementId.style.borderRadius = '3px';
+            } else {
+                elementId.style.display = 'none';
+            }
+            
+            // Display classes if exist
+            if (el.className && typeof el.className === 'string') {
+                const classes = el.className.split(' ').filter(c => c && !c.includes('inspect') && !c.includes('pasted') && !c.includes('locked') && !c.includes('selected') && !c.includes('grouped'));
+                if (classes.length > 0) {
+                    elementClass.textContent = `.${classes.join(' .')}`;
+                    elementClass.style.display = 'inline';
+                    elementClass.style.background = '#388e3c';
+                    elementClass.style.color = 'white';
+                    elementClass.style.padding = '2px 6px';
+                    elementClass.style.borderRadius = '3px';
+                } else {
+                    elementClass.style.display = 'none';
+                }
+            } else {
+                elementClass.style.display = 'none';
+            }
             
             const style = window.getComputedStyle(el);
             document.getElementById('propText').value = el.innerText || "";
-            document.getElementById('propFontFamily').value = style.fontFamily;
+            
+            // Handle font family - show actual font or add as custom option
+            const currentFont = style.fontFamily;
+            const fontSelect = document.getElementById('propFontFamily');
+            let fontFound = false;
+            
+            // Check if current font exists in options
+            for (let option of fontSelect.options) {
+                if (option.value === currentFont) {
+                    fontSelect.value = currentFont;
+                    fontFound = true;
+                    break;
+                }
+            }
+            
+            // If font not found, add it as a custom option
+            if (!fontFound && currentFont) {
+                const customOption = document.createElement('option');
+                customOption.value = currentFont;
+                customOption.textContent = currentFont.split(',')[0].replace(/['"]/g, '') + ' (Current)';
+                fontSelect.insertBefore(customOption, fontSelect.firstChild);
+                fontSelect.value = currentFont;
+            }
+            
             document.getElementById('propFontSize').value = parseInt(style.fontSize);
             document.getElementById('propFontWeight').value = style.fontWeight;
             document.getElementById('propColor').value = rgbToHex(style.color);
             document.getElementById('propBg').value = rgbToHex(style.backgroundColor);
+            
+            // Handle opacity
+            const opacity = parseFloat(style.opacity) || 1;
+            const opacityPercent = Math.round(opacity * 100);
+            document.getElementById('propOpacity').value = opacityPercent;
+            document.getElementById('opacityValue').textContent = opacityPercent + '%';
+            
             document.getElementById('propPadding').value = parseInt(style.padding);
             document.getElementById('propMargin').value = parseInt(style.margin);
-            document.getElementById('propWidth').value = style.width === 'auto' ? 'auto' : parseInt(style.width);
-            document.getElementById('propHeight').value = style.height === 'auto' ? 'auto' : parseInt(style.height);
+            
+            // Handle width
+            const widthValue = style.width;
+            if (widthValue === 'auto' || widthValue === '0px') {
+                document.getElementById('propWidth').value = '';
+                document.getElementById('propWidth').placeholder = 'auto';
+            } else {
+                document.getElementById('propWidth').value = parseInt(widthValue);
+                document.getElementById('propWidth').placeholder = 'px';
+            }
+            
+            // Handle height
+            const heightValue = style.height;
+            if (heightValue === 'auto' || heightValue === '0px') {
+                document.getElementById('propHeight').value = '';
+                document.getElementById('propHeight').placeholder = 'auto';
+            } else {
+                document.getElementById('propHeight').value = parseInt(heightValue);
+                document.getElementById('propHeight').placeholder = 'px';
+            }
+            
             document.getElementById('propBorderWidth').value = parseInt(style.borderWidth) || 0;
             document.getElementById('propBorderStyle').value = style.borderStyle;
             document.getElementById('propBorderColor').value = rgbToHex(style.borderColor);
             document.getElementById('propBorderRadius').value = parseInt(style.borderRadius) || 0;
+            
+            // Handle box shadow
+            const boxShadow = style.boxShadow;
+            const shadowSelect = document.getElementById('propBoxShadow');
+            let shadowFound = false;
+            for (let option of shadowSelect.options) {
+                if (boxShadow.includes(option.value) || option.value === boxShadow) {
+                    shadowSelect.value = option.value;
+                    shadowFound = true;
+                    break;
+                }
+            }
+            if (!shadowFound) {
+                shadowSelect.value = boxShadow === 'none' ? 'none' : shadowSelect.options[0].value;
+            }
+            
+            // Handle blur filter
+            const filter = style.filter;
+            const blurMatch = filter.match(/blur\((\d+)px\)/);
+            document.getElementById('propBlur').value = blurMatch ? parseInt(blurMatch[1]) : 0;
+            
+            // Handle transform (rotate and scale)
+            const transform = style.transform;
+            const rotateMatch = transform.match(/rotate\(([^)]+)deg\)/);
+            const scaleMatch = transform.match(/scale\(([^)]+)\)/);
+            
+            document.getElementById('propRotate').value = rotateMatch ? parseInt(rotateMatch[1]) : 0;
+            
+            const scaleValue = scaleMatch ? Math.round(parseFloat(scaleMatch[1]) * 100) : 100;
+            document.getElementById('propScale').value = scaleValue;
+            document.getElementById('scaleValue').textContent = scaleValue + '%';
+            
             document.getElementById('propTextAlign').value = style.textAlign;
             document.getElementById('propDisplay').value = style.display;
             
@@ -1355,14 +1757,63 @@
             propFontWeight: (el, val) => { if(el && !isElementLocked(el)) el.style.fontWeight = val; },
             propColor: (el, val) => { if(el && !isElementLocked(el)) el.style.color = val; },
             propBg: (el, val) => { if(el && !isElementLocked(el)) el.style.backgroundColor = val; },
+            propOpacity: (el, val) => { 
+                if(el && !isElementLocked(el)) {
+                    el.style.opacity = val / 100;
+                    document.getElementById('opacityValue').textContent = val + '%';
+                }
+            },
             propPadding: (el, val) => { if(el && !isElementLocked(el)) el.style.padding = val + 'px'; },
             propMargin: (el, val) => { if(el && !isElementLocked(el)) el.style.margin = val + 'px'; },
-            propWidth: (el, val) => { if(el && !isElementLocked(el)) el.style.width = val === 'auto' ? 'auto' : val + 'px'; },
-            propHeight: (el, val) => { if(el && !isElementLocked(el)) el.style.height = val === 'auto' ? 'auto' : val + 'px'; },
+            propWidth: (el, val) => { 
+                if(el && !isElementLocked(el)) {
+                    if (val === 'auto' || val === '') {
+                        el.style.width = 'auto';
+                    } else if (!isNaN(val)) {
+                        el.style.width = val + 'px';
+                    } else {
+                        el.style.width = val; // Allow other units like %, em, etc.
+                    }
+                }
+            },
+            propHeight: (el, val) => { 
+                if(el && !isElementLocked(el)) {
+                    if (val === 'auto' || val === '') {
+                        el.style.height = 'auto';
+                    } else if (!isNaN(val)) {
+                        el.style.height = val + 'px';
+                    } else {
+                        el.style.height = val; // Allow other units like %, em, etc.
+                    }
+                }
+            },
             propBorderWidth: (el, val) => { if(el && !isElementLocked(el)) el.style.borderWidth = val + 'px'; },
             propBorderStyle: (el, val) => { if(el && !isElementLocked(el)) el.style.borderStyle = val; },
             propBorderColor: (el, val) => { if(el && !isElementLocked(el)) el.style.borderColor = val; },
             propBorderRadius: (el, val) => { if(el && !isElementLocked(el)) el.style.borderRadius = val + 'px'; },
+            propBoxShadow: (el, val) => { if(el && !isElementLocked(el)) el.style.boxShadow = val; },
+            propBlur: (el, val) => { 
+                if(el && !isElementLocked(el)) {
+                    const blur = val > 0 ? `blur(${val}px)` : 'none';
+                    el.style.filter = blur;
+                }
+            },
+            propRotate: (el, val) => { 
+                if(el && !isElementLocked(el)) {
+                    const currentTransform = el.style.transform || '';
+                    const withoutRotate = currentTransform.replace(/rotate\([^)]+\)/g, '').trim();
+                    el.style.transform = withoutRotate + (val != 0 ? ` rotate(${val}deg)` : '');
+                }
+            },
+            propScale: (el, val) => { 
+                if(el && !isElementLocked(el)) {
+                    const scale = val / 100;
+                    const currentTransform = el.style.transform || '';
+                    const withoutScale = currentTransform.replace(/scale\([^)]+\)/g, '').trim();
+                    el.style.transform = withoutScale + (scale != 1 ? ` scale(${scale})` : '');
+                    document.getElementById('scaleValue').textContent = val + '%';
+                }
+            },
             propTextAlign: (el, val) => { if(el && !isElementLocked(el)) el.style.textAlign = val; },
             propDisplay: (el, val) => { if(el && !isElementLocked(el)) el.style.display = val; }
         };
@@ -1398,15 +1849,115 @@
         }
 
         // 4. Copy, Delete & Export Logic
+        
+        // Helper function to extract computed styles and convert to inline styles
+        function getElementWithInlineStyles(element) {
+            // Clone the element deeply (including all children)
+            const clone = element.cloneNode(true);
+            
+            // Function to apply computed styles to an element
+            function applyComputedStyles(original, cloned) {
+                const computedStyle = window.getComputedStyle(original);
+                
+                // List of CSS properties to copy (most important ones)
+                const propertiesToCopy = [
+                    // Layout
+                    'display', 'position', 'top', 'right', 'bottom', 'left',
+                    'width', 'height', 'minWidth', 'minHeight', 'maxWidth', 'maxHeight',
+                    'margin', 'marginTop', 'marginRight', 'marginBottom', 'marginLeft',
+                    'padding', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft',
+                    'boxSizing', 'overflow', 'overflowX', 'overflowY',
+                    
+                    // Flexbox
+                    'flex', 'flexDirection', 'flexWrap', 'flexFlow', 'justifyContent',
+                    'alignItems', 'alignContent', 'alignSelf', 'flexGrow', 'flexShrink', 'flexBasis',
+                    'order', 'gap', 'rowGap', 'columnGap',
+                    
+                    // Grid
+                    'grid', 'gridTemplate', 'gridTemplateColumns', 'gridTemplateRows',
+                    'gridTemplateAreas', 'gridAutoColumns', 'gridAutoRows', 'gridAutoFlow',
+                    'gridColumn', 'gridRow', 'gridArea',
+                    
+                    // Typography
+                    'color', 'fontFamily', 'fontSize', 'fontWeight', 'fontStyle',
+                    'lineHeight', 'letterSpacing', 'textAlign', 'textDecoration',
+                    'textTransform', 'textIndent', 'textShadow', 'whiteSpace', 'wordBreak',
+                    'wordWrap', 'wordSpacing',
+                    
+                    // Background
+                    'background', 'backgroundColor', 'backgroundImage', 'backgroundSize',
+                    'backgroundPosition', 'backgroundRepeat', 'backgroundAttachment',
+                    'backgroundClip', 'backgroundOrigin',
+                    
+                    // Border
+                    'border', 'borderWidth', 'borderStyle', 'borderColor',
+                    'borderTop', 'borderRight', 'borderBottom', 'borderLeft',
+                    'borderRadius', 'borderTopLeftRadius', 'borderTopRightRadius',
+                    'borderBottomLeftRadius', 'borderBottomRightRadius',
+                    'borderImage', 'borderImageSource', 'borderImageSlice',
+                    
+                    // Visual effects
+                    'opacity', 'visibility', 'zIndex', 'boxShadow', 'filter',
+                    'backdropFilter', 'transform', 'transformOrigin', 'transition',
+                    'animation', 'cursor', 'pointerEvents',
+                    
+                    // Other
+                    'outline', 'outlineWidth', 'outlineStyle', 'outlineColor', 'outlineOffset',
+                    'listStyle', 'listStyleType', 'listStylePosition', 'listStyleImage',
+                    'verticalAlign', 'clipPath', 'mask', 'objectFit', 'objectPosition'
+                ];
+                
+                // Build inline style string
+                let inlineStyle = '';
+                propertiesToCopy.forEach(prop => {
+                    const value = computedStyle.getPropertyValue(prop);
+                    if (value && value !== 'none' && value !== 'normal' && value !== 'auto') {
+                        // Convert camelCase to kebab-case
+                        const kebabProp = prop.replace(/([A-Z])/g, '-$1').toLowerCase();
+                        inlineStyle += `${kebabProp}: ${value}; `;
+                    }
+                });
+                
+                // Set the inline style
+                if (inlineStyle) {
+                    cloned.setAttribute('style', inlineStyle);
+                }
+                
+                // Recursively apply to all children
+                const originalChildren = original.children;
+                const clonedChildren = cloned.children;
+                
+                for (let i = 0; i < originalChildren.length; i++) {
+                    if (originalChildren[i] && clonedChildren[i]) {
+                        applyComputedStyles(originalChildren[i], clonedChildren[i]);
+                    }
+                }
+            }
+            
+            // Apply styles to the clone and all its children
+            applyComputedStyles(element, clone);
+            
+            // Remove inspector classes
+            clone.classList.remove('active-inspect', 'batch-pasted', 'locked-element', 'multi-selected', 'grouped-element', 'arrange-applied', 'arrange-hover');
+            
+            // Remove inspector classes from all children
+            const allElements = clone.querySelectorAll('*');
+            allElements.forEach(el => {
+                el.classList.remove('active-inspect', 'batch-pasted', 'locked-element', 'multi-selected', 'grouped-element', 'arrange-applied', 'arrange-hover');
+            });
+            
+            return clone.outerHTML;
+        }
+        
         document.getElementById('copyBtn').addEventListener('click', () => {
             if(!selectedElement) return;
-            selectedElement.classList.remove('active-inspect');
-            const code = selectedElement.outerHTML;
-            selectedElement.classList.add('active-inspect');
+            
+            // Get HTML with inline styles
+            const code = getElementWithInlineStyles(selectedElement);
             
             navigator.clipboard.writeText(code).then(() => {
                 const indicator = document.getElementById('copyIndicator');
-                indicator.textContent = 'COPIED!';
+                indicator.textContent = 'COPIED WITH STYLES!';
                 indicator.style.display = 'block';
                 setTimeout(() => indicator.style.display = 'none', 2000);
             });
@@ -1422,8 +1973,16 @@
                 lockedElements.delete(selectedElement); // Remove from locked set
                 selectedElement.remove();
                 selectedElement = null;
-                editorUI.style.display = 'none';
+                
+                // Reset UI state properly
+                document.getElementById('elementTag').textContent = 'None';
+                document.getElementById('elementId').style.display = 'none';
+                document.getElementById('elementClass').style.display = 'none';
+                
+                // Keep editor UI visible (always-on design)
+                editorUI.style.display = 'flex';
                 emptyMsg.style.display = 'block';
+                
                 saveState(); // Save after delete
             }
         });
@@ -2513,295 +3072,9 @@
             document.body.style.cursor = '';
         }
         
-        // ===== DRAG & DROP FUNCTIONALITY =====
-        let draggedElement = null;
-        let dragPlaceholder = null;
-        let dragOffset = { x: 0, y: 0 };
-        let isDragging = false;
-        let dragStartPos = { x: 0, y: 0 };
-        let hasMoved = false;
-        let affectedParent = null;
-        let originalParentRect = null;
-        const DRAG_THRESHOLD = 5;
-        
-        function isDestructiveMove(element) {
-            const parent = element.parentElement;
-            if (!parent) return false;
-            
-            const parentStyle = window.getComputedStyle(parent);
-            const display = parentStyle.display;
-            
-            // Destructive if parent uses flex or grid layout
-            return display === 'flex' || display === 'grid' || display === 'inline-flex' || display === 'inline-grid';
-        }
-        
-        function showDestructiveMoveConfirmation(doc, element, placeholder, parent, originalRect) {
-            // Show banner in main UI (not in iframe)
-            const banner = document.getElementById('destructiveMoveBanner');
-            const details = document.getElementById('destructiveMoveDetails');
-            
-            const newRect = parent.getBoundingClientRect();
-            const sizeChanged = Math.abs(newRect.width - originalRect.width) > 1 || Math.abs(newRect.height - originalRect.height) > 1;
-            
-            details.textContent = sizeChanged 
-                ? `Parent ${parent.tagName.toLowerCase()} size changed: ${Math.round(originalRect.width)}×${Math.round(originalRect.height)} → ${Math.round(newRect.width)}×${Math.round(newRect.height)}`
-                : `Parent ${parent.tagName.toLowerCase()} layout was affected by this move`;
-            
-            banner.classList.add('active');
-            banner.style.display = 'flex';
-            
-            // Store references for button handlers
-            window.pendingMoveData = { element, placeholder, parent };
-            
-            // Remove old listeners
-            const confirmBtn = document.getElementById('confirmMoveBtn');
-            const undoBtn = document.getElementById('undoMoveBtn');
-            const newConfirmBtn = confirmBtn.cloneNode(true);
-            const newUndoBtn = undoBtn.cloneNode(true);
-            confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
-            undoBtn.parentNode.replaceChild(newUndoBtn, undoBtn);
-            
-            // Handle confirm
-            newConfirmBtn.addEventListener('click', () => {
-                // Remove visual feedback
-                parent.style.outline = '';
-                parent.style.outlineOffset = '';
-                delete parent.dataset.affectedByDrag;
-                
-                // Remove placeholder
-                if (placeholder && placeholder.parentNode) {
-                    placeholder.parentNode.removeChild(placeholder);
-                }
-                
-                // Hide banner
-                banner.classList.remove('active');
-                banner.style.display = 'none';
-                
-                // Reset globals
-                dragPlaceholder = null;
-                affectedParent = null;
-                originalParentRect = null;
-                window.pendingMoveData = null;
-                
-                saveState();
-                
-                const indicator = document.getElementById('copyIndicator');
-                indicator.textContent = 'MOVE CONFIRMED!';
-                indicator.style.display = 'block';
-                setTimeout(() => indicator.style.display = 'none', 1500);
-            });
-            
-            // Handle undo
-            newUndoBtn.addEventListener('click', () => {
-                // Restore element to placeholder position
-                if (placeholder && placeholder.parentNode) {
-                    placeholder.parentNode.insertBefore(element, placeholder);
-                }
-                
-                // Restore original styles
-                element.style.position = element.dataset.originalPosition || '';
-                element.style.top = element.dataset.originalTop || '';
-                element.style.left = element.dataset.originalLeft || '';
-                element.style.width = element.dataset.originalWidth || '';
-                element.style.height = element.dataset.originalHeight || '';
-                element.style.margin = element.dataset.originalMargin || '';
-                element.style.zIndex = element.dataset.originalZIndex || '';
-                
-                // Clean up dataset
-                delete element.dataset.originalPosition;
-                delete element.dataset.originalTop;
-                delete element.dataset.originalLeft;
-                delete element.dataset.originalWidth;
-                delete element.dataset.originalHeight;
-                delete element.dataset.originalMargin;
-                delete element.dataset.originalZIndex;
-                
-                // Remove placeholder
-                if (placeholder && placeholder.parentNode) {
-                    placeholder.parentNode.removeChild(placeholder);
-                }
-                
-                // Remove visual feedback
-                parent.style.outline = '';
-                parent.style.outlineOffset = '';
-                delete parent.dataset.affectedByDrag;
-                
-                // Hide banner
-                banner.classList.remove('active');
-                banner.style.display = 'none';
-                
-                // Reset globals
-                dragPlaceholder = null;
-                affectedParent = null;
-                originalParentRect = null;
-                window.pendingMoveData = null;
-                
-                const indicator = document.getElementById('copyIndicator');
-                indicator.textContent = 'MOVE UNDONE!';
-                indicator.style.display = 'block';
-                setTimeout(() => indicator.style.display = 'none', 1500);
-            });
-        }
-        
-        function enableDragDrop(doc) {
-            doc.body.addEventListener('mousedown', (e) => {
-                if (batchPasteMode || multiSelectMode || e.button !== 0) return;
-                
-                const element = e.target;
-                if (!element || element.nodeType !== 1) return;
-                if (isElementLocked(element)) return;
-                if (['BODY', 'HTML', 'SCRIPT', 'STYLE'].includes(element.tagName)) return;
-                
-                draggedElement = element;
-                dragStartPos.x = e.clientX;
-                dragStartPos.y = e.clientY;
-                hasMoved = false;
-                
-                const rect = element.getBoundingClientRect();
-                dragOffset.x = e.clientX - rect.left;
-                dragOffset.y = e.clientY - rect.top;
-                
-                e.preventDefault();
-            }, true);
-            
-            doc.body.addEventListener('mousemove', (e) => {
-                if (!draggedElement) return;
-                
-                const deltaX = Math.abs(e.clientX - dragStartPos.x);
-                const deltaY = Math.abs(e.clientY - dragStartPos.y);
-                
-                if (!isDragging && (deltaX > DRAG_THRESHOLD || deltaY > DRAG_THRESHOLD)) {
-                    isDragging = true;
-                    hasMoved = true;
-                    
-                    // Check if move is destructive
-                    const isDestructive = isDestructiveMove(draggedElement);
-                    
-                    if (isDestructive) {
-                        affectedParent = draggedElement.parentElement;
-                        originalParentRect = affectedParent.getBoundingClientRect();
-                        
-                        // Add visual feedback to parent
-                        affectedParent.style.outline = '3px solid #ff5722';
-                        affectedParent.style.outlineOffset = '-3px';
-                        affectedParent.dataset.affectedByDrag = 'true';
-                    }
-                    
-                    // Create placeholder to preserve layout
-                    const rect = draggedElement.getBoundingClientRect();
-                    dragPlaceholder = doc.createElement('div');
-                    dragPlaceholder.className = 'drag-placeholder';
-                    dragPlaceholder.style.width = rect.width + 'px';
-                    dragPlaceholder.style.height = rect.height + 'px';
-                    dragPlaceholder.style.backgroundColor = 'rgba(255, 152, 0, 0.2)';
-                    dragPlaceholder.style.border = '2px dashed #ff9800';
-                    dragPlaceholder.style.boxSizing = 'border-box';
-                    dragPlaceholder.style.pointerEvents = 'none';
-                    
-                    // Insert placeholder before element
-                    draggedElement.parentNode.insertBefore(dragPlaceholder, draggedElement);
-                    
-                    // Store original styles
-                    const computed = window.getComputedStyle(draggedElement);
-                    draggedElement.dataset.originalPosition = computed.position;
-                    draggedElement.dataset.originalTop = draggedElement.style.top || '';
-                    draggedElement.dataset.originalLeft = draggedElement.style.left || '';
-                    draggedElement.dataset.originalWidth = draggedElement.style.width || '';
-                    draggedElement.dataset.originalHeight = draggedElement.style.height || '';
-                    draggedElement.dataset.originalMargin = draggedElement.style.margin || '';
-                    draggedElement.dataset.originalZIndex = draggedElement.style.zIndex || '';
-                    
-                    // Make element float above layout
-                    const scrollX = doc.documentElement.scrollLeft || doc.body.scrollLeft;
-                    const scrollY = doc.documentElement.scrollTop || doc.body.scrollTop;
-                    
-                    draggedElement.style.position = 'absolute';
-                    draggedElement.style.left = (rect.left + scrollX) + 'px';
-                    draggedElement.style.top = (rect.top + scrollY) + 'px';
-                    draggedElement.style.width = rect.width + 'px';
-                    draggedElement.style.height = rect.height + 'px';
-                    draggedElement.style.margin = '0';
-                    draggedElement.style.zIndex = '9999';
-                    draggedElement.style.opacity = '0.8';
-                    draggedElement.classList.add('dragging');
-                }
-                
-                if (!isDragging) return;
-                
-                e.preventDefault();
-                
-                const scrollX = doc.documentElement.scrollLeft || doc.body.scrollLeft;
-                const scrollY = doc.documentElement.scrollTop || doc.body.scrollTop;
-                
-                draggedElement.style.left = (e.clientX - dragOffset.x + scrollX) + 'px';
-                draggedElement.style.top = (e.clientY - dragOffset.y + scrollY) + 'px';
-            }, true);
-            
-            doc.body.addEventListener('mouseup', (e) => {
-                if (!draggedElement) return;
-                
-                if (!hasMoved) {
-                    draggedElement = null;
-                    isDragging = false;
-                    return;
-                }
-                
-                if (isDragging) {
-                    isDragging = false;
-                    draggedElement.classList.remove('dragging');
-                    draggedElement.style.opacity = '';
-                    
-                    // Check if this was a destructive move
-                    const wasDestructive = affectedParent !== null;
-                    
-                    if (wasDestructive) {
-                        // Show custom confirmation overlay on affected parent
-                        showDestructiveMoveConfirmation(doc, draggedElement, dragPlaceholder, affectedParent, originalParentRect);
-                    } else {
-                        // Non-destructive move - just apply it
-                        if (dragPlaceholder && dragPlaceholder.parentNode) {
-                            dragPlaceholder.parentNode.removeChild(dragPlaceholder);
-                        }
-                        dragPlaceholder = null;
-                        
-                        saveState();
-                        
-                        const indicator = document.getElementById('copyIndicator');
-                        indicator.textContent = 'ELEMENT MOVED!';
-                        indicator.style.display = 'block';
-                        setTimeout(() => indicator.style.display = 'none', 1500);
-                    }
-                }
-                
-                draggedElement = null;
-                draggedElement = null;
-            }, true);
-            
-            document.addEventListener('mouseup', () => {
-                if (isDragging && draggedElement) {
-                    isDragging = false;
-                    draggedElement.classList.remove('dragging');
-                    draggedElement.style.opacity = '';
-                    
-                    // Clean up affected parent visual feedback
-                    if (affectedParent) {
-                        affectedParent.style.outline = '';
-                        affectedParent.style.outlineOffset = '';
-                        delete affectedParent.dataset.affectedByDrag;
-                    }
-                    
-                    // Clean up placeholder
-                    if (dragPlaceholder && dragPlaceholder.parentNode) {
-                        dragPlaceholder.parentNode.removeChild(dragPlaceholder);
-                    }
-                    
-                    dragPlaceholder = null;
-                    draggedElement = null;
-                    affectedParent = null;
-                    originalParentRect = null;
-                }
-            });
-        }
+        // ===== DRAG & DROP REMOVED =====
+        // Drag functionality temporarily removed for stability
+        // Use arrow movement controls (↑←→↓) in the panel to move elements
         // ===== END DRAG & DROP =====
         
         // Modify inspector to handle batch paste
@@ -2813,34 +3086,117 @@
             const style = doc.createElement('style');
             style.setAttribute('data-inspector', 'true');
             style.textContent = `
-                * { transition: outline 0.1s; }
+                /* Editor mode styles */
+                * { 
+                    transition: outline 0.1s;
+                }
+                
+                /* Allow editor interactions */
                 *.active-inspect { outline: 3px solid #ff9800 !important; outline-offset: -3px; }
                 *.batch-pasted { outline: 3px solid #4caf50 !important; outline-offset: -3px; animation: batchFlash 0.5s; }
-                *.locked-element { outline: 2px dashed #ff5722 !important; outline-offset: -2px; pointer-events: none; }
-                *.locked-element::before { content: '🔒'; position: absolute; top: 2px; right: 2px; background: #ff5722; color: white; font-size: 10px; padding: 2px 4px; border-radius: 2px; z-index: 10000; pointer-events: none; }
+                *.locked-element { outline: 2px dashed #ff5722 !important; outline-offset: -2px; }
+                *.locked-element::before { content: '🔒'; position: absolute; top: 2px; right: 2px; background: #ff5722; color: white; font-size: 10px; padding: 2px 4px; border-radius: 2px; z-index: 10000; cursor: pointer; pointer-events: auto !important; }
+                *.locked-element::before:hover { background: #d32f2f; transform: scale(1.1); }
                 *.multi-selected { outline: 3px solid #2196f3 !important; outline-offset: -3px; background: rgba(33, 150, 243, 0.1) !important; }
                 @keyframes batchFlash {
                     0%, 100% { outline-color: #4caf50; }
                     50% { outline-color: #8bc34a; }
                 }
-                body *:not(.dragging):not(.active-inspect):not(.batch-pasted):not(.locked-element):not(.multi-selected):hover { 
+                body *:not(.active-inspect):not(.batch-pasted):not(.locked-element):not(.multi-selected):hover { 
                     outline: 2px dashed #ff9800 !important; 
-                    cursor: pointer; 
+                    cursor: pointer !important;
                 }
-                .dragging { cursor: move !important; }
+        
+        /* Smart Alignment Guides */
+        .alignment-guide {
+            position: fixed;
+            background: #00d4ff;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0;
+            transition: opacity 0.1s;
+        }
+        .alignment-guide.active {
+            opacity: 1;
+        }
+        .alignment-guide.horizontal {
+            height: 1px;
+            box-shadow: 0 0 3px rgba(0, 212, 255, 0.8);
+        }
+        .alignment-guide.vertical {
+            width: 1px;
+            box-shadow: 0 0 3px rgba(0, 212, 255, 0.8);
+        }
+        .alignment-guide.center {
+            background: #ff00ff;
+            box-shadow: 0 0 3px rgba(255, 0, 255, 0.8);
+        }
+        .snap-indicator {
+            position: fixed;
+            background: rgba(0, 212, 255, 0.2);
+            border: 1px solid #00d4ff;
+            pointer-events: none;
+            z-index: 9998;
+            opacity: 0;
+            transition: opacity 0.1s;
+        }
+        .snap-indicator.active {
+            opacity: 1;
+        }
             `;
             doc.head.appendChild(style);
 
-            // Remove old event listeners by cloning
-            const oldBody = doc.body;
-            const newBody = oldBody.cloneNode(true);
-            oldBody.parentNode.replaceChild(newBody, oldBody);
+            // Remove old event listeners by removing stored handlers
+            if (inspectorClickHandler) {
+                doc.body.removeEventListener('click', inspectorClickHandler, true);
+            }
+            if (inspectorDblClickHandler) {
+                doc.body.removeEventListener('dblclick', inspectorDblClickHandler, true);
+            }
+            if (inspectorMouseOverHandler) {
+                doc.body.removeEventListener('mouseover', inspectorMouseOverHandler, true);
+            }
+            if (inspectorMouseOutHandler) {
+                doc.body.removeEventListener('mouseout', inspectorMouseOutHandler, true);
+            }
 
-            newBody.addEventListener('click', (e) => {
+            // Define click handler
+            inspectorClickHandler = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 
                 const clickedElement = e.target;
+                
+                // Check if clicked on lock icon
+                if (clickedElement.classList.contains('locked-element')) {
+                    const rect = clickedElement.getBoundingClientRect();
+                    const clickX = e.clientX - rect.left;
+                    const clickY = e.clientY - rect.top;
+                    
+                    // Lock icon is at top-right (within 30px from top and right)
+                    if (clickY < 30 && clickX > rect.width - 30) {
+                        // Unlock the element
+                        lockedElements.delete(clickedElement);
+                        clickedElement.classList.remove('locked-element');
+                        clickedElement.removeAttribute('data-locked');
+                        
+                        // Select it
+                        if(selectedElement) selectedElement.classList.remove('active-inspect');
+                        selectedElement = clickedElement;
+                        selectedElement.classList.add('active-inspect');
+                        
+                        showEditor(selectedElement);
+                        updateLockButton();
+                        
+                        const indicator = document.getElementById('copyIndicator');
+                        indicator.textContent = 'ELEMENT UNLOCKED!';
+                        indicator.style.display = 'block';
+                        setTimeout(() => indicator.style.display = 'none', 1500);
+                        
+                        saveState();
+                        return;
+                    }
+                }
                 
                 // Check if element is locked (but allow selection to show it's locked)
                 const isLocked = isElementLocked(clickedElement);
@@ -3002,10 +3358,13 @@
                 }
                 
                 showEditor(selectedElement);
-            }, true);
+            };
+            
+            // Add click handler
+            doc.body.addEventListener('click', inspectorClickHandler, true);
 
-            // Hover effects for arrange mode
-            newBody.addEventListener('mouseover', (e) => {
+            // Define and add hover handlers for arrange mode
+            inspectorMouseOverHandler = (e) => {
                 if (arrangeMode && arrangeTargetElement) {
                     const element = e.target;
                     // Only apply to element nodes, not text nodes or other node types
@@ -3013,9 +3372,9 @@
                         element.classList.add('arrange-hover');
                     }
                 }
-            }, true);
+            };
             
-            newBody.addEventListener('mouseout', (e) => {
+            inspectorMouseOutHandler = (e) => {
                 if (arrangeMode) {
                     const element = e.target;
                     // Only remove from element nodes
@@ -3023,29 +3382,34 @@
                         element.classList.remove('arrange-hover');
                     }
                 }
-            }, true);
+            };
+            
+            doc.body.addEventListener('mouseover', inspectorMouseOverHandler, true);
+            doc.body.addEventListener('mouseout', inspectorMouseOutHandler, true);
 
-            // Double-click to copy HTML
-            newBody.addEventListener('dblclick', (e) => {
+            // Define and add double-click handler
+            inspectorDblClickHandler = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 
                 if (batchPasteMode || arrangeMode) return; // Ignore in batch/arrange mode
                 
                 const element = e.target;
-                element.classList.remove('active-inspect');
-                const code = element.outerHTML;
-                element.classList.add('active-inspect');
+                
+                // Get HTML with inline styles
+                const code = getElementWithInlineStyles(element);
                 
                 navigator.clipboard.writeText(code).then(() => {
                     const indicator = document.getElementById('copyIndicator');
-                    indicator.textContent = 'COPIED VIA DOUBLE-CLICK!';
+                    indicator.textContent = 'COPIED WITH STYLES (DOUBLE-CLICK)!';
                     indicator.style.display = 'block';
                     setTimeout(() => indicator.style.display = 'none', 2000);
                 });
-            }, true);
+            };
             
-            enableDragDrop(doc);
+            doc.body.addEventListener('dblclick', inspectorDblClickHandler, true);
+            
+            // enableDragDrop(doc); // REMOVED - drag functionality disabled for stability
         }
         
         // ===== END BATCH PASTE MODE =====
@@ -3053,9 +3417,28 @@
         // Close modals on ESC
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
+                // Exit fullscreen if active
+                const mainContainer = document.getElementById('main');
+                if (mainContainer.classList.contains('fullscreen')) {
+                    exitFullscreen();
+                    return;
+                }
+                
+                // Close modals
                 document.getElementById('copyStyleModal').classList.remove('active');
                 document.getElementById('pasteStyleModal').classList.remove('active');
                 document.getElementById('distributeModal').classList.remove('active');
+            }
+            
+            // F11 for fullscreen toggle (prevent browser fullscreen)
+            if (e.key === 'F11') {
+                e.preventDefault();
+                const mainContainer = document.getElementById('main');
+                if (mainContainer.classList.contains('fullscreen')) {
+                    exitFullscreen();
+                } else {
+                    toggleFullscreen();
+                }
             }
         });
 
@@ -3242,6 +3625,47 @@
             // Setup paste code feature
             setupPasteCodeFeature();
             
+            // Setup interactive mode toggle
+            document.getElementById('toggleInteractiveBtn').addEventListener('click', toggleInteractiveMode);
+            
+            // Setup fullscreen mode
+            document.getElementById('fullscreenBtn').addEventListener('click', toggleFullscreen);
+            document.getElementById('exitFullscreenBtn').addEventListener('click', exitFullscreen);
+            
+            // Setup open in new tab
+            document.getElementById('openNewTabBtn').addEventListener('click', openInNewTab);
+            
+            // Setup sidebar dragging
+            enableSidebarDragging();
+            
+            // Setup reset animations button
+            document.getElementById('resetAnimationsBtn').addEventListener('click', () => {
+                if (!selectedElement) return;
+                
+                const success = resetElementAnimations(selectedElement);
+                
+                if (success) {
+                    saveState();
+                    
+                    const indicator = document.getElementById('copyIndicator');
+                    indicator.textContent = '🔄 ANIMATIONS RESET!';
+                    indicator.style.display = 'block';
+                    setTimeout(() => indicator.style.display = 'none', 2000);
+                }
+            });
+            
+            // Setup arrow movement controls
+            setupArrowControls();
+            
+            // Setup auto dimension buttons
+            setupAutoDimensionButtons();
+            
+            // Setup number input spinners
+            setupNumberSpinners();
+            
+            // Create alignment guides
+            createAlignmentGuides();
+            
             // DON'T auto-load from localStorage on startup
             // loadFromLocalStorage();
         });
@@ -3329,6 +3753,685 @@
         }
         
         // ===== END PASTE CODE FEATURE =====
+        
+        // ===== INTERACTIVE MODE TOGGLE =====
+        
+        function toggleInteractiveMode() {
+            interactiveMode = !interactiveMode;
+            const btn = document.getElementById('toggleInteractiveBtn');
+            const doc = viewer.contentWindow.document;
+            
+            if (interactiveMode) {
+                // Enable interactive mode - disable inspector
+                btn.innerHTML = '<i data-lucide="edit"></i> Editor Mode';
+                btn.style.background = '#ff9800';
+                
+                // Remove inspector styles
+                const inspectorStyle = doc.querySelector('style[data-inspector="true"]');
+                if (inspectorStyle) {
+                    inspectorStyle.remove();
+                }
+                
+                // Remove ALL event listeners that block interaction
+                if (inspectorClickHandler) {
+                    doc.body.removeEventListener('click', inspectorClickHandler, true);
+                }
+                if (inspectorDblClickHandler) {
+                    doc.body.removeEventListener('dblclick', inspectorDblClickHandler, true);
+                }
+                if (inspectorMouseOverHandler) {
+                    doc.body.removeEventListener('mouseover', inspectorMouseOverHandler, true);
+                }
+                if (inspectorMouseOutHandler) {
+                    doc.body.removeEventListener('mouseout', inspectorMouseOutHandler, true);
+                }
+                
+                // Clear any active selection
+                if (selectedElement) {
+                    selectedElement.classList.remove('active-inspect');
+                    selectedElement = null;
+                }
+                
+                // Hide editor panel
+                editorUI.style.display = 'none';
+                emptyMsg.style.display = 'block';
+                emptyMsg.textContent = 'Interactive mode active - click button to return to editor';
+                
+                // Exit any special modes
+                if (batchPasteMode) exitBatchMode();
+                if (arrangeMode) exitArrangeMode();
+                if (multiSelectMode) exitMultiSelectMode();
+                
+                // Show feedback
+                const indicator = document.getElementById('copyIndicator');
+                indicator.textContent = '🖱️ INTERACTIVE MODE ENABLED';
+                indicator.style.display = 'block';
+                setTimeout(() => indicator.style.display = 'none', 2000);
+                
+            } else {
+                // Disable interactive mode - enable inspector
+                btn.innerHTML = '<i data-lucide="mouse-pointer"></i> Interactive Mode';
+                btn.style.background = '#673ab7';
+                
+                // Show editor UI (always-on design)
+                editorUI.style.display = 'flex';
+                emptyMsg.style.display = 'block';
+                emptyMsg.textContent = 'Click an element to edit';
+                
+                // Re-initialize inspector (this will add back all event listeners)
+                initInspector(doc);
+                
+                // Show feedback
+                const indicator = document.getElementById('copyIndicator');
+                indicator.textContent = '✏️ EDITOR MODE ENABLED';
+                indicator.style.display = 'block';
+                setTimeout(() => indicator.style.display = 'none', 2000);
+            }
+            
+            // Refresh lucide icons
+            try {
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+            } catch(e) {
+                console.warn('Lucide icons refresh failed:', e);
+            }
+        }
+        
+        // ===== END INTERACTIVE MODE TOGGLE =====
+        
+        // ===== FULLSCREEN MODE =====
+        
+        function toggleFullscreen() {
+            const mainContainer = document.getElementById('main');
+            const sidebar = document.getElementById('sidebar');
+            const exitBtn = document.getElementById('exitFullscreenBtn');
+            
+            mainContainer.classList.add('fullscreen');
+            sidebar.style.display = 'none';
+            exitBtn.style.display = 'block';
+            
+            // Refresh lucide icons
+            try {
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+            } catch(e) {
+                console.warn('Lucide icons refresh failed:', e);
+            }
+        }
+        
+        function exitFullscreen() {
+            const mainContainer = document.getElementById('main');
+            const sidebar = document.getElementById('sidebar');
+            const exitBtn = document.getElementById('exitFullscreenBtn');
+            
+            mainContainer.classList.remove('fullscreen');
+            sidebar.style.display = 'flex';
+            exitBtn.style.display = 'none';
+        }
+        
+        // ===== END FULLSCREEN MODE =====
+        
+        // ===== OPEN IN NEW TAB =====
+        
+        function openInNewTab() {
+            const doc = viewer.contentWindow.document;
+            
+            if (!doc || !doc.body) {
+                alert('Please load an HTML file first!');
+                return;
+            }
+            
+            // Get the current HTML content
+            const html = doc.documentElement.outerHTML;
+            
+            // Create a blob URL
+            const blob = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            
+            // Open in new tab
+            const newTab = window.open(url, '_blank');
+            
+            if (newTab) {
+                // Clean up the blob URL after a delay
+                setTimeout(() => {
+                    URL.revokeObjectURL(url);
+                }, 1000);
+                
+                // Show feedback
+                const indicator = document.getElementById('copyIndicator');
+                indicator.textContent = '🚀 OPENED IN NEW TAB!';
+                indicator.style.display = 'block';
+                setTimeout(() => indicator.style.display = 'none', 2000);
+            } else {
+                alert('Failed to open new tab. Please check your browser popup settings.');
+            }
+        }
+        
+        // ===== END OPEN IN NEW TAB =====
+        
+        // ===== SIDEBAR DRAGGING =====
+        
+        function enableSidebarDragging() {
+            const sidebar = document.getElementById('sidebar');
+            const dragHandle = document.getElementById('sidebarDragHandle');
+            const sidebarHeader = document.getElementById('sidebarHeader');
+            
+            // Double-click header to toggle floating mode
+            sidebarHeader.addEventListener('dblclick', (e) => {
+                if (e.target === dragHandle || dragHandle.contains(e.target)) return;
+                
+                sidebarFloating = !sidebarFloating;
+                
+                if (sidebarFloating) {
+                    // Make floating
+                    sidebar.classList.add('floating');
+                    
+                    // Position at right side initially
+                    const rect = sidebar.getBoundingClientRect();
+                    sidebar.style.right = '20px';
+                    sidebar.style.top = '20px';
+                    sidebar.style.left = 'auto';
+                    sidebar.style.bottom = 'auto';
+                    
+                    const indicator = document.getElementById('copyIndicator');
+                    indicator.textContent = '📌 PANEL FLOATING - Drag header to move';
+                    indicator.style.display = 'block';
+                    setTimeout(() => indicator.style.display = 'none', 2500);
+                } else {
+                    // Dock back
+                    sidebar.classList.remove('floating');
+                    sidebar.style.right = '';
+                    sidebar.style.top = '';
+                    sidebar.style.left = '';
+                    sidebar.style.bottom = '';
+                    
+                    const indicator = document.getElementById('copyIndicator');
+                    indicator.textContent = '📌 PANEL DOCKED';
+                    indicator.style.display = 'block';
+                    setTimeout(() => indicator.style.display = 'none', 1500);
+                }
+                
+                // Refresh lucide icons
+                try {
+                    if (typeof lucide !== 'undefined') {
+                        lucide.createIcons();
+                    }
+                } catch(e) {}
+            });
+            
+            // Drag functionality
+            sidebarHeader.addEventListener('mousedown', (e) => {
+                if (!sidebarFloating) return;
+                if (e.target.closest('#collapseBtn')) return; // Don't drag when clicking collapse button
+                
+                sidebarDragging = true;
+                
+                const rect = sidebar.getBoundingClientRect();
+                sidebarDragOffset.x = e.clientX - rect.left;
+                sidebarDragOffset.y = e.clientY - rect.top;
+                
+                sidebar.style.cursor = 'grabbing';
+                sidebarHeader.style.cursor = 'grabbing';
+                
+                e.preventDefault();
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (!sidebarDragging) return;
+                
+                let newLeft = e.clientX - sidebarDragOffset.x;
+                let newTop = e.clientY - sidebarDragOffset.y;
+                
+                // Get sidebar dimensions
+                const rect = sidebar.getBoundingClientRect();
+                const sidebarWidth = rect.width;
+                const sidebarHeight = rect.height;
+                
+                // Constrain to viewport with padding
+                const padding = 10;
+                const maxLeft = window.innerWidth - sidebarWidth - padding;
+                const maxTop = window.innerHeight - sidebarHeight - padding;
+                
+                newLeft = Math.max(padding, Math.min(newLeft, maxLeft));
+                newTop = Math.max(padding, Math.min(newTop, maxTop));
+                
+                sidebar.style.left = newLeft + 'px';
+                sidebar.style.top = newTop + 'px';
+                sidebar.style.right = 'auto';
+                sidebar.style.bottom = 'auto';
+            });
+            
+            document.addEventListener('mouseup', () => {
+                if (sidebarDragging) {
+                    sidebarDragging = false;
+                    sidebar.style.cursor = '';
+                    sidebarHeader.style.cursor = 'move';
+                }
+            });
+        }
+        
+        // ===== END SIDEBAR DRAGGING =====
+        
+        // ===== RESET ANIMATIONS & TRANSFORMS =====
+        
+        function resetElementAnimations(element) {
+            if (!element) return;
+            
+            // List of properties that can cause unexpected behavior
+            const problematicProperties = [
+                'animation',
+                'animationName',
+                'animationDuration',
+                'animationTimingFunction',
+                'animationDelay',
+                'animationIterationCount',
+                'animationDirection',
+                'animationFillMode',
+                'animationPlayState',
+                'transition',
+                'transitionProperty',
+                'transitionDuration',
+                'transitionTimingFunction',
+                'transitionDelay',
+                'transform',
+                'transformOrigin',
+                'transformStyle',
+                'perspective',
+                'perspectiveOrigin',
+                'backfaceVisibility',
+                'willChange',
+                'filter',
+                'backdropFilter',
+                'clipPath',
+                'mask',
+                'maskImage',
+                'opacity' // Sometimes animated
+            ];
+            
+            // Reset inline styles
+            problematicProperties.forEach(prop => {
+                element.style[prop] = '';
+            });
+            
+            // Also remove common animation classes
+            const animationClasses = ['animate', 'animated', 'fade', 'slide', 'bounce', 'zoom', 'rotate', 'pulse', 'shake', 'flip', 'swing'];
+            animationClasses.forEach(cls => {
+                const regex = new RegExp(`\\b${cls}[\\w-]*\\b`, 'gi');
+                if (element.className && typeof element.className === 'string') {
+                    element.className = element.className.replace(regex, '').trim();
+                }
+            });
+            
+            // Force reflow to stop any ongoing animations
+            void element.offsetHeight;
+            
+            return true;
+        }
+        
+        // ===== END RESET ANIMATIONS =====
+        
+        // ===== ARROW MOVEMENT CONTROLS =====
+        
+        function moveElement(element, direction, step) {
+            if (!element || isElementLocked(element)) {
+                if (isElementLocked(element)) {
+                    alert('Cannot move locked element!');
+                }
+                return;
+            }
+            
+            const computed = window.getComputedStyle(element);
+            
+            // Make element positioned if it's not already
+            if (computed.position === 'static') {
+                element.style.position = 'relative';
+            }
+            
+            // Get current position values
+            let currentTop = parseInt(element.style.top) || 0;
+            let currentLeft = parseInt(element.style.left) || 0;
+            
+            // Calculate new position
+            switch(direction) {
+                case 'up':
+                    element.style.top = (currentTop - step) + 'px';
+                    break;
+                case 'down':
+                    element.style.top = (currentTop + step) + 'px';
+                    break;
+                case 'left':
+                    element.style.left = (currentLeft - step) + 'px';
+                    break;
+                case 'right':
+                    element.style.left = (currentLeft + step) + 'px';
+                    break;
+            }
+            
+            saveState();
+        }
+        
+        function setupArrowControls() {
+            const moveStep = () => parseInt(document.getElementById('moveStep').value) || 10;
+            
+            // Button controls
+            document.getElementById('moveUpBtn').addEventListener('click', () => {
+                if (selectedElement) moveElement(selectedElement, 'up', moveStep());
+            });
+            
+            document.getElementById('moveDownBtn').addEventListener('click', () => {
+                if (selectedElement) moveElement(selectedElement, 'down', moveStep());
+            });
+            
+            document.getElementById('moveLeftBtn').addEventListener('click', () => {
+                if (selectedElement) moveElement(selectedElement, 'left', moveStep());
+            });
+            
+            document.getElementById('moveRightBtn').addEventListener('click', () => {
+                if (selectedElement) moveElement(selectedElement, 'right', moveStep());
+            });
+            
+            // Keyboard controls
+            document.addEventListener('keydown', (e) => {
+                // Only work when an element is selected and not typing in an input
+                if (!selectedElement || e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                    return;
+                }
+                
+                // Check if we're in interactive mode
+                if (interactiveMode) return;
+                
+                const step = e.shiftKey ? moveStep() * 5 : moveStep(); // 5x faster with Shift
+                
+                switch(e.key) {
+                    case 'ArrowUp':
+                        e.preventDefault();
+                        moveElement(selectedElement, 'up', step);
+                        break;
+                    case 'ArrowDown':
+                        e.preventDefault();
+                        moveElement(selectedElement, 'down', step);
+                        break;
+                    case 'ArrowLeft':
+                        e.preventDefault();
+                        moveElement(selectedElement, 'left', step);
+                        break;
+                    case 'ArrowRight':
+                        e.preventDefault();
+                        moveElement(selectedElement, 'right', step);
+                        break;
+                }
+            });
+        }
+        
+        // ===== END ARROW MOVEMENT CONTROLS =====
+        
+        // ===== AUTO DIMENSION BUTTONS =====
+        
+        function setupAutoDimensionButtons() {
+            // Width Auto Button
+            document.getElementById('widthAutoBtn').addEventListener('click', () => {
+                if (!selectedElement) return;
+                if (isElementLocked(selectedElement)) {
+                    alert('Cannot modify locked element!');
+                    return;
+                }
+                
+                selectedElement.style.width = 'auto';
+                document.getElementById('propWidth').value = '';
+                document.getElementById('propWidth').placeholder = 'auto';
+                
+                saveState();
+                
+                const indicator = document.getElementById('copyIndicator');
+                indicator.textContent = 'WIDTH SET TO AUTO!';
+                indicator.style.display = 'block';
+                setTimeout(() => indicator.style.display = 'none', 1500);
+            });
+            
+            // Height Auto Button
+            document.getElementById('heightAutoBtn').addEventListener('click', () => {
+                if (!selectedElement) return;
+                if (isElementLocked(selectedElement)) {
+                    alert('Cannot modify locked element!');
+                    return;
+                }
+                
+                selectedElement.style.height = 'auto';
+                document.getElementById('propHeight').value = '';
+                document.getElementById('propHeight').placeholder = 'auto';
+                
+                saveState();
+                
+                const indicator = document.getElementById('copyIndicator');
+                indicator.textContent = 'HEIGHT SET TO AUTO!';
+                indicator.style.display = 'block';
+                setTimeout(() => indicator.style.display = 'none', 1500);
+            });
+        }
+        
+        // ===== END AUTO DIMENSION BUTTONS =====
+        
+        // ===== NUMBER INPUT SPINNERS =====
+        
+        function setupNumberSpinners() {
+            document.querySelectorAll('.spinner-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const targetId = e.currentTarget.dataset.target;
+                    const input = document.getElementById(targetId);
+                    if (!input) return;
+                    
+                    const currentValue = parseInt(input.value) || 0;
+                    const step = parseInt(input.step) || 1;
+                    const min = input.min !== '' ? parseInt(input.min) : -Infinity;
+                    const max = input.max !== '' ? parseInt(input.max) : Infinity;
+                    
+                    let newValue;
+                    if (e.currentTarget.classList.contains('up')) {
+                        newValue = Math.min(currentValue + step, max);
+                    } else {
+                        newValue = Math.max(currentValue - step, min);
+                    }
+                    
+                    input.value = newValue;
+                    
+                    // Trigger input event to update element
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                    input.dispatchEvent(new Event('change', { bubbles: true }));
+                });
+            });
+        }
+        
+        // ===== END NUMBER INPUT SPINNERS =====
+        
+        // ===== SMART ALIGNMENT GUIDES =====
+        
+        const SNAP_THRESHOLD = 5; // pixels
+        let alignmentGuides = {
+            horizontal: [],
+            vertical: [],
+            center: []
+        };
+        
+        function createAlignmentGuides() {
+            // Create guide elements
+            for (let i = 0; i < 6; i++) {
+                const hGuide = document.createElement('div');
+                hGuide.className = 'alignment-guide horizontal';
+                document.body.appendChild(hGuide);
+                alignmentGuides.horizontal.push(hGuide);
+                
+                const vGuide = document.createElement('div');
+                vGuide.className = 'alignment-guide vertical';
+                document.body.appendChild(vGuide);
+                alignmentGuides.vertical.push(vGuide);
+            }
+            
+            // Create center guides
+            const hCenter = document.createElement('div');
+            hCenter.className = 'alignment-guide horizontal center';
+            document.body.appendChild(hCenter);
+            alignmentGuides.center.push(hCenter);
+            
+            const vCenter = document.createElement('div');
+            vCenter.className = 'alignment-guide vertical center';
+            document.body.appendChild(vCenter);
+            alignmentGuides.center.push(vCenter);
+        }
+        
+        function hideAllGuides() {
+            [...alignmentGuides.horizontal, ...alignmentGuides.vertical, ...alignmentGuides.center].forEach(guide => {
+                guide.classList.remove('active');
+            });
+        }
+        
+        function showAlignmentGuides(draggedEl, draggedRect) {
+            hideAllGuides();
+            
+            const doc = viewer.contentWindow.document;
+            if (!doc || !doc.body) return null;
+            
+            const allElements = Array.from(doc.body.querySelectorAll('*')).filter(el => {
+                return el !== draggedEl && 
+                       !el.classList.contains('alignment-guide') &&
+                       !el.classList.contains('snap-indicator') &&
+                       el.offsetParent !== null; // visible elements only
+            });
+            
+            const snapInfo = {
+                snapX: null,
+                snapY: null,
+                guides: []
+            };
+            
+            let guideIndex = 0;
+            
+            // Get iframe offset
+            const iframeRect = viewer.getBoundingClientRect();
+            
+            // Check alignments with other elements
+            allElements.forEach(el => {
+                const rect = el.getBoundingClientRect();
+                
+                // Horizontal alignments (Y-axis)
+                const alignments = [
+                    { pos: rect.top, type: 'top', label: 'Top' },
+                    { pos: rect.top + rect.height / 2, type: 'centerY', label: 'Center Y' },
+                    { pos: rect.bottom, type: 'bottom', label: 'Bottom' }
+                ];
+                
+                alignments.forEach(align => {
+                    const draggedPositions = [
+                        { pos: draggedRect.top, type: 'top' },
+                        { pos: draggedRect.top + draggedRect.height / 2, type: 'centerY' },
+                        { pos: draggedRect.bottom, type: 'bottom' }
+                    ];
+                    
+                    draggedPositions.forEach(dragPos => {
+                        const diff = Math.abs(dragPos.pos - align.pos);
+                        if (diff < SNAP_THRESHOLD && guideIndex < alignmentGuides.horizontal.length) {
+                            const guide = alignmentGuides.horizontal[guideIndex];
+                            const isCenter = align.type === 'centerY' || dragPos.type === 'centerY';
+                            
+                            if (isCenter && alignmentGuides.center[0]) {
+                                const centerGuide = alignmentGuides.center[0];
+                                centerGuide.style.top = align.pos + 'px';
+                                centerGuide.style.left = Math.min(rect.left, draggedRect.left) + 'px';
+                                centerGuide.style.width = (Math.max(rect.right, draggedRect.right) - Math.min(rect.left, draggedRect.left)) + 'px';
+                                centerGuide.classList.add('active');
+                            } else {
+                                guide.style.top = align.pos + 'px';
+                                guide.style.left = Math.min(rect.left, draggedRect.left) + 'px';
+                                guide.style.width = (Math.max(rect.right, draggedRect.right) - Math.min(rect.left, draggedRect.left)) + 'px';
+                                guide.classList.add('active');
+                            }
+                            
+                            if (!snapInfo.snapY || diff < Math.abs(draggedRect.top - snapInfo.snapY)) {
+                                snapInfo.snapY = align.pos - (dragPos.pos - draggedRect.top);
+                            }
+                            guideIndex++;
+                        }
+                    });
+                });
+                
+                // Vertical alignments (X-axis)
+                const vAlignments = [
+                    { pos: rect.left, type: 'left', label: 'Left' },
+                    { pos: rect.left + rect.width / 2, type: 'centerX', label: 'Center X' },
+                    { pos: rect.right, type: 'right', label: 'Right' }
+                ];
+                
+                vAlignments.forEach(align => {
+                    const draggedPositions = [
+                        { pos: draggedRect.left, type: 'left' },
+                        { pos: draggedRect.left + draggedRect.width / 2, type: 'centerX' },
+                        { pos: draggedRect.right, type: 'right' }
+                    ];
+                    
+                    draggedPositions.forEach(dragPos => {
+                        const diff = Math.abs(dragPos.pos - align.pos);
+                        if (diff < SNAP_THRESHOLD && guideIndex < alignmentGuides.vertical.length + alignmentGuides.horizontal.length) {
+                            const vGuideIndex = guideIndex - alignmentGuides.horizontal.length;
+                            if (vGuideIndex >= 0 && vGuideIndex < alignmentGuides.vertical.length) {
+                                const guide = alignmentGuides.vertical[vGuideIndex];
+                                const isCenter = align.type === 'centerX' || dragPos.type === 'centerX';
+                                
+                                if (isCenter && alignmentGuides.center[1]) {
+                                    const centerGuide = alignmentGuides.center[1];
+                                    centerGuide.style.left = align.pos + 'px';
+                                    centerGuide.style.top = Math.min(rect.top, draggedRect.top) + 'px';
+                                    centerGuide.style.height = (Math.max(rect.bottom, draggedRect.bottom) - Math.min(rect.top, draggedRect.top)) + 'px';
+                                    centerGuide.classList.add('active');
+                                } else {
+                                    guide.style.left = align.pos + 'px';
+                                    guide.style.top = Math.min(rect.top, draggedRect.top) + 'px';
+                                    guide.style.height = (Math.max(rect.bottom, draggedRect.bottom) - Math.min(rect.top, draggedRect.top)) + 'px';
+                                    guide.classList.add('active');
+                                }
+                                
+                                if (!snapInfo.snapX || diff < Math.abs(draggedRect.left - snapInfo.snapX)) {
+                                    snapInfo.snapX = align.pos - (dragPos.pos - draggedRect.left);
+                                }
+                            }
+                            guideIndex++;
+                        }
+                    });
+                });
+            });
+            
+            // Check viewport center alignment
+            const viewportCenterX = window.innerWidth / 2;
+            const viewportCenterY = window.innerHeight / 2;
+            const draggedCenterX = draggedRect.left + draggedRect.width / 2;
+            const draggedCenterY = draggedRect.top + draggedRect.height / 2;
+            
+            if (Math.abs(draggedCenterX - viewportCenterX) < SNAP_THRESHOLD) {
+                if (alignmentGuides.center[1]) {
+                    const guide = alignmentGuides.center[1];
+                    guide.style.left = viewportCenterX + 'px';
+                    guide.style.top = '0px';
+                    guide.style.height = window.innerHeight + 'px';
+                    guide.classList.add('active');
+                    snapInfo.snapX = viewportCenterX - draggedRect.width / 2;
+                }
+            }
+            
+            if (Math.abs(draggedCenterY - viewportCenterY) < SNAP_THRESHOLD) {
+                if (alignmentGuides.center[0]) {
+                    const guide = alignmentGuides.center[0];
+                    guide.style.top = viewportCenterY + 'px';
+                    guide.style.left = '0px';
+                    guide.style.width = window.innerWidth + 'px';
+                    guide.classList.add('active');
+                    snapInfo.snapY = viewportCenterY - draggedRect.height / 2;
+                }
+            }
+            
+            return snapInfo;
+        }
+        
+        // ===== END SMART ALIGNMENT GUIDES =====
     </script>
 </body>
 </html>

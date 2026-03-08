@@ -5,92 +5,580 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ConstructLM Interface Demo</title>
   <style>
+    :root {
+      --bg: #050505;
+      --panel: #0c0c0e;
+      --text: #ffffff;
+      --text-muted: rgba(255,255,255,0.4);
+      --border: rgba(255,255,255,0.05);
+      --border-light: rgba(255,255,255,0.1);
+      --shadow: rgba(59,130,246,0.1);
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --input-bg: #0c0c0e;
+      --code-bg: rgba(255,255,255,0.02);
+      --code-text: #60a5fa;
+      --scrollbar-track: #0c0c0e;
+      --scrollbar-thumb: rgba(255,255,255,0.1);
+      --glow: rgba(59,130,246,0.2);
+    }
+    
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Courier New', monospace; background: #f5f5f5; color: #1a1a1a; height: 100vh; overflow: hidden; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif; 
+      background: var(--bg); 
+      color: var(--text); 
+      height: 100vh; 
+      overflow: hidden;
+      position: relative;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      top: 10%;
+      left: 20%;
+      width: 60%;
+      height: 40%;
+      background: rgba(37, 99, 235, 0.05);
+      filter: blur(150px);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 0;
+    }
     
     /* Layout */
-    .app-container { display: flex; height: 100vh; }
-    .sidebar { width: 320px; background: white; border-right: 2px solid black; box-shadow: 4px 0 0 0 black; display: flex; flex-direction: column; transition: width 0.3s ease; flex-shrink: 0; }
+    .app-container { display: flex; height: 100vh; position: relative; z-index: 1; }
+    .sidebar { 
+      width: 360px; 
+      background: var(--panel); 
+      border-right: 1px solid var(--border); 
+      display: flex; 
+      flex-direction: column; 
+      transition: width 0.3s ease; 
+      flex-shrink: 0;
+      backdrop-filter: blur(20px);
+    }
     .sidebar.collapsed { width: 0; overflow: hidden; }
-    .main-content { flex: 1; display: flex; flex-direction: column; background: white; }
+    .main-content { flex: 1; display: flex; flex-direction: column; background: transparent; }
     .content-wrapper { display: flex; flex: 1; overflow: hidden; position: relative; }
     .chat-container { flex: 1; display: flex; flex-direction: column; transition: margin-right 0.3s ease; }
     .chat-container.canvas-open { margin-right: 50%; }
     
     /* Sidebar */
-    .sidebar-tabs { display: flex; border-bottom: 2px solid black; height: 64px; align-items: center; padding: 0 16px; gap: 16px; }
-    .tab-button { flex: 1; height: 36px; font-weight: 900; font-size: 10px; text-transform: uppercase; border: 2px solid #f0f0f0; background: white; cursor: pointer; }
-    .tab-button.active { border-color: black; box-shadow: 4px 4px 0 0 black; transform: translate(-2px, -2px); }
+    .sidebar-tabs { 
+      display: flex; 
+      border-bottom: 1px solid var(--border); 
+      height: 80px; 
+      align-items: center; 
+      padding: 0 24px; 
+      gap: 12px; 
+    }
+    .tab-button { 
+      flex: 1; 
+      height: 44px; 
+      font-weight: 900; 
+      font-size: 9px; 
+      text-transform: uppercase; 
+      letter-spacing: 0.3em;
+      border: 1px solid var(--border); 
+      background: transparent; 
+      cursor: pointer; 
+      color: var(--text-muted);
+      border-radius: 12px;
+      transition: all 0.3s ease;
+    }
+    .tab-button.active { 
+      background: var(--accent); 
+      color: white;
+      border-color: var(--accent);
+      box-shadow: 0 0 20px var(--glow);
+    }
     .sidebar-content { flex: 1; overflow-y: auto; padding: 24px; }
-    .add-source-btn { width: 100%; border: 2px dashed black; padding: 24px; text-align: center; background: white; cursor: pointer; margin-bottom: 24px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
-    .source-item { border: 2px solid transparent; padding: 16px; margin-bottom: 12px; cursor: pointer; opacity: 0.4; }
-    .source-item.active { border-color: black; background: white; box-shadow: 4px 4px 0 0 black; transform: translate(-2px, -2px); opacity: 1; }
-    .source-name { font-weight: bold; font-size: 11px; text-transform: uppercase; }
-    .source-tokens { font-size: 9px; color: #999; font-weight: bold; }
-    .sidebar-footer { height: 88px; padding: 16px; border-top: 2px solid black; }
-    .context-label { display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 8px; font-weight: 600; }
-    .progress-bar { width: 100%; background: #e5e5e5; height: 8px; border: 2px solid black; }
-    .progress-fill { background: black; height: 100%; width: 15%; }
+    .add-source-btn { 
+      width: 100%; 
+      border: 1px dashed var(--border-light); 
+      padding: 32px; 
+      text-align: center; 
+      background: rgba(255,255,255,0.02); 
+      cursor: pointer; 
+      margin-bottom: 24px; 
+      font-size: 9px; 
+      font-weight: 900; 
+      text-transform: uppercase; 
+      letter-spacing: 0.3em;
+      color: var(--text-muted);
+      border-radius: 20px;
+      transition: all 0.3s ease;
+    }
+    .add-source-btn:hover {
+      background: rgba(59,130,246,0.05);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .source-item { 
+      border: 1px solid var(--border); 
+      padding: 20px; 
+      margin-bottom: 16px; 
+      cursor: pointer; 
+      opacity: 0.5; 
+      color: var(--text);
+      border-radius: 16px;
+      background: rgba(255,255,255,0.02);
+      transition: all 0.3s ease;
+    }
+    .source-item.active { 
+      border-color: var(--accent); 
+      background: rgba(59,130,246,0.05); 
+      opacity: 1;
+      box-shadow: 0 0 20px var(--glow);
+    }
+    .source-name { font-weight: 900; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; }
+    .source-tokens { font-size: 8px; color: var(--text-muted); font-weight: 900; letter-spacing: 0.2em; margin-top: 8px; }
+    .sidebar-footer { height: 100px; padding: 24px; border-top: 1px solid var(--border); }
+    .context-label { 
+      display: flex; 
+      justify-content: space-between; 
+      font-size: 8px; 
+      margin-bottom: 12px; 
+      font-weight: 900; 
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .progress-bar { 
+      width: 100%; 
+      background: rgba(255,255,255,0.02); 
+      height: 10px; 
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .progress-fill { 
+      background: linear-gradient(90deg, var(--accent), #60a5fa); 
+      height: 100%; 
+      width: 15%;
+      box-shadow: 0 0 10px var(--glow);
+    }
     
     /* Header */
-    .header { height: 64px; border-bottom: 2px solid black; display: flex; align-items: center; padding: 0 32px; gap: 24px; }
-    .sidebar-toggle-btn { width: 32px; height: 32px; border: 2px solid black; background: white; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; flex-shrink: 0; }
-    .sidebar-toggle-btn:hover { background: #f9f9f9; }
-    .header-title { font-size: 18px; font-weight: 900; text-transform: uppercase; }
-    .model-selector { height: 36px; padding: 0 16px; font-size: 10px; font-weight: 900; text-transform: uppercase; border: 2px solid black; background: white; cursor: pointer; font-family: inherit; }
+    .header { 
+      height: 80px; 
+      border-bottom: 1px solid var(--border); 
+      display: flex; 
+      align-items: center; 
+      padding: 0 40px; 
+      gap: 32px;
+      backdrop-filter: blur(20px);
+      background: rgba(12,12,14,0.8);
+    }
+    .sidebar-toggle-btn { 
+      width: 40px; 
+      height: 40px; 
+      border: 1px solid var(--border); 
+      background: transparent; 
+      cursor: pointer; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      font-size: 16px; 
+      font-weight: bold; 
+      flex-shrink: 0; 
+      color: var(--text-muted);
+      border-radius: 12px;
+      transition: all 0.3s ease;
+    }
+    .sidebar-toggle-btn:hover { 
+      background: rgba(255,255,255,0.05); 
+      color: var(--text);
+      border-color: var(--border-light);
+    }
+    .header-title { 
+      font-size: 20px; 
+      font-weight: 900; 
+      text-transform: uppercase; 
+      letter-spacing: 0.4em;
+      font-style: italic;
+    }
+    .model-selector { 
+      height: 44px; 
+      padding: 0 20px; 
+      font-size: 9px; 
+      font-weight: 900; 
+      text-transform: uppercase; 
+      letter-spacing: 0.3em;
+      border: 1px solid var(--border); 
+      background: rgba(255,255,255,0.02); 
+      cursor: pointer; 
+      font-family: inherit; 
+      color: var(--text);
+      border-radius: 12px;
+      transition: all 0.3s ease;
+    }
+    .model-selector:hover {
+      background: rgba(255,255,255,0.05);
+      border-color: var(--border-light);
+    }
+    .theme-buttons { display: flex; gap: 8px; margin-left: auto; }
+    .theme-btn { 
+      height: 40px; 
+      padding: 0 16px; 
+      font-size: 8px; 
+      font-weight: 900; 
+      text-transform: uppercase; 
+      letter-spacing: 0.3em;
+      border: 1px solid var(--border); 
+      background: transparent; 
+      cursor: pointer; 
+      font-family: inherit; 
+      color: var(--text-muted); 
+      transition: all 0.3s;
+      border-radius: 12px;
+    }
+    .theme-btn:hover { 
+      background: var(--accent); 
+      color: white;
+      border-color: var(--accent);
+      box-shadow: 0 0 20px var(--glow);
+    }
     
     /* Chat */
-    .chat-area { flex: 1; overflow-y: auto; padding: 48px; }
-    .chat-messages { max-width: 768px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
-    .message-label { font-size: 10px; color: #999; text-transform: uppercase; margin-bottom: 4px; }
+    .chat-area { flex: 1; overflow-y: auto; padding: 60px 48px; }
+    .chat-messages { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 32px; }
+    .message-label { 
+      font-size: 8px; 
+      color: var(--text-muted); 
+      text-transform: uppercase; 
+      margin-bottom: 12px;
+      font-weight: 900;
+      letter-spacing: 0.3em;
+    }
     .message.user .message-label { text-align: right; }
-    .message-content { padding: 14px; border: 2px solid black; font-size: 14px; line-height: 1.6; }
-    .message.user .message-content { background: black; color: white; margin-left: auto; max-width: 70%; }
-    .message.assistant .message-content { background: white; box-shadow: 8px 8px 0 0 black; padding: 40px; }
+    .message-content { 
+      padding: 20px 28px; 
+      border: 1px solid var(--border); 
+      font-size: 14px; 
+      line-height: 1.7;
+      border-radius: 20px;
+    }
+    .message.user .message-content { 
+      background: var(--accent); 
+      color: white; 
+      margin-left: auto; 
+      max-width: 70%;
+      border-color: var(--accent);
+      box-shadow: 0 0 30px var(--glow);
+    }
+    .message.assistant .message-content { 
+      background: var(--panel); 
+      padding: 48px; 
+      color: var(--text);
+      border-color: var(--border);
+    }
     
     /* Citations */
-    .citation-badge { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; background: black; color: white; font-size: 10px; font-weight: bold; margin: 0 2px; cursor: pointer; position: relative; vertical-align: middle; }
-    .citation-tooltip { position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: white; border: 2px solid black; box-shadow: 4px 4px 0 0 black; padding: 12px; min-width: 300px; max-width: 400px; z-index: 1000; opacity: 0; pointer-events: none; }
+    .citation-badge { 
+      display: inline-flex; 
+      align-items: center; 
+      justify-content: center; 
+      width: 22px; 
+      height: 22px; 
+      background: var(--accent); 
+      color: white; 
+      font-size: 9px; 
+      font-weight: 900; 
+      margin: 0 4px; 
+      cursor: pointer; 
+      position: relative; 
+      vertical-align: middle;
+      border-radius: 6px;
+      box-shadow: 0 0 10px var(--glow);
+    }
+    .citation-tooltip { 
+      position: absolute; 
+      bottom: calc(100% + 12px); 
+      left: 50%; 
+      transform: translateX(-50%); 
+      background: var(--panel); 
+      border: 1px solid var(--border-light); 
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5); 
+      padding: 20px; 
+      min-width: 320px; 
+      max-width: 420px; 
+      z-index: 1000; 
+      opacity: 0; 
+      pointer-events: none;
+      border-radius: 16px;
+      backdrop-filter: blur(20px);
+    }
     .citation-badge:hover .citation-tooltip { opacity: 1; }
-    .citation-tooltip-header { font-size: 9px; font-weight: bold; text-transform: uppercase; color: #666; margin-bottom: 8px; display: flex; justify-content: space-between; }
-    .citation-tooltip-text { font-size: 11px; line-height: 1.5; max-height: 200px; overflow-y: auto; }
-    .citations-list { margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e5e5; font-size: 10px; }
-    .citation-item { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; padding: 4px; cursor: pointer; }
-    .citation-number { width: 18px; height: 18px; background: black; color: white; font-size: 9px; font-weight: bold; display: flex; align-items: center; justify-content: center; }
+    .citation-tooltip-header { 
+      font-size: 8px; 
+      font-weight: 900; 
+      text-transform: uppercase; 
+      letter-spacing: 0.2em;
+      color: var(--text-muted); 
+      margin-bottom: 12px; 
+      display: flex; 
+      justify-content: space-between; 
+    }
+    .citation-tooltip-text { 
+      font-size: 12px; 
+      line-height: 1.6; 
+      max-height: 200px; 
+      overflow-y: auto; 
+      color: var(--text); 
+    }
+    .citations-list { 
+      margin-top: 24px; 
+      padding-top: 24px; 
+      border-top: 1px solid var(--border); 
+      font-size: 10px; 
+    }
+    .citation-item { 
+      display: flex; 
+      align-items: center; 
+      gap: 12px; 
+      margin-bottom: 8px; 
+      padding: 8px; 
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    .citation-item:hover {
+      background: rgba(255,255,255,0.02);
+    }
+    .citation-number { 
+      width: 20px; 
+      height: 20px; 
+      background: var(--accent); 
+      color: white; 
+      font-size: 9px; 
+      font-weight: 900; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
     
     /* Code Block */
-    .code-block-card { border: 2px solid black; padding: 16px; margin: 16px 0; background: #f9f9f9; }
-    .code-block-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
-    .code-block-title { display: flex; align-items: center; gap: 12px; }
-    .code-block-icon { width: 36px; height: 36px; border: 2px solid black; background: black; color: white; display: flex; align-items: center; justify-content: center; }
-    .code-block-info h4 { font-size: 14px; font-weight: bold; text-transform: uppercase; }
-    .code-block-info p { font-size: 10px; color: #666; font-weight: bold; text-transform: uppercase; }
-    .code-block-actions { display: flex; gap: 8px; }
-    .code-action-btn { padding: 8px 16px; border: 2px solid black; background: white; font-size: 10px; font-weight: 900; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; gap: 6px; }
-    .code-action-btn.primary { background: black; color: white; }
+    .code-block-card { 
+      border: 1px solid var(--border); 
+      padding: 24px; 
+      margin: 24px 0; 
+      background: rgba(255,255,255,0.02);
+      border-radius: 24px;
+    }
+    .code-block-header { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      gap: 16px; 
+      flex-wrap: wrap; 
+    }
+    .code-block-title { display: flex; align-items: center; gap: 16px; }
+    .code-block-icon { 
+      width: 48px; 
+      height: 48px; 
+      border: 1px solid var(--border); 
+      background: var(--accent); 
+      color: white; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      border-radius: 14px;
+      box-shadow: 0 0 20px var(--glow);
+    }
+    .code-block-info h4 { 
+      font-size: 13px; 
+      font-weight: 900; 
+      text-transform: uppercase; 
+      letter-spacing: 0.1em;
+    }
+    .code-block-info p { 
+      font-size: 9px; 
+      color: var(--text-muted); 
+      font-weight: 900; 
+      text-transform: uppercase; 
+      letter-spacing: 0.2em;
+      margin-top: 4px;
+    }
+    .code-block-actions { display: flex; gap: 10px; }
+    .code-action-btn { 
+      padding: 12px 20px; 
+      border: 1px solid var(--border); 
+      background: transparent; 
+      font-size: 9px; 
+      font-weight: 900; 
+      text-transform: uppercase; 
+      letter-spacing: 0.3em;
+      cursor: pointer; 
+      display: flex; 
+      align-items: center; 
+      gap: 8px; 
+      color: var(--text-muted);
+      border-radius: 12px;
+      transition: all 0.3s ease;
+    }
+    .code-action-btn:hover {
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+      border-color: var(--border-light);
+    }
+    .code-action-btn.primary { 
+      background: var(--accent); 
+      color: white;
+      border-color: var(--accent);
+      box-shadow: 0 0 20px var(--glow);
+    }
+    .code-action-btn.primary:hover {
+      background: var(--accent-hover);
+    }
     
     /* Canvas */
-    .canvas-panel { position: absolute; right: 0; top: 0; bottom: 0; width: 0; background: white; border-left: 2px solid black; display: flex; flex-direction: column; transition: width 0.3s ease; overflow: hidden; }
+    .canvas-panel { 
+      position: absolute; 
+      right: 0; 
+      top: 0; 
+      bottom: 0; 
+      width: 0; 
+      background: var(--panel); 
+      border-left: 1px solid var(--border); 
+      display: flex; 
+      flex-direction: column; 
+      transition: width 0.3s ease; 
+      overflow: hidden;
+      backdrop-filter: blur(20px);
+    }
     .canvas-panel.open { width: 50%; }
-    .canvas-header { height: 56px; border-bottom: 2px solid black; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; }
-    .canvas-title { font-size: 11px; font-weight: 900; text-transform: uppercase; }
-    .canvas-controls { display: flex; gap: 8px; }
-    .canvas-btn { height: 32px; padding: 0 12px; font-size: 9px; font-weight: 900; text-transform: uppercase; border: 2px solid black; background: white; cursor: pointer; display: flex; align-items: center; gap: 6px; }
-    .canvas-btn.active { background: black; color: white; }
-    .canvas-close-btn { width: 32px; height: 32px; border: 2px solid black; background: white; cursor: pointer; font-size: 18px; font-weight: bold; }
+    .canvas-header { 
+      height: 72px; 
+      border-bottom: 1px solid var(--border); 
+      display: flex; 
+      align-items: center; 
+      justify-content: space-between; 
+      padding: 0 24px; 
+    }
+    .canvas-title { 
+      font-size: 10px; 
+      font-weight: 900; 
+      text-transform: uppercase; 
+      letter-spacing: 0.3em;
+    }
+    .canvas-controls { display: flex; gap: 10px; }
+    .canvas-btn { 
+      height: 40px; 
+      padding: 0 16px; 
+      font-size: 8px; 
+      font-weight: 900; 
+      text-transform: uppercase; 
+      letter-spacing: 0.3em;
+      border: 1px solid var(--border); 
+      background: transparent; 
+      cursor: pointer; 
+      display: flex; 
+      align-items: center; 
+      gap: 8px; 
+      color: var(--text-muted);
+      border-radius: 12px;
+      transition: all 0.3s ease;
+    }
+    .canvas-btn:hover {
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+    }
+    .canvas-btn.active { 
+      background: var(--accent); 
+      color: white;
+      border-color: var(--accent);
+      box-shadow: 0 0 20px var(--glow);
+    }
+    .canvas-close-btn { 
+      width: 40px; 
+      height: 40px; 
+      border: 1px solid var(--border); 
+      background: transparent; 
+      cursor: pointer; 
+      font-size: 18px; 
+      font-weight: bold; 
+      color: var(--text-muted);
+      border-radius: 12px;
+      transition: all 0.3s ease;
+    }
+    .canvas-close-btn:hover {
+      background: rgba(255,255,255,0.05);
+      color: var(--text);
+    }
     .canvas-content { flex: 1; overflow: hidden; }
     .canvas-preview { height: 100%; }
     .canvas-preview iframe { width: 100%; height: 100%; border: none; }
-    .canvas-code-editor { height: 100%; background: #1e1e1e; color: #d4d4d4; font-size: 13px; padding: 16px; overflow: auto; display: none; }
+    .canvas-code-editor { 
+      height: 100%; 
+      background: #0a0a0c; 
+      color: #e0e0e0; 
+      font-size: 13px; 
+      padding: 24px; 
+      overflow: auto; 
+      display: none;
+      font-family: 'Courier New', monospace;
+    }
     .canvas-code-editor.active { display: block; }
     
     /* Input */
-    .input-area { border-top: 2px solid black; padding: 24px; }
-    .input-wrapper { max-width: 768px; margin: 0 auto; display: flex; gap: 12px; }
-    .input-box { flex: 1; min-height: 48px; max-height: 120px; padding: 12px 16px; border: 2px solid black; font-family: inherit; font-size: 14px; resize: none; }
-    .send-btn { width: 48px; height: 48px; border: 2px solid black; background: black; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+    .input-area { 
+      border-top: 1px solid var(--border); 
+      padding: 32px;
+      backdrop-filter: blur(20px);
+      background: rgba(12,12,14,0.8);
+    }
+    .input-wrapper { max-width: 900px; margin: 0 auto; display: flex; gap: 16px; }
+    .input-box { 
+      flex: 1; 
+      min-height: 56px; 
+      max-height: 140px; 
+      padding: 16px 20px; 
+      border: 1px solid var(--border); 
+      font-family: inherit; 
+      font-size: 14px; 
+      resize: none; 
+      background: rgba(255,255,255,0.02); 
+      color: var(--text);
+      border-radius: 16px;
+      transition: all 0.3s ease;
+    }
+    .input-box:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 20px var(--glow);
+    }
+    .send-btn { 
+      width: 56px; 
+      height: 56px; 
+      border: 1px solid var(--accent); 
+      background: var(--accent); 
+      color: white; 
+      cursor: pointer; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      border-radius: 16px;
+      transition: all 0.3s ease;
+      box-shadow: 0 0 20px var(--glow);
+    }
+    .send-btn:hover {
+      background: var(--accent-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 0 30px var(--glow);
+    }
     
-    code { background: #f0f0f0; color: #c7254e; padding: 2px 6px; font-size: 12px; }
+    code { 
+      background: var(--code-bg); 
+      color: var(--code-text); 
+      padding: 4px 8px; 
+      font-size: 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
   </style>
 </head>
 <body>
@@ -129,6 +617,12 @@
           <option>LLAMA3.1-8B</option>
           <option>GEMINI-2.0-FLASH</option>
         </select>
+        <div class="theme-buttons">
+          <button class="theme-btn" onclick="applyTheme('dark')">DARK</button>
+          <button class="theme-btn" onclick="applyTheme('cyber')">CYBER</button>
+          <button class="theme-btn" onclick="applyTheme('ocean')">OCEAN</button>
+          <button class="theme-btn" onclick="applyTheme('purple')">PURPLE</button>
+        </div>
       </header>
 
       <div class="content-wrapper">
@@ -148,13 +642,13 @@
                   <strong>Core Features:</strong><br>
                   1. RESTful endpoints for data access<span class="citation-badge">1
                     <div class="citation-tooltip">
-                      <div class="citation-tooltip-header"><span>API_REFERENCE.MD</span><span style="font-size:8px;background:black;color:white;padding:2px 6px;">0.892</span></div>
+                      <div class="citation-tooltip-header"><span>API_REFERENCE.MD</span><span style="font-size:8px;background:var(--accent);color:white;padding:4px 10px;border-radius:6px;font-weight:900;">0.892</span></div>
                       <div class="citation-tooltip-text">The API provides RESTful endpoints following standard HTTP methods (GET, POST, PUT, DELETE). All endpoints return JSON responses and support pagination for large datasets.</div>
                     </div>
                   </span><br>
                   2. Authentication via API keys<span class="citation-badge">2
                     <div class="citation-tooltip">
-                      <div class="citation-tooltip-header"><span>PROJECT_DOCUMENTATION.PDF</span><span style="font-size:8px;background:black;color:white;padding:2px 6px;">0.876</span></div>
+                      <div class="citation-tooltip-header"><span>PROJECT_DOCUMENTATION.PDF</span><span style="font-size:8px;background:var(--accent);color:white;padding:4px 10px;border-radius:6px;font-weight:900;">0.876</span></div>
                       <div class="citation-tooltip-text">Authentication is handled through API keys passed in the Authorization header. Each key is associated with a specific user account and can be revoked at any time.</div>
                     </div>
                   </span><br>
@@ -165,16 +659,16 @@
                   To authenticate, include your API key in the request header as <code>Authorization: Bearer YOUR_API_KEY</code>. The API validates the key on each request.
 
                   <div class="citations-list">
-                    <div style="font-weight:bold;text-transform:uppercase;margin-bottom:8px;font-size:9px;color:#666;">📖 SOURCES REFERENCED</div>
+                    <div style="font-weight:900;text-transform:uppercase;margin-bottom:12px;font-size:8px;color:var(--text-muted);letter-spacing:0.3em;">📖 SOURCES REFERENCED</div>
                     <div class="citation-item">
                       <div class="citation-number">1</div>
-                      <div style="font-weight:bold;font-size:10px;">API_REFERENCE.MD</div>
-                      <div style="margin-left:auto;font-size:8px;color:#666;">0.892</div>
+                      <div style="font-weight:900;font-size:10px;">API_REFERENCE.MD</div>
+                      <div style="margin-left:auto;font-size:9px;color:var(--text-muted);font-weight:900;">0.892</div>
                     </div>
                     <div class="citation-item">
                       <div class="citation-number">2</div>
-                      <div style="font-weight:bold;font-size:10px;">PROJECT_DOCUMENTATION.PDF</div>
-                      <div style="margin-left:auto;font-size:8px;color:#666;">0.876</div>
+                      <div style="font-weight:900;font-size:10px;">PROJECT_DOCUMENTATION.PDF</div>
+                      <div style="margin-left:auto;font-size:9px;color:var(--text-muted);font-weight:900;">0.876</div>
                     </div>
                   </div>
                 </div>
@@ -270,6 +764,128 @@ export default function AuthComponent() {
   </div>
 
   <script>
+    // Theme System
+    const themes = {
+      dark: {
+        bg: "#050505",
+        panel: "#0c0c0e",
+        text: "#ffffff",
+        textMuted: "rgba(255,255,255,0.4)",
+        border: "rgba(255,255,255,0.05)",
+        borderLight: "rgba(255,255,255,0.1)",
+        shadow: "rgba(59,130,246,0.1)",
+        accent: "#3b82f6",
+        accentHover: "#2563eb",
+        inputBg: "#0c0c0e",
+        codeBg: "rgba(255,255,255,0.02)",
+        codeText: "#60a5fa",
+        scrollbarTrack: "#0c0c0e",
+        scrollbarThumb: "rgba(255,255,255,0.1)",
+        glow: "rgba(59,130,246,0.2)"
+      },
+      cyber: {
+        bg: "#020617",
+        panel: "#0f172a",
+        text: "#22c55e",
+        textMuted: "rgba(34,197,94,0.5)",
+        border: "rgba(34,197,94,0.1)",
+        borderLight: "rgba(34,197,94,0.2)",
+        shadow: "rgba(34,197,94,0.2)",
+        accent: "#22c55e",
+        accentHover: "#16a34a",
+        inputBg: "#020617",
+        codeBg: "rgba(34,197,94,0.05)",
+        codeText: "#4ade80",
+        scrollbarTrack: "#0f172a",
+        scrollbarThumb: "rgba(34,197,94,0.2)",
+        glow: "rgba(34,197,94,0.3)"
+      },
+      ocean: {
+        bg: "#0c4a6e",
+        panel: "#075985",
+        text: "#e0f2fe",
+        textMuted: "rgba(224,242,254,0.5)",
+        border: "rgba(14,165,233,0.2)",
+        borderLight: "rgba(14,165,233,0.3)",
+        shadow: "rgba(14,165,233,0.3)",
+        accent: "#0ea5e9",
+        accentHover: "#0284c7",
+        inputBg: "#0c4a6e",
+        codeBg: "rgba(14,165,233,0.1)",
+        codeText: "#38bdf8",
+        scrollbarTrack: "#075985",
+        scrollbarThumb: "rgba(14,165,233,0.3)",
+        glow: "rgba(14,165,233,0.4)"
+      },
+      purple: {
+        bg: "#1e1b4b",
+        panel: "#312e81",
+        text: "#e0e7ff",
+        textMuted: "rgba(224,231,255,0.5)",
+        border: "rgba(139,92,246,0.2)",
+        borderLight: "rgba(139,92,246,0.3)",
+        shadow: "rgba(139,92,246,0.3)",
+        accent: "#8b5cf6",
+        accentHover: "#7c3aed",
+        inputBg: "#1e1b4b",
+        codeBg: "rgba(139,92,246,0.1)",
+        codeText: "#a78bfa",
+        scrollbarTrack: "#312e81",
+        scrollbarThumb: "rgba(139,92,246,0.3)",
+        glow: "rgba(139,92,246,0.4)"
+      }
+    };
+
+    function applyTheme(name) {
+      const theme = themes[name];
+      if (!theme) return;
+      
+      const root = document.documentElement;
+      root.style.setProperty('--bg', theme.bg);
+      root.style.setProperty('--panel', theme.panel);
+      root.style.setProperty('--text', theme.text);
+      root.style.setProperty('--text-muted', theme.textMuted);
+      root.style.setProperty('--border', theme.border);
+      root.style.setProperty('--border-light', theme.borderLight);
+      root.style.setProperty('--shadow', theme.shadow);
+      root.style.setProperty('--accent', theme.accent);
+      root.style.setProperty('--accent-hover', theme.accentHover);
+      root.style.setProperty('--input-bg', theme.inputBg);
+      root.style.setProperty('--code-bg', theme.codeBg);
+      root.style.setProperty('--code-text', theme.codeText);
+      root.style.setProperty('--scrollbar-track', theme.scrollbarTrack);
+      root.style.setProperty('--glow', theme.glow);
+      
+      // Save preference
+      localStorage.setItem('constructlm-theme', name);
+    }
+
+    // Load theme from external JSON (for marketplace simulation)
+    async function loadThemeFromURL(url) {
+      try {
+        const response = await fetch(url);
+        const theme = await response.json();
+        applyThemeObject(theme);
+      } catch (error) {
+        console.error('Failed to load theme:', error);
+      }
+    }
+
+    function applyThemeObject(theme) {
+      const root = document.documentElement;
+      Object.entries(theme).forEach(([key, value]) => {
+        const cssVar = key.replace(/([A-Z])/g, '-$1').toLowerCase();
+        root.style.setProperty(`--${cssVar}`, value);
+      });
+    }
+
+    // Load saved theme on startup
+    window.addEventListener('DOMContentLoaded', () => {
+      const savedTheme = localStorage.getItem('constructlm-theme') || 'dark';
+      applyTheme(savedTheme);
+    });
+
+    // UI Functions
     const textarea = document.querySelector('.input-box');
     textarea.addEventListener('input', function() {
       this.style.height = '48px';

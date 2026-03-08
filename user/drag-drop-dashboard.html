@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drag & Drop Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            min-height: 500px;
+        }
+
+        .square {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            color: white;
+            font-size: 2em;
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+            user-select: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .square {
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+
+        .square:not(.dragging):hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(102, 126, 234, 0.6);
+        }
+
+        .square:active {
+            cursor: grabbing;
+        }
+
+        .square.dragging {
+            opacity: 0.5;
+            transform: scale(0.95);
+            transition: none;
+            cursor: grabbing;
+        }
+
+        .square.drag-over {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            transform: scale(1.05);
+            box-shadow: 0 15px 35px rgba(245, 87, 108, 0.6);
+            transition: none;
+        }
+
+        .placeholder {
+            aspect-ratio: 1;
+            background: repeating-linear-gradient(
+                45deg,
+                rgba(102, 126, 234, 0.2),
+                rgba(102, 126, 234, 0.2) 10px,
+                rgba(102, 126, 234, 0.1) 10px,
+                rgba(102, 126, 234, 0.1) 20px
+            );
+            border-radius: 15px;
+            border: 2px dashed rgba(102, 126, 234, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(102, 126, 234, 0.5);
+            font-size: 1.5em;
+            user-select: none;
+            animation: pulse 1.5s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 0.6;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+
+        .square::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+            transform: rotate(45deg);
+            animation: shine 3s infinite;
+            pointer-events: none;
+        }
+
+        @keyframes shine {
+            0% {
+                transform: rotate(45deg) translateX(-100%);
+            }
+            100% {
+                transform: rotate(45deg) translateX(100%);
+            }
+        }
+
+        .square span {
+            position: relative;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+                gap: 15px;
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✨ Drag & Drop Dashboard</h1>
+        <div class="dashboard" id="dashboard"></div>
+    </div>
+
+    <script>
+        const dashboard = document.getElementById('dashboard');
+        const numberOfSquares = 12;
+        let draggedElement = null;
+        let placeholder = null;
+
+        // Create squares
+        function createSquares() {
+            for (let i = 1; i <= numberOfSquares; i++) {
+                const square = document.createElement('div');
+                square.className = 'square';
+                square.draggable = true;
+                square.innerHTML = `<span>${i}</span>`;
+                square.dataset.number = i;
+
+                square.addEventListener('dragstart', handleDragStart);
+                square.addEventListener('dragend', handleDragEnd);
+                square.addEventListener('dragover', handleDragOver);
+                square.addEventListener('drop', handleDrop);
+                square.addEventListener('dragenter', handleDragEnter);
+                square.addEventListener('dragleave', handleDragLeave);
+
+                dashboard.appendChild(square);
+            }
+        }
+
+        function handleDragStart(e) {
+            draggedElement = this;
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            
+            // Create placeholder
+            placeholder = document.createElement('div');
+            placeholder.className = 'placeholder';
+            placeholder.innerHTML = '↓';
+            this.parentNode.insertBefore(placeholder, this.nextSibling);
+        }
+
+        function handleDragEnd(e) {
+            if (draggedElement) {
+                draggedElement.classList.remove('dragging');
+                draggedElement = null;
+            }
+            
+            // Remove placeholder
+            if (placeholder) {
+                placeholder.remove();
+                placeholder = null;
+            }
+            
+            document.querySelectorAll('.square').forEach(square => {
+                square.classList.remove('drag-over');
+            });
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+
+        function handleDragEnter(e) {
+            if (draggedElement && this !== draggedElement) {
+                // Move placeholder before this square
+                if (placeholder) {
+                    this.parentNode.insertBefore(placeholder, this);
+                }
+            }
+        }
+
+        function handleDragLeave(e) {
+            // Don't remove drag-over class, just update placeholder position
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (draggedElement && placeholder && placeholder.parentNode) {
+                // Insert dragged element before the placeholder
+                placeholder.parentNode.insertBefore(draggedElement, placeholder);
+            }
+
+            return false;
+        }
+
+        // Initialize
+        createSquares();
+        
+        // Allow drops on dashboard itself
+        dashboard.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        });
+        
+        dashboard.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            if (draggedElement && placeholder && placeholder.parentNode) {
+                placeholder.parentNode.insertBefore(draggedElement, placeholder);
+            }
+        });
+    </script>
+</body>
+</html>

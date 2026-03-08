@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ConstructLM | Premium Interface</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-deep: #050505;
+      --bg-surface: #0a0a0a;
+      --accent-blue: #3b82f6;
+      --accent-glow: rgba(59, 130, 246, 0.5);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --text-dim: rgba(255, 255, 255, 0.4);
+    }
+
+    body {
+      background-color: var(--bg-deep);
+      color: white;
+      font-family: 'Space Grotesk', sans-serif;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .glass-panel {
+      background: rgba(10, 10, 10, 0.7);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-subtle); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--text-dim); }
+
+    /* Animations */
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 0 5px var(--accent-glow); }
+      50% { box-shadow: 0 0 20px var(--accent-glow); }
+    }
+
+    .active-glow { animation: glow 3s infinite ease-in-out; }
+
+    /* Canvas Transitions */
+    .chat-container { transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+    .canvas-panel { 
+      transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      transform: translateX(100%);
+    }
+    .canvas-panel.open { transform: translateX(0); width: 50%; }
+
+    /* Floating Input */
+    .floating-input-container {
+      position: absolute;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 800px;
+      padding: 0 1.5rem;
+      z-index: 50;
+    }
+
+    .input-glass {
+      background: rgba(15, 15, 15, 0.8);
+      backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      border-radius: 20px;
+      padding: 12px 16px;
+    }
+
+    .citation-tag {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      color: #60a5fa;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      cursor: help;
+      position: relative;
+    }
+
+    .tooltip {
+      visibility: hidden;
+      position: absolute;
+      bottom: 120%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #111;
+      border: 1px solid var(--accent-blue);
+      padding: 12px;
+      width: 280px;
+      border-radius: 8px;
+      z-index: 100;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .citation-tag:hover .tooltip {
+      visibility: visible;
+      opacity: 1;
+    }
+  </style>
+</head>
+<body class="flex overflow-hidden">
+
+  <!-- Sidebar -->
+  <aside class="w-[300px] flex flex-col glass-panel border-r shrink-0 z-40">
+    <div class="p-6 border-b border-white/5">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-black italic">C</div>
+        <h1 class="text-sm font-black tracking-[0.2em] uppercase">Construct_LM</h1>
+      </div>
+    </div>
+
+    <nav class="flex p-4 gap-2 border-b border-white/5">
+      <button onclick="switchTab('chats')" id="tab-chats" class="flex-1 py-2 text-[10px] font-bold uppercase tracking-widest border-b-2 border-transparent text-white/40 hover:text-white transition-all">Chats</button>
+      <button onclick="switchTab('sources')" id="tab-sources" class="flex-1 py-2 text-[10px] font-bold uppercase tracking-widest border-b-2 border-blue-600 text-white transition-all">Sources</button>
+    </nav>
+
+    <div class="flex-1 overflow-y-auto p-4 space-y-4" id="sidebar-content">
+      <!-- Sources View (Default) -->
+      <div class="space-y-4">
+        <button class="w-full py-4 border border-dashed border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest text-white/30 hover:border-blue-500/50 hover:text-white transition-all">
+          + Add New Intelligence
+        </button>
+        
+        <div class="group cursor-pointer p-4 rounded-xl bg-white/5 border border-white/5 hover:border-blue-500/30 transition-all">
+          <div class="flex justify-between items-start mb-1">
+            <span class="text-[10px] font-black text-blue-400 uppercase tracking-tighter">API_REF.MD</span>
+            <div class="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_#3b82f6]"></div>
+          </div>
+          <p class="text-[9px] text-white/40 uppercase tracking-widest">~12.4k Tokens Indexed</p>
+        </div>
+
+        <div class="group cursor-pointer p-4 rounded-xl bg-white/5 border border-white/5 hover:border-blue-500/30 transition-all">
+          <div class="flex justify-between items-start mb-1">
+            <span class="text-[10px] font-black text-white/60 uppercase tracking-tighter">PROJECT_SPEC.PDF</span>
+          </div>
+          <p class="text-[9px] text-white/20 uppercase tracking-widest">~8.3k Tokens Indexed</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="p-6 border-t border-white/5 bg-black/20">
+      <div class="flex justify-between text-[9px] font-black uppercase tracking-[0.2em] mb-3 text-white/40">
+        <span>Context Load</span>
+        <span class="text-blue-400">2.3%</span>
+      </div>
+      <div class="h-[2px] w-full bg-white/5 rounded-full overflow-hidden">
+        <div class="h-full bg-blue-600 w-[23%]"></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <main class="flex-1 relative flex flex-col bg-[#050505]">
+    
+    <!-- Top Header -->
+    <header class="h-16 flex items-center justify-between px-8 border-b border-white/5 z-30 bg-[#050505]/80 backdrop-blur-md">
+      <div class="flex items-center gap-6">
+        <div class="flex items-center gap-2">
+          <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+          <span class="text-[10px] font-black uppercase tracking-widest text-white/40">Neural Engine Online</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-4">
+        <select class="bg-white/5 border border-white/10 rounded-full px-4 py-1.5 text-[10px] font-black uppercase tracking-widest focus:outline-none focus:border-blue-500 cursor-pointer">
+          <option>Llama-3.1-Precision</option>
+          <option>Gemini-Flash-2.0</option>
+        </select>
+        <div class="w-8 h-8 rounded-full border border-white/10 flex items-center justify-center text-[10px] font-black">M</div>
+      </div>
+    </header>
+
+    <!-- Content Split Wrapper -->
+    <div class="flex-1 relative flex overflow-hidden">
+      
+      <!-- Chat Container -->
+      <div id="chatContainer" class="chat-container flex-1 flex flex-col relative">
+        <div class="flex-1 overflow-y-auto px-8 py-12 pb-40">
+          <div class="max-w-3xl mx-auto space-y-12">
+            
+            <!-- User Message -->
+            <div class="flex flex-col items-end group">
+              <span class="text-[9px] font-black text-white/20 uppercase tracking-[0.3em] mb-4 mr-2">Muhamad // Query</span>
+              <div class="bg-white/5 border border-white/10 p-5 rounded-2xl rounded-tr-none max-w-[85%] text-sm leading-relaxed text-white/80">
+                What are the main features of the API and how does authentication work?
+              </div>
+            </div>
+
+            <!-- Assistant Message -->
+            <div class="flex flex-col items-start group">
+              <span class="text-[9px] font-black text-blue-500/60 uppercase tracking-[0.3em] mb-4 ml-2">ConstructLM // Analysis</span>
+              <div class="relative bg-white/[0.02] border border-white/5 p-8 rounded-3xl rounded-tl-none text-sm leading-relaxed text-white/70">
+                <p class="mb-4">Analysis of <span class="text-blue-400 font-bold">API_REFERENCE.MD</span> complete. Key features identified:</p>
+                <ul class="space-y-4 mb-6">
+                  <li class="flex items-start gap-3">
+                    <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0"></span>
+                    <span>RESTful structural endpoints supporting pagination for large datasets <span class="citation-tag">01<div class="tooltip"><div class="text-[9px] font-bold text-blue-400 mb-1">SOURCE: API_REF.MD</div><div class="text-[11px] text-white/60">"The API provides RESTful endpoints following standard HTTP methods (GET, POST, PUT, DELETE)."</div></div></span></span>
+                  </li>
+                  <li class="flex items-start gap-3">
+                    <span class="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0"></span>
+                    <span>High-frequency rate limiting capped at 1,000 req/hr per node.</span>
+                  </li>
+                </ul>
+
+                <!-- Enhanced Code Block Component -->
+                <div class="mt-8 rounded-2xl overflow-hidden border border-white/10 bg-black/40">
+                  <div class="flex items-center justify-between px-5 py-3 border-b border-white/10 bg-white/5">
+                    <div class="flex items-center gap-3">
+                      <div class="text-blue-400">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                      </div>
+                      <span class="text-[10px] font-black uppercase tracking-widest text-white/60">Auth_Module.tsx</span>
+                    </div>
+                    <button onclick="toggleCanvas()" class="text-[9px] font-black uppercase tracking-widest px-3 py-1 bg-blue-600 rounded-full hover:bg-blue-500 transition-all">Launch Preview</button>
+                  </div>
+                  <div class="p-6 mono text-[12px] text-white/40">
+                    <span class="text-blue-400">const</span> <span class="text-white">API_KEY</span> = <span class="text-yellow-500">"X-PROT-9921"</span>;
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Floating Input Field -->
+        <div class="floating-input-container">
+          <div class="input-glass flex items-end gap-3 group focus-within:border-blue-500/50 transition-all">
+            <button class="p-2 text-white/20 hover:text-white transition-colors">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+            </button>
+            <textarea id="promptInput" rows="1" class="flex-1 bg-transparent border-none focus:outline-none text-sm py-2 resize-none placeholder:text-white/10" placeholder="Direct query to neural engine..."></textarea>
+            <button class="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-black hover:bg-blue-500 hover:text-white transition-all">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Side Canvas Panel -->
+      <div id="canvasPanel" class="canvas-panel absolute right-0 top-0 bottom-0 z-40 glass-panel border-l flex flex-col">
+        <div class="h-16 flex items-center justify-between px-6 border-b border-white/5">
+          <div class="flex items-center gap-4">
+            <span class="text-[10px] font-black uppercase tracking-[0.2em]">Deployment Canvas</span>
+            <div class="flex gap-1">
+              <button id="view-preview" onclick="setCanvasMode('preview')" class="px-3 py-1 text-[9px] font-black uppercase tracking-widest bg-white/10 rounded-l-md hover:bg-white/20 transition-all border border-white/5">Preview</button>
+              <button id="view-code" onclick="setCanvasMode('code')" class="px-3 py-1 text-[9px] font-black uppercase tracking-widest bg-transparent rounded-r-md hover:bg-white/5 transition-all border border-white/5 text-white/40">Code</button>
+            </div>
+          </div>
+          <button onclick="toggleCanvas()" class="w-8 h-8 flex items-center justify-center text-white/20 hover:text-white">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <div class="flex-1 bg-[#020202] relative">
+          <div id="canvas-preview" class="h-full w-full">
+            <iframe srcdoc="<!DOCTYPE html><html lang='en'><head><style>body{background:#000;color:#fff;font-family:sans-serif;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;}.card{border:1px solid #333;padding:40px;border-radius:20px;background:#050505;text-align:center;}input{background:#111;border:1px solid #222;padding:12px;width:100%;margin:10px 0;color:white;border-radius:8px;}button{background:#3b82f6;color:white;border:none;padding:12px 24px;border-radius:8px;font-weight:bold;margin-top:20px;cursor:pointer;}</style></head><body><div class='card'><h2>SYSTEM ACCESS</h2><input type='password' placeholder='Enter System Key'><button>Authorize Instance</button></div></body></html>" class="w-full h-full border-none"></iframe>
+          </div>
+          <div id="canvas-code" class="hidden h-full p-8 mono text-sm text-blue-300/60 overflow-y-auto">
+            <pre><code>import { useState } from 'react';
+
+export const AuthModule = () => {
+  const [token, setToken] = useState('');
+  
+  return (
+    &lt;div className="p-8 bg-black"&gt;
+      &lt;h1&gt;Secure Bridge&lt;/h1&gt;
+      &lt;input type="password" /&gt;
+    &lt;/div&gt;
+  );
+};</code></pre>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    const textarea = document.getElementById('promptInput');
+    const canvasPanel = document.getElementById('canvasPanel');
+    const chatContainer = document.getElementById('chatContainer');
+
+    // Auto-resize textarea
+    textarea.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 150) + 'px';
+    });
+
+    // Sidebar Tab Switching
+    function switchTab(tab) {
+      const chatBtn = document.getElementById('tab-chats');
+      const sourceBtn = document.getElementById('tab-sources');
+      const content = document.getElementById('sidebar-content');
+
+      if (tab === 'chats') {
+        chatBtn.classList.add('border-blue-600', 'text-white');
+        chatBtn.classList.remove('border-transparent', 'text-white/40');
+        sourceBtn.classList.remove('border-blue-600', 'text-white');
+        sourceBtn.classList.add('border-transparent', 'text-white/40');
+        content.innerHTML = `
+          <div class="space-y-2">
+            <div class="p-3 bg-white/5 rounded-lg border border-white/5 text-[11px] font-bold text-white/80 cursor-pointer hover:bg-white/10">Architecture Optimization Strategy</div>
+            <div class="p-3 bg-white/5 rounded-lg border border-white/5 text-[11px] font-bold text-white/40 cursor-pointer hover:bg-white/10">Sustainability Report Summary</div>
+            <div class="p-3 bg-white/5 rounded-lg border border-white/5 text-[11px] font-bold text-white/40 cursor-pointer hover:bg-white/10">Neural Engine Config v2</div>
+          </div>
+        `;
+      } else {
+        location.reload(); // Quick reset to initial state for demo
+      }
+    }
+
+    // Canvas Toggle Logic
+    function toggleCanvas() {
+      canvasPanel.classList.toggle('open');
+      chatContainer.classList.toggle('mr-[50%]');
+    }
+
+    // Canvas Mode Switching
+    function setCanvasMode(mode) {
+      const previewEl = document.getElementById('canvas-preview');
+      const codeEl = document.getElementById('canvas-code');
+      const previewBtn = document.getElementById('view-preview');
+      const codeBtn = document.getElementById('view-code');
+
+      if (mode === 'preview') {
+        previewEl.classList.remove('hidden');
+        codeEl.classList.add('hidden');
+        previewBtn.classList.add('bg-white/10', 'text-white');
+        previewBtn.classList.remove('bg-transparent', 'text-white/40');
+        codeBtn.classList.remove('bg-white/10', 'text-white');
+        codeBtn.classList.add('bg-transparent', 'text-white/40');
+      } else {
+        previewEl.classList.add('hidden');
+        codeEl.classList.remove('hidden');
+        codeBtn.classList.add('bg-white/10', 'text-white');
+        codeBtn.classList.remove('bg-transparent', 'text-white/40');
+        previewBtn.classList.remove('bg-white/10', 'text-white');
+        previewBtn.classList.add('bg-transparent', 'text-white/40');
+      }
+    }
+  </script>
+</body>
+</html>

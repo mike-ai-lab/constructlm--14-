@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ConstructLM | Premium Architectural Intelligence</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            brand: {
+              gold: '#C5A059', // Refined gold for premium touch
+              blue: '#2563eb',
+            },
+            surface: {
+              900: '#0A0A0B',
+              800: '#141417',
+              700: '#1C1C21',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(155, 155, 155, 0.1); border-radius: 10px; }
+    .glass { backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+    .citation-glow:hover { box-shadow: 0 0 15px rgba(37, 99, 235, 0.2); }
+  </style>
+</head>
+<body class="bg-white dark:bg-surface-900 text-slate-900 dark:text-slate-100 font-sans transition-colors duration-300 h-screen flex flex-col overflow-hidden">
+
+  <!-- Header -->
+  <header class="h-16 border-b border-slate-200 dark:border-white/5 px-6 flex items-center justify-between glass sticky top-0 z-50 bg-white/80 dark:bg-surface-900/80">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 bg-brand-blue rounded-lg flex items-center justify-center text-white font-bold text-lg">C</div>
+      <div>
+        <h1 class="text-sm font-bold tracking-tight uppercase">ConstructLM</h1>
+        <p class="text-[10px] text-slate-500 font-medium tracking-widest uppercase">Intelligence Layer v2.0</p>
+      </div>
+    </div>
+    
+    <div class="flex items-center gap-4">
+      <div class="hidden md:flex items-center gap-1 bg-slate-100 dark:bg-white/5 px-3 py-1.5 rounded-full border border-slate-200 dark:border-white/10">
+        <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+        <span class="text-[10px] font-bold uppercase tracking-wide opacity-70">Riyadh Node Online</span>
+      </div>
+      <button id="themeToggle" class="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-full transition-all">
+        <svg id="sunIcon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"/></svg>
+        <svg id="moonIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main class="flex-1 flex overflow-hidden">
+    <!-- Sidebar: Intelligence Context -->
+    <aside class="w-72 border-r border-slate-200 dark:border-white/5 hidden lg:flex flex-col bg-slate-50/50 dark:bg-surface-800/50">
+      <div class="p-4 border-b border-slate-200 dark:border-white/5">
+        <div class="flex gap-2 mb-4">
+          <button class="flex-1 py-2 text-[10px] font-bold uppercase border-b-2 border-brand-blue">Knowledge</button>
+          <button class="flex-1 py-2 text-[10px] font-bold uppercase opacity-40 hover:opacity-100 transition-opacity">Archive</button>
+        </div>
+        <button class="w-full py-3 bg-brand-blue/10 hover:bg-brand-blue/20 text-brand-blue rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border border-brand-blue/20">
+          + Import Architecture Docs
+        </button>
+      </div>
+      
+      <div class="flex-1 overflow-y-auto p-4 space-y-3">
+        <div class="group p-3 rounded-xl border border-slate-200 dark:border-white/5 hover:border-brand-blue/30 transition-all cursor-pointer">
+          <p class="text-[10px] text-brand-blue font-bold uppercase mb-1">Structural Ref</p>
+          <p class="text-xs font-medium truncate italic">NEOM_Sustainability_Code.pdf</p>
+        </div>
+        <div class="group p-3 rounded-xl border border-slate-200 dark:border-white/5 hover:border-brand-blue/30 transition-all cursor-pointer">
+          <p class="text-[10px] text-brand-blue font-bold uppercase mb-1">Zoning Policy</p>
+          <p class="text-xs font-medium truncate italic">Riyadh_Urban_Reg_2025.json</p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Chat Interface -->
+    <section class="flex-1 flex flex-col relative">
+      <div id="chatContainer" class="flex-1 overflow-y-auto p-6 md:p-12 space-y-10">
+        
+        <!-- Welcome Message -->
+        <div class="max-w-3xl mx-auto space-y-4">
+          <div class="flex items-center gap-2 opacity-50">
+            <div class="h-[1px] w-8 bg-current"></div>
+            <span class="text-[10px] font-black uppercase tracking-widest">Session Start: 12:46 PM</span>
+          </div>
+          <h2 class="text-3xl font-light leading-tight">Welcome, <span class="font-bold text-brand-blue">Muhamad</span>. How can we optimize your design intelligence today?</h2>
+        </div>
+
+        <!-- AI Response with Citation Demos -->
+        <div class="max-w-3xl mx-auto">
+          <div class="flex gap-4 items-start group">
+            <div class="w-8 h-8 rounded bg-slate-100 dark:bg-white/5 flex-shrink-0 flex items-center justify-center">
+              <svg class="w-4 h-4 text-brand-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            </div>
+            <div class="space-y-6 flex-1">
+              <div class="prose dark:prose-invert prose-slate max-w-none text-sm leading-relaxed opacity-90">
+                Based on the current zoning laws for Riyadh’s King Salman Park district, the structural footprint must maintain a 40% permeability ratio. 
+                
+                <!-- STYLE 1: The "Minimalist Monospace" -->
+                <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-slate-100 dark:bg-white/10 text-brand-blue font-mono text-[10px] font-bold cursor-help hover:bg-brand-blue hover:text-white transition-colors citation-glow mr-1">
+                  [01]
+                </span>
+                
+                The facade thermal efficiency should aim for a U-value below 1.2 W/m²K to handle peak summer temperatures. 
+                
+                <!-- STYLE 2: The "Ghost Chip" -->
+                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full border border-slate-200 dark:border-white/10 text-[9px] font-bold uppercase tracking-tighter cursor-pointer hover:border-brand-blue/50 transition-all mr-1">
+                  <span class="w-1 h-1 rounded-full bg-brand-blue"></span>
+                  Ref: Policy 4.2
+                </span>
+
+                Furthermore, utilizing local limestone not only reduces the carbon footprint but also aligns with the Salmani architectural style.
+
+                <!-- STYLE 3: The "Contextual Hover" -->
+                <span class="relative group/cite inline-block">
+                  <span class="text-brand-blue font-bold underline decoration-brand-blue/30 underline-offset-4 cursor-help">Salmani Design Manual</span>
+                  <div class="absolute bottom-full left-0 mb-2 w-48 p-2 bg-white dark:bg-surface-700 border border-slate-200 dark:border-white/10 rounded-lg shadow-xl opacity-0 invisible group-hover/cite:opacity-100 group-hover/cite:visible transition-all text-[10px] z-20">
+                    <p class="font-bold mb-1">Heritage Guidelines</p>
+                    <p class="opacity-70 italic">"The use of regional materials is mandatory for Phase 1..."</p>
+                  </div>
+                </span>
+
+                <!-- STYLE 4: The "Deep Index" (End of Paragraph) -->
+                <div class="mt-6 pt-4 border-t border-slate-100 dark:border-white/5 flex flex-wrap gap-2">
+                  <p class="w-full text-[10px] font-bold uppercase opacity-40 mb-1">Sources Discovered</p>
+                  <div class="flex items-center gap-2 px-3 py-1.5 bg-slate-50 dark:bg-white/5 rounded-md border border-slate-200 dark:border-white/10 hover:border-brand-blue/40 transition-all cursor-pointer">
+                    <svg class="w-3 h-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                    <span class="text-[11px] font-medium">Urban_Planning_v4.pdf</span>
+                    <span class="text-[9px] bg-brand-blue/20 text-brand-blue px-1 rounded">p.142</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Input Bar -->
+      <div class="p-6 md:p-10 bg-gradient-to-t from-white dark:from-surface-900 via-white dark:via-surface-900/90 to-transparent">
+        <div class="max-w-3xl mx-auto relative group">
+          <div class="absolute -inset-0.5 bg-gradient-to-r from-brand-blue to-purple-600 rounded-2xl opacity-0 group-focus-within:opacity-20 transition duration-500 blur"></div>
+          <div class="relative flex items-center bg-slate-50 dark:bg-surface-800 border border-slate-200 dark:border-white/10 rounded-2xl p-2 pl-5 shadow-2xl">
+            <input type="text" placeholder="Inquire about building codes or design specs..." 
+                   class="flex-1 bg-transparent border-none outline-none py-3 text-sm font-medium placeholder:opacity-40">
+            <button class="p-3 bg-brand-blue text-white rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+            </button>
+          </div>
+          <div class="flex justify-center gap-6 mt-4 opacity-40">
+             <span class="text-[10px] font-bold tracking-[0.2em] uppercase">Autonomous Mode</span>
+             <span class="text-[10px] font-bold tracking-[0.2em] uppercase">Grounded in local regs</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const themeToggle = document.getElementById('themeToggle');
+    const sunIcon = document.getElementById('sunIcon');
+    const moonIcon = document.getElementById('moonIcon');
+    const html = document.documentElement;
+
+    themeToggle.addEventListener('click', () => {
+      html.classList.toggle('dark');
+      const isDark = html.classList.contains('dark');
+      sunIcon.classList.toggle('hidden', !isDark);
+      moonIcon.classList.toggle('hidden', isDark);
+    });
+
+    // Auto-scroll to bottom of chat
+    const chatContainer = document.getElementById('chatContainer');
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+  </script>
+</body>
+</html>
