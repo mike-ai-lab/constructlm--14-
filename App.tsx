@@ -459,7 +459,7 @@ const App: React.FC = () => {
 
   return (
     <div 
-      className="flex flex-col min-h-[100dvh] h-[100dvh] w-full bg-[#f5f5f5] text-[#1a1a1a] font-mono selection:bg-black selection:text-white overflow-hidden relative"
+      className="flex flex-col min-h-[100dvh] h-[100dvh] w-full bg-white dark:bg-[#0a0a0b] text-slate-900 dark:text-slate-100 font-sans selection:bg-brand-blue selection:text-white overflow-hidden relative transition-colors duration-300"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
@@ -467,53 +467,54 @@ const App: React.FC = () => {
       <style>{`
         /* Custom Scrollbar Styling */
         ::-webkit-scrollbar {
-          width: 12px; 
-          height: 12px;
+          width: 4px; 
+          height: 4px;
         }
         ::-webkit-scrollbar-track {
-          background: #f0f0f0;
-          border-left: 1px solid black;
+          background: transparent;
         }
         ::-webkit-scrollbar-thumb {
-          background: black;
-          border-radius: 0px;
-          border: 2px solid #f0f0f0; 
+          background: rgba(155, 155, 155, 0.1);
+          border-radius: 10px;
         }
         ::-webkit-scrollbar-thumb:hover {
-          background: #333;
+          background: rgba(155, 155, 155, 0.2);
+        }
+        .glass {
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
         }
       `}</style>
 
       {/* Mobile Header - Always visible on mobile */}
-      {/* FIXED: Added fixed height to ensure sidebar offset matches exactly */}
       <header 
-        className="block md:hidden p-3 border-b-2 border-black flex justify-between items-center bg-white z-50 flex-shrink-0 sticky top-0"
+        className="block md:hidden p-3 border-b border-slate-200 dark:border-white/5 flex justify-between items-center bg-white/80 dark:bg-[#0a0a0b]/80 glass z-50 flex-shrink-0 sticky top-0"
         style={{ height: MOBILE_HEADER_HEIGHT_WITH_SAFE_AREA, paddingTop: 'env(safe-area-inset-top)' }}
       >
         <div className="flex items-center gap-2">
           <button
             onClick={() => window.open('/docs/index.html', '_blank')}
-            className="hover:bg-gray-100 px-2 py-1 rounded"
+            className="hover:bg-slate-100 dark:hover:bg-white/5 px-2 py-1 rounded transition-colors"
             title="Documentation"
           >
             <BookOpen size={18} />
           </button>
           <button
             onClick={() => setIsSettingsOpen(true)}
-            className="hover:bg-gray-100 px-2 py-1 rounded"
+            className="hover:bg-slate-100 dark:hover:bg-white/5 px-2 py-1 rounded transition-colors"
             title="Settings"
           >
             <Settings size={18} />
           </button>
           <button 
             onClick={() => setIsMobileSidebarOpen(true)}
-            className="font-mono font-bold text-sm hover:bg-gray-100 px-2 py-1 flex items-center gap-2"
+            className="font-sans font-bold text-xs hover:bg-slate-100 dark:hover:bg-white/5 px-2 py-1 flex items-center gap-2 uppercase tracking-tight transition-colors"
           >
-            CONSTRUCT_LM
+            ConstructLM
           </button>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-[10px] font-mono">{files.length} FILES</span>
+          <span className="text-[9px] font-bold uppercase tracking-wider opacity-60">{files.length} Files</span>
           <select 
             value={aiModel}
             onChange={(e) => {
@@ -521,7 +522,6 @@ const App: React.FC = () => {
               setAiModel(provider);
               localStorage.setItem('ai_model', provider);
               
-              // Auto-select a compatible model for the provider
               const modelLists = {
                 gemini: GeminiService.GEMINI_MODELS,
                 cerebras: GeminiService.CEREBRAS_MODELS,
@@ -536,7 +536,7 @@ const App: React.FC = () => {
                 localStorage.setItem('selected_model', defaultModel);
               }
             }}
-            className="text-[10px] font-mono font-bold px-2 py-1 border border-black bg-white"
+            className="text-[9px] font-bold uppercase px-2 py-1 border border-slate-200 dark:border-white/10 bg-white dark:bg-surface-800 rounded"
           >
             <option value="gemini">GEMINI</option>
             <option value="cerebras">CEREBRAS</option>
@@ -552,7 +552,7 @@ const App: React.FC = () => {
       {/* Mobile Sidebar Overlay */}
       {isMobileSidebarOpen && (
         <div 
-          className="md:hidden fixed bg-black z-40 transition-opacity duration-300"
+          className="md:hidden fixed bg-black/50 z-40 transition-opacity duration-300"
           style={{ 
             top: 0,
             left: 0, 
@@ -566,7 +566,7 @@ const App: React.FC = () => {
       
       {/* SIDEBAR */}
       <aside 
-        className={`bg-white shrink-0 flex flex-col border-r-2 border-black shadow-[4px_0_0_0_rgba(0,0,0,1)] fixed md:relative left-0 z-50 ${
+        className={`bg-white dark:bg-[#0f0f11] shrink-0 flex flex-col border-r border-slate-200 dark:border-white/5 shadow-lg fixed md:relative left-0 z-50 ${
           isMobileSidebarOpen ? '' : '-translate-x-full md:translate-x-0'
         }`}
         style={{ 
@@ -582,7 +582,7 @@ const App: React.FC = () => {
         {!isMobileSidebarOpen && (
           <div 
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="hidden md:flex absolute -right-[12px] top-1/2 -translate-y-1/2 w-6 h-16 bg-white border-2 border-black items-center justify-center cursor-pointer z-[70] transition-all hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px]"
+            className="hidden md:flex absolute -right-[12px] top-1/2 -translate-y-1/2 w-6 h-16 bg-white dark:bg-[#0f0f11] border border-slate-200 dark:border-white/10 rounded-r items-center justify-center cursor-pointer z-[70] transition-all hover:bg-slate-50 dark:hover:bg-[#1b1b1d]"
           >
             {isSidebarCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
           </div>
@@ -618,7 +618,7 @@ const App: React.FC = () => {
         {!isSidebarCollapsed && !isMobileSidebarOpen && (
           <div 
             onMouseDown={startResizing}
-            className="hidden md:block absolute top-0 right-[-2px] w-2 h-full cursor-col-resize z-[60] active:bg-black/10 hover:bg-black/5"
+            className="hidden md:block absolute top-0 right-[-2px] w-2 h-full cursor-col-resize z-[60] hover:bg-brand-blue/10 active:bg-brand-blue/20 transition-colors"
           />
         )}
       </aside>
@@ -630,49 +630,53 @@ const App: React.FC = () => {
           style={{ top: 'calc(50% + 30px)' }}
         >
           <div className="flex items-center">
-            <div className="w-1 h-16 bg-black rounded-r-full animate-pulse" />
+            <div className="w-1 h-16 bg-brand-blue/30 rounded-r-full animate-pulse" />
             <div className="ml-1 flex flex-col gap-1">
-              <div className="w-2 h-2 bg-black rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-              <div className="w-2 h-2 bg-black rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-              <div className="w-2 h-2 bg-black rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              <div className="w-2 h-2 bg-brand-blue/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <div className="w-2 h-2 bg-brand-blue/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <div className="w-2 h-2 bg-brand-blue/50 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
             </div>
           </div>
         </div>
       )}
 
       {/* MAIN */}
-      {/* FIXED: Added w-full and proper flex properties to ensure ChatInterface renders on mobile */}
-      <main className="flex-1 flex flex-col relative bg-white md:bg-[#f9f9f9] min-w-0 w-full">
+      <main className="flex-1 flex flex-col relative bg-white dark:bg-[#0a0a0b] min-w-0 w-full">
         {/* Desktop Header */}
-        <header className="hidden md:flex h-16 border-b-2 border-black items-center justify-between px-8 bg-white shrink-0 z-20">
+        <header className="hidden md:flex h-14 border-b border-slate-200 dark:border-white/5 items-center justify-between px-8 bg-white/80 dark:bg-[#0a0a0b]/80 glass shrink-0 z-20">
           <div className="flex items-center gap-6">
-            <BookOpen 
-              size={18} 
-              className="cursor-pointer hover:scale-110 transition-transform" 
+            <div className="flex items-center gap-3">
+              <div className="w-7 h-7 bg-brand-blue rounded flex items-center justify-center text-white font-bold text-sm">C</div>
+              <h1 className="text-xs font-bold tracking-tight uppercase">ConstructLM</h1>
+            </div>
+            <div 
+              className="cursor-pointer hover:scale-110 transition-transform opacity-60 hover:opacity-100" 
               onClick={() => window.open('/docs/index.html', '_blank')}
               title="Documentation"
-            />
-            <Settings 
-              size={18} 
-              className="cursor-pointer hover:rotate-45 transition-transform" 
+            >
+              <BookOpen size={16} />
+            </div>
+            <div 
+              className="cursor-pointer hover:rotate-45 transition-transform opacity-60 hover:opacity-100" 
               onClick={() => setIsSettingsOpen(true)}
               title="Settings"
-            />
-            <h1 className="text-lg font-black uppercase tracking-tighter">Construct_LM</h1>
+            >
+              <Settings size={16} />
+            </div>
             
             {/* Model Dropdown */}
             <div className="relative">
               <button
                 onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
-                className="h-9 px-4 text-[10px] font-black uppercase border-2 border-black bg-white hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all flex items-center gap-2"
+                className="h-9 px-4 text-[10px] font-bold uppercase border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1b1b1d] hover:bg-slate-50 dark:hover:bg-[#0f0f11] transition-all flex items-center gap-2 rounded"
               >
                 {selectedModel}
                 <span className="text-[8px]">▼</span>
               </button>
               
               {isModelDropdownOpen && (
-                <div className="absolute top-full left-0 mt-1 bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] z-50 min-w-[280px] max-h-[500px] overflow-y-auto">
-                  <div className="p-2 border-b border-gray-200 text-[8px] font-bold text-gray-500">CEREBRAS</div>
+                <div className="absolute top-full left-0 mt-1 bg-white dark:bg-[#1b1b1d] border border-slate-200 dark:border-white/10 shadow-xl rounded-lg z-50 min-w-[280px] max-h-[500px] overflow-y-auto">
+                  <div className="p-2 border-b border-slate-100 dark:border-white/5 text-[8px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Cerebras</div>
                   {GeminiService.CEREBRAS_MODELS.map(model => (
                     <button
                       key={model.id}
@@ -683,23 +687,23 @@ const App: React.FC = () => {
                         localStorage.setItem('selected_model', model.id);
                         localStorage.setItem('ai_model', 'cerebras');
                       }}
-                      className={`w-full text-left px-4 py-2 text-[10px] font-mono hover:bg-gray-100 ${
-                        selectedModel === model.id ? 'bg-gray-100 font-bold' : ''
+                      className={`w-full text-left px-4 py-2 text-[10px] font-sans hover:bg-slate-50 dark:hover:bg-[#0f0f11] transition-colors ${
+                        selectedModel === model.id ? 'bg-slate-50 dark:bg-[#0f0f11] font-bold' : ''
                       }`}
                     >
                       <div className="flex justify-between items-start">
                         <span>{model.id}</span>
-                        <span className="text-[8px] text-gray-500">{model.context}</span>
+                        <span className="text-[8px] text-slate-500 dark:text-slate-400">{model.context}</span>
                       </div>
                       <div className="flex gap-1 mt-1">
                         {model.tags.map(tag => (
-                          <span key={tag} className="text-[7px] px-1 py-0.5 bg-gray-200 text-gray-700">{tag}</span>
+                          <span key={tag} className="text-[7px] px-1 py-0.5 bg-slate-100 dark:bg-[#0a0a0b] text-slate-600 dark:text-slate-300 rounded">{tag}</span>
                         ))}
                       </div>
                     </button>
                   ))}
                   
-                  <div className="p-2 border-b border-t border-gray-200 text-[8px] font-bold text-gray-500">GEMINI</div>
+                  <div className="p-2 border-b border-t border-slate-100 dark:border-white/5 text-[8px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Gemini</div>
                   {GeminiService.GEMINI_MODELS.map(model => (
                     <button
                       key={model.id}
@@ -710,23 +714,23 @@ const App: React.FC = () => {
                         localStorage.setItem('selected_model', model.id);
                         localStorage.setItem('ai_model', 'gemini');
                       }}
-                      className={`w-full text-left px-4 py-2 text-[10px] font-mono hover:bg-gray-100 ${
-                        selectedModel === model.id ? 'bg-gray-100 font-bold' : ''
+                      className={`w-full text-left px-4 py-2 text-[10px] font-sans hover:bg-slate-50 dark:hover:bg-[#0f0f11] transition-colors ${
+                        selectedModel === model.id ? 'bg-slate-50 dark:bg-[#0f0f11] font-bold' : ''
                       }`}
                     >
                       <div className="flex justify-between items-start">
                         <span>{model.id}</span>
-                        <span className="text-[8px] text-gray-500">{model.context}</span>
+                        <span className="text-[8px] text-slate-500 dark:text-slate-400">{model.context}</span>
                       </div>
                       <div className="flex gap-1 mt-1">
                         {model.tags.map(tag => (
-                          <span key={tag} className="text-[7px] px-1 py-0.5 bg-gray-200 text-gray-700">{tag}</span>
+                          <span key={tag} className="text-[7px] px-1 py-0.5 bg-slate-100 dark:bg-[#0a0a0b] text-slate-600 dark:text-slate-300 rounded">{tag}</span>
                         ))}
                       </div>
                     </button>
                   ))}
                   
-                  <div className="p-2 border-b border-t border-gray-200 text-[8px] font-bold text-gray-500">GROQ</div>
+                  <div className="p-2 border-b border-t border-slate-100 dark:border-white/5 text-[8px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Groq</div>
                   {GeminiService.GROQ_MODELS.map(model => (
                     <button
                       key={model.id}
@@ -737,23 +741,23 @@ const App: React.FC = () => {
                         localStorage.setItem('selected_model', model.id);
                         localStorage.setItem('ai_model', 'groq');
                       }}
-                      className={`w-full text-left px-4 py-2 text-[10px] font-mono hover:bg-gray-100 ${
-                        selectedModel === model.id ? 'bg-gray-100 font-bold' : ''
+                      className={`w-full text-left px-4 py-2 text-[10px] font-sans hover:bg-slate-50 dark:hover:bg-[#0f0f11] transition-colors ${
+                        selectedModel === model.id ? 'bg-slate-50 dark:bg-[#0f0f11] font-bold' : ''
                       }`}
                     >
                       <div className="flex justify-between items-start">
                         <span>{model.id}</span>
-                        <span className="text-[8px] text-gray-500">{model.context}</span>
+                        <span className="text-[8px] text-slate-500 dark:text-slate-400">{model.context}</span>
                       </div>
                       <div className="flex gap-1 mt-1">
                         {model.tags.map(tag => (
-                          <span key={tag} className="text-[7px] px-1 py-0.5 bg-gray-200 text-gray-700">{tag}</span>
+                          <span key={tag} className="text-[7px] px-1 py-0.5 bg-slate-100 dark:bg-[#0a0a0b] text-slate-600 dark:text-slate-300 rounded">{tag}</span>
                         ))}
                       </div>
                     </button>
                   ))}
                   
-                  <div className="p-2 border-b border-t border-gray-200 text-[8px] font-bold text-gray-500">OPENROUTER</div>
+                  <div className="p-2 border-b border-t border-slate-100 dark:border-white/5 text-[8px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">OpenRouter</div>
                   {GeminiService.OPENROUTER_MODELS.map(model => (
                     <button
                       key={model.id}
@@ -764,17 +768,17 @@ const App: React.FC = () => {
                         localStorage.setItem('selected_model', model.id);
                         localStorage.setItem('ai_model', 'openrouter');
                       }}
-                      className={`w-full text-left px-4 py-2 text-[10px] font-mono hover:bg-gray-100 ${
-                        selectedModel === model.id ? 'bg-gray-100 font-bold' : ''
+                      className={`w-full text-left px-4 py-2 text-[10px] font-sans hover:bg-slate-50 dark:hover:bg-[#0f0f11] transition-colors ${
+                        selectedModel === model.id ? 'bg-slate-50 dark:bg-[#0f0f11] font-bold' : ''
                       }`}
                     >
                       <div className="flex justify-between items-start">
                         <span>{model.id}</span>
-                        <span className="text-[8px] text-gray-500">{model.context}</span>
+                        <span className="text-[8px] text-slate-500 dark:text-slate-400">{model.context}</span>
                       </div>
                       <div className="flex gap-1 mt-1">
                         {model.tags.map(tag => (
-                          <span key={tag} className="text-[7px] px-1 py-0.5 bg-gray-200 text-gray-700">{tag}</span>
+                          <span key={tag} className="text-[7px] px-1 py-0.5 bg-slate-100 dark:bg-[#0a0a0b] text-slate-600 dark:text-slate-300 rounded">{tag}</span>
                         ))}
                       </div>
                     </button>
@@ -794,7 +798,6 @@ const App: React.FC = () => {
                     setAiModel(provider);
                     localStorage.setItem('ai_model', provider);
                     
-                    // Auto-select a compatible model for the provider
                     const modelLists = {
                       gemini: GeminiService.GEMINI_MODELS,
                       cerebras: GeminiService.CEREBRAS_MODELS,
@@ -809,10 +812,10 @@ const App: React.FC = () => {
                       localStorage.setItem('selected_model', defaultModel);
                     }
                   }}
-                  className={`h-9 px-3 text-[10px] font-black uppercase border-2 transition-all ${
+                  className={`h-9 px-3 text-[10px] font-bold uppercase border border-slate-200 dark:border-white/10 rounded transition-all ${
                     aiModel === m.toLowerCase()
-                      ? 'bg-black text-white border-black shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] translate-x-[-1px] translate-y-[-1px]'
-                      : 'bg-white text-black border-black hover:shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] hover:translate-x-[-1px] hover:translate-y-[-1px]'
+                      ? 'bg-brand-blue text-white border-brand-blue shadow-lg'
+                      : 'bg-white dark:bg-surface-800 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-surface-700'
                   }`}
                 >
                   {m}

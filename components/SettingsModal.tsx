@@ -132,14 +132,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
-      <div className="bg-white border-2 border-black w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-[#1b1b1d] border border-slate-200 dark:border-white/10 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-lg shadow-2xl">
         {/* Header */}
-        <div className="p-4 border-b-2 border-black flex justify-between items-center bg-gray-50">
+        <div className="p-4 border-b border-slate-200 dark:border-white/10 flex justify-between items-center bg-slate-50 dark:bg-[#0f0f11]">
           <h2 className="font-mono text-lg font-bold">SETTINGS</h2>
           <button 
             onClick={onClose}
-            className="text-2xl font-bold hover:bg-gray-200 px-2 leading-none"
+            className="text-2xl font-bold hover:bg-slate-100 dark:hover:bg-[#0a0a0b] px-2 leading-none rounded transition-colors"
           >
             ×
           </button>
@@ -148,8 +148,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         {/* Content */}
         <div className="p-6 space-y-6">
           {/* Info */}
-          <div className="bg-gray-100 border border-gray-300 p-3 text-xs font-mono flex items-start gap-2">
-            <Lightbulb size={16} className="shrink-0 mt-0.5" />
+          <div className="bg-brand-blue/10 border border-brand-blue/20 p-3 text-xs font-mono flex items-start gap-2 rounded">
+            <Lightbulb size={16} className="shrink-0 mt-0.5 text-brand-blue" />
             <div>
               <strong>TIP:</strong> API keys are stored locally in your browser. They never leave your device.
             </div>
@@ -171,12 +171,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     setGeminiError('');
                   }}
                   placeholder="Enter your Gemini API key"
-                  className="w-full px-3 py-2 border border-gray-300 focus:border-black outline-none font-mono text-sm"
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0a0a0b] focus:border-brand-blue outline-none font-mono text-sm rounded"
                 />
                 <button
                   type="button"
                   onClick={() => setShowGeminiKey(!showGeminiKey)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 hover:text-brand-blue"
                 >
                   {showGeminiKey ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -184,7 +184,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <button
                 onClick={testGeminiKey}
                 disabled={!localGeminiKey.trim() || testingGemini}
-                className="px-4 py-2 bg-black text-white font-mono text-xs font-bold hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-brand-blue text-white font-mono text-xs font-bold hover:bg-brand-blue/90 disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:cursor-not-allowed rounded transition-colors"
               >
                 {testingGemini ? 'TESTING...' : 'TEST'}
               </button>
@@ -221,12 +221,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     setCerebrasError('');
                   }}
                   placeholder="Enter your Cerebras API key"
-                  className="w-full px-3 py-2 border border-gray-300 focus:border-black outline-none font-mono text-sm"
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0a0a0b] focus:border-brand-blue outline-none font-mono text-sm rounded"
                 />
                 <button
                   type="button"
                   onClick={() => setShowCerebrasKey(!showCerebrasKey)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 hover:text-brand-blue"
                 >
                   {showCerebrasKey ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -234,7 +234,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               <button
                 onClick={testCerebrasKey}
                 disabled={!localCerebrasKey.trim() || testingCerebras}
-                className="px-4 py-2 bg-black text-white font-mono text-xs font-bold hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                className="px-4 py-2 bg-brand-blue text-white font-mono text-xs font-bold hover:bg-brand-blue/90 disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:cursor-not-allowed rounded transition-colors"
               >
                 {testingCerebras ? 'TESTING...' : 'TEST'}
               </button>
@@ -267,12 +267,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   value={localGroqKey}
                   onChange={(e) => setLocalGroqKey(e.target.value)}
                   placeholder="Enter your Groq API key"
-                  className="w-full px-3 py-2 border border-gray-300 focus:border-black outline-none font-mono text-sm"
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0a0a0b] focus:border-brand-blue outline-none font-mono text-sm rounded"
                 />
                 <button
                   type="button"
                   onClick={() => setShowGroqKey(!showGroqKey)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 hover:text-brand-blue"
                 >
                   {showGroqKey ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -300,12 +300,12 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   value={localOpenRouterKey}
                   onChange={(e) => setLocalOpenRouterKey(e.target.value)}
                   placeholder="Enter your OpenRouter API key"
-                  className="w-full px-3 py-2 border border-gray-300 focus:border-black outline-none font-mono text-sm"
+                  className="w-full px-3 py-2 border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0a0a0b] focus:border-brand-blue outline-none font-mono text-sm rounded"
                 />
                 <button
                   type="button"
                   onClick={() => setShowOpenRouterKey(!showOpenRouterKey)}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400 hover:text-brand-blue"
                 >
                   {showOpenRouterKey ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -323,16 +323,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t-2 border-black flex justify-end gap-3 bg-gray-50">
+        <div className="p-4 border-t border-slate-200 dark:border-white/10 flex justify-end gap-3 bg-slate-50 dark:bg-[#0f0f11]">
           <button
             onClick={onClose}
-            className="px-4 py-2 border border-gray-300 font-mono text-sm font-bold hover:bg-gray-100"
+            className="px-4 py-2 border border-slate-200 dark:border-white/10 font-mono text-sm font-bold hover:bg-slate-100 dark:hover:bg-[#0a0a0b] rounded transition-colors"
           >
             CANCEL
           </button>
           <button
             onClick={handleSave}
-            className="px-4 py-2 bg-black text-white font-mono text-sm font-bold hover:bg-gray-800"
+            className="px-4 py-2 bg-brand-blue text-white font-mono text-sm font-bold hover:bg-brand-blue/90 rounded transition-colors"
           >
             SAVE
           </button>

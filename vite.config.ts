@@ -25,7 +25,7 @@ export default defineConfig(({ mode }) => {
         }
       },
       optimizeDeps: {
-        include: ['pdfjs-dist']
+        include: ['pdfjs-dist', 'monaco-editor']
       },
       build: {
         commonjsOptions: {
@@ -34,7 +34,8 @@ export default defineConfig(({ mode }) => {
         rollupOptions: {
           output: {
             manualChunks: {
-              'pdfjs': ['pdfjs-dist']
+              'pdfjs': ['pdfjs-dist'],
+              'monaco': ['monaco-editor']
             }
           }
         }

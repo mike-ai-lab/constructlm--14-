@@ -53,7 +53,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <div 
-      className={`w-full flex flex-col h-full bg-white flex-shrink-0 transition-all duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}
+      className={`w-full flex flex-col h-full bg-white dark:bg-[#0f0f11] flex-shrink-0 transition-all duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}
       style={{ 
         width: window.innerWidth >= 768 ? `${width}px` : '100vw', 
         maxWidth: '100vw',
@@ -114,31 +114,29 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         /* Sidebar Scrollbar Styling */
         .sidebar-scroll::-webkit-scrollbar {
-          width: 12px;
+          width: 4px;
         }
         .sidebar-scroll::-webkit-scrollbar-track {
-          background: #f0f0f0;
-          border-left: 1px solid black;
+          background: transparent;
         }
         .sidebar-scroll::-webkit-scrollbar-thumb {
-          background: black;
-          border-radius: 0px;
-          border: 2px solid #f0f0f0;
+          background: rgba(155, 155, 155, 0.1);
+          border-radius: 10px;
         }
         .sidebar-scroll::-webkit-scrollbar-thumb:hover {
-          background: #333;
+          background: rgba(155, 155, 155, 0.2);
         }
       `}</style>
 
-      <div className="flex border-b-2 border-black shrink-0 h-16 items-center px-4 gap-4 bg-white">
+      <div className="flex border-b border-slate-200 dark:border-white/5 shrink-0 h-14 items-center px-4 gap-3 bg-white dark:bg-[#0f0f11]">
         {['CHATS', 'SOURCES'].map((tab) => (
           <button 
             key={tab}
             onClick={() => setActiveTab(tab.toLowerCase() as 'chats' | 'sources')}
-            className={`flex-1 h-9 font-black text-[10px] uppercase transition-all duration-75 border-2 ${
+            className={`flex-1 h-9 font-bold text-[10px] uppercase transition-all duration-200 rounded ${
               activeTab === tab.toLowerCase()
-              ? 'bg-white border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] translate-x-[-2px] translate-y-[-2px] text-black' 
-              : 'bg-white border-gray-100 text-black'
+              ? 'bg-brand-blue text-white shadow-lg' 
+              : 'bg-slate-50 dark:bg-[#1b1b1d] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#0a0a0b]'
             }`}
           >
             {tab}
@@ -147,7 +145,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {onClose && (
           <button 
             onClick={onClose}
-            className="md:hidden absolute right-3 px-3 text-xl font-bold hover:bg-gray-100"
+            className="md:hidden absolute right-3 px-3 text-xl font-bold hover:bg-slate-100 dark:hover:bg-surface-700 rounded"
           >
             ×
           </button>
@@ -160,30 +158,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {/* New Chat Button */}
             <button
               onClick={onNewChat}
-              className="w-full border-2 border-dashed border-black p-6 mb-6 flex flex-col items-center justify-center hover:bg-gray-50 group"
+              className="w-full border border-dashed border-slate-300 dark:border-white/10 p-6 mb-6 flex flex-col items-center justify-center hover:bg-slate-50 dark:hover:bg-[#1b1b1d] hover:border-brand-blue/30 group rounded-lg transition-all"
             >
-              <Plus className="mb-2 group-hover:rotate-90 transition-transform" size={20} />
-              <span className="text-[10px] font-bold uppercase tracking-widest">+ New Chat</span>
+              <Plus className="mb-2 group-hover:rotate-90 transition-transform text-slate-400 dark:text-slate-500" size={20} />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">+ New Chat</span>
             </button>
             
             {chatSessions.length === 0 && (
-              <div className="text-center mt-10 text-gray-400 font-mono text-xs">
-                NO CHAT HISTORY
+              <div className="text-center mt-10 text-slate-400 dark:text-slate-500 font-sans text-xs opacity-60">
+                No chat history
               </div>
             )}
             
             {chatSessions.map(session => (
               <div 
                 key={session.id}
-                className={`group relative mb-3 border-2 p-4 bg-white transition-all cursor-pointer ${
+                className={`group relative mb-3 border p-4 bg-white dark:bg-[#1b1b1d] transition-all cursor-pointer rounded-lg ${
                   currentChatId === session.id 
-                    ? 'border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] translate-x-[-2px] translate-y-[-2px]' 
-                    : 'border-transparent opacity-40 hover:opacity-100'
+                    ? 'border-brand-blue shadow-lg ring-1 ring-brand-blue/20' 
+                    : 'border-slate-200 dark:border-white/10 opacity-60 hover:opacity-100 hover:border-brand-blue/30'
                 }`}
                 onClick={() => onSelectChat(session.id)}
               >
                 <div className="flex justify-between items-start mb-1">
-                  <span className="font-mono text-xs font-bold truncate max-w-[150px]" title={session.title}>
+                  <span className="font-sans text-xs font-semibold truncate max-w-[150px]" title={session.title}>
                     {session.title}
                   </span>
                   <div className="flex gap-1">
@@ -192,7 +190,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         e.stopPropagation();
                         onExportChat(session.id);
                       }}
-                      className="opacity-0 group-hover:opacity-100 text-[10px] hover:bg-gray-100 p-1"
+                      className="opacity-0 group-hover:opacity-100 text-[10px] hover:bg-slate-100 dark:hover:bg-[#0a0a0b] p-1 rounded transition-all"
                       title="Export"
                     >
                       <Download size={12} />
@@ -202,14 +200,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         e.stopPropagation();
                         onDeleteChat(session.id);
                       }}
-                      className="opacity-0 group-hover:opacity-100 text-[10px] text-red-600 hover:underline font-mono"
+                      className="opacity-0 group-hover:opacity-100 text-[10px] text-red-500 hover:text-red-600 font-sans px-1"
                     >
-                      DEL
+                      Del
                     </button>
                   </div>
                 </div>
-                <div className="flex justify-between text-[10px] text-gray-500 font-mono">
-                  <span>{session.messages.length} MSGS</span>
+                <div className="flex justify-between text-[10px] text-slate-500 dark:text-slate-400 font-sans">
+                  <span>{session.messages.length} msgs</span>
                   <span>{new Date(session.updatedAt).toLocaleDateString()}</span>
                 </div>
               </div>
@@ -227,21 +225,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onChange={handleFileChange}
                 disabled={isUploading}
               />
-              <div className={`w-full border-2 border-dashed border-black p-6 mb-6 flex flex-col items-center justify-center hover:bg-gray-50 group ${isUploading ? 'opacity-50' : ''}`}>
-                <Plus className="mb-2 group-hover:rotate-90 transition-transform" size={20} />
-                <span className="text-[10px] font-bold uppercase tracking-widest">Add Source</span>
+              <div className={`w-full border border-dashed border-slate-300 dark:border-white/10 p-6 mb-6 flex flex-col items-center justify-center hover:bg-slate-50 dark:hover:bg-[#1b1b1d] hover:border-brand-blue/30 group rounded-lg transition-all ${isUploading ? 'opacity-50' : ''}`}>
+                <Plus className="mb-2 group-hover:rotate-90 transition-transform text-slate-400 dark:text-slate-500" size={20} />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Add Source</span>
               </div>
             </label>
             
             {isUploading && (
-              <div className="mt-2 p-1 bg-black text-white text-[10px] font-mono truncate">
+              <div className="mt-2 p-2 bg-brand-blue/10 text-brand-blue text-[10px] font-sans truncate rounded border border-brand-blue/20">
                 {uploadStatus}
               </div>
             )}
             
             {files.length === 0 && (
-              <div className="text-center mt-10 text-gray-400 font-mono text-xs">
-                NO SOURCES INDEXED
+              <div className="text-center mt-10 text-slate-400 dark:text-slate-500 font-sans text-xs opacity-60">
+                No sources indexed
               </div>
             )}
             
@@ -250,10 +248,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <div 
                   key={file.id}
                   onClick={() => onToggleFile(file.id, !(file.isEnabled !== false))}
-                  className={`border-2 p-4 cursor-pointer transition-all ${
+                  className={`border p-4 cursor-pointer transition-all rounded-lg ${
                     file.isEnabled !== false
-                    ? 'border-black bg-white shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] translate-x-[-2px] translate-y-[-2px]' 
-                    : 'border-transparent opacity-40 hover:opacity-100'
+                    ? 'border-brand-blue bg-white dark:bg-[#1b1b1d] shadow-lg ring-1 ring-brand-blue/20' 
+                    : 'border-slate-200 dark:border-white/10 opacity-60 hover:opacity-100 hover:border-brand-blue/30 bg-white dark:bg-[#1b1b1d]'
                   }`}
                 >
                   <div className="flex items-start">
@@ -283,7 +281,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                     <div className="flex-1 min-w-0 mt-2">
                       <div className="flex justify-between items-start mb-1">
-                        <div className="font-bold text-[11px] truncate uppercase max-w-[200px]" title={file.name}>
+                        <div className="font-semibold text-[11px] truncate uppercase max-w-[200px] font-sans" title={file.name}>
                           {file.name}
                         </div>
                         <button 
@@ -291,13 +289,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             e.stopPropagation();
                             onDelete(file.id);
                           }}
-                          className="opacity-0 group-hover:opacity-100 text-[10px] text-red-600 hover:underline font-mono ml-2"
+                          className="opacity-0 group-hover:opacity-100 text-[10px] text-red-500 hover:text-red-600 font-sans ml-2 px-1"
                         >
-                          DEL
+                          Del
                         </button>
                       </div>
-                      <div className="text-[9px] mt-1 text-gray-400 font-bold">
-                        ~{Math.round(file.tokenCount || 0)} TOKENS
+                      <div className="text-[9px] mt-1 text-slate-400 dark:text-slate-500 font-semibold">
+                        ~{Math.round(file.tokenCount || 0)} tokens
                       </div>
                     </div>
                   </div>
@@ -308,16 +306,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
       </div>
 
-      <div className="h-[88px] p-4 border-t-2 border-black bg-white flex flex-col justify-center flex-shrink-0">
-        <div className="flex justify-between items-center font-mono text-[10px] mb-2">
-          <span className="font-semibold">CONTEXT USAGE</span>
-          <span className={totalTokens > 30000 ? "text-red-600 font-bold" : ""}>
+      <div className="h-[88px] p-4 border-t border-slate-200 dark:border-white/5 bg-white dark:bg-[#0f0f11] flex flex-col justify-center flex-shrink-0">
+        <div className="flex justify-between items-center font-sans text-[10px] mb-2 font-semibold">
+          <span className="text-slate-600 dark:text-slate-400">Context Usage</span>
+          <span className={totalTokens > 30000 ? "text-red-500 font-bold" : "text-slate-600 dark:text-slate-400"}>
             {Math.round(totalTokens).toLocaleString()} / 1M
           </span>
         </div>
-        <div className="w-full bg-gray-200 h-2 border-2 border-black">
+        <div className="w-full bg-slate-100 dark:bg-[#0a0a0b] h-2 border border-slate-200 dark:border-white/10 rounded-full overflow-hidden">
           <div 
-            className="bg-black h-full transition-all duration-500" 
+            className="bg-brand-blue h-full transition-all duration-500 rounded-full" 
             style={{ width: `${Math.min((totalTokens / 1000000) * 100, 100)}%` }}
           />
         </div>

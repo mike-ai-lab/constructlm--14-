@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monaco Syntax Highlighting Test</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background: #1e1e1e;
+      color: white;
+    }
+    #container {
+      width: 100%;
+      height: 600px;
+      border: 2px solid #333;
+    }
+    .status {
+      padding: 10px;
+      margin-bottom: 10px;
+      background: #2d2d2d;
+      border-radius: 4px;
+    }
+    .success { color: #4ec9b0; }
+    .error { color: #f48771; }
+  </style>
+</head>
+<body>
+  <h1>Monaco Editor Syntax Highlighting Test</h1>
+  <div class="status" id="status">Loading Monaco Editor...</div>
+  <div id="container"></div>
+
+  <script type="module">
+    const statusEl = document.getElementById('status');
+    
+    try {
+      statusEl.innerHTML = 'Importing Monaco...';
+      
+      // Test if we can access the app at localhost:3001
+      const response = await fetch('http://localhost:3001/');
+      if (!response.ok) {
+        throw new Error('Dev server not accessible');
+      }
+      
+      statusEl.innerHTML = '<span class="success">✓ Dev server is running on port 3001</span><br>' +
+                          '<span class="success">✓ Open http://localhost:3001/ in your browser</span><br>' +
+                          '<span class="success">✓ Test the Monaco editor in the Canvas feature</span><br>' +
+                          '<span style="color: #ce9178;">Instructions:</span><br>' +
+                          '1. Open the app in browser<br>' +
+                          '2. Ask AI to generate a React component<br>' +
+                          '3. Click "Open Canvas" on the code block<br>' +
+                          '4. Click "Show Code" to see the Monaco editor<br>' +
+                          '5. Verify syntax highlighting is working (keywords should be colored)';
+      
+    } catch (error) {
+      statusEl.innerHTML = `<span class="error">✗ Error: ${error.message}</span>`;
+    }
+  </script>
+</body>
+</html>
