@@ -41,6 +41,17 @@ export interface ChatSession {
   createdAt: number;
   updatedAt: number;
   aiModel: 'gemini' | 'cerebras' | 'groq' | 'openrouter';
+  canvasState?: {
+    isOpen: boolean;
+    content: {
+      html: string;
+      code: string;
+      language: string;
+      blockId: string;
+    } | null;
+    showCode: boolean;
+    editedCode: string;
+  };
 }
 
 export interface Citation {

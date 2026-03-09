@@ -173,7 +173,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {chatSessions.map(session => (
               <div 
                 key={session.id}
-                className={`group relative mb-3 border p-4 bg-white dark:bg-[#1b1b1d] transition-all cursor-pointer rounded-lg ${
+                className={`group relative mb-3 border p-2 bg-white dark:bg-[#1b1b1d] transition-all cursor-pointer rounded-lg min-h-[50px] ${
                   currentChatId === session.id 
                     ? 'border-brand-blue shadow-lg ring-1 ring-brand-blue/20' 
                     : 'border-slate-200 dark:border-white/10 opacity-60 hover:opacity-100 hover:border-brand-blue/30'
@@ -248,7 +248,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <div 
                   key={file.id}
                   onClick={() => onToggleFile(file.id, !(file.isEnabled !== false))}
-                  className={`border p-4 cursor-pointer transition-all rounded-lg ${
+                  className={`border p-2 cursor-pointer transition-all rounded-lg min-h-[50px] ${
                     file.isEnabled !== false
                     ? 'border-brand-blue bg-white dark:bg-[#1b1b1d] shadow-lg ring-1 ring-brand-blue/20' 
                     : 'border-slate-200 dark:border-white/10 opacity-60 hover:opacity-100 hover:border-brand-blue/30 bg-white dark:bg-[#1b1b1d]'

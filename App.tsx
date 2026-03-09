@@ -20,7 +20,7 @@ const App: React.FC = () => {
   const [aiModel, setAiModel] = useState<'gemini' | 'cerebras' | 'groq' | 'openrouter'>('cerebras');
   const [selectedModel, setSelectedModel] = useState('llama3.1-8b');
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
-  const [sidebarWidth, setSidebarWidth] = useState(320);
+  const [sidebarWidth, setSidebarWidth] = useState(300);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [geminiApiKey, setGeminiApiKey] = useState('');
@@ -29,7 +29,7 @@ const App: React.FC = () => {
   const [openrouterApiKey, setOpenrouterApiKey] = useState('');
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const isResizingRef = useRef(false);
@@ -484,6 +484,25 @@ const App: React.FC = () => {
           backdrop-filter: blur(12px);
           -webkit-backdrop-filter: blur(12px);
         }
+        
+        /* Container Query for React Component Cards */
+        .react-card-container {
+          container-type: inline-size;
+        }
+        
+        /* Only stack when REALLY narrow (less than 280px) */
+        @container (max-width: 280px) {
+          .react-card-container {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+          }
+          .react-card-info {
+            margin-bottom: 0.5rem;
+          }
+          .react-card-actions {
+            width: 100%;
+          }
+        }
       `}</style>
 
       {/* Mobile Header - Always visible on mobile */}
@@ -578,16 +597,6 @@ const App: React.FC = () => {
           transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
         }}
       >
-        {/* Collapse/Expand Button - Desktop Only */}
-        {!isMobileSidebarOpen && (
-          <div 
-            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            className="hidden md:flex absolute -right-[12px] top-1/2 -translate-y-1/2 w-6 h-16 bg-white dark:bg-[#0f0f11] border border-slate-200 dark:border-white/10 rounded-r items-center justify-center cursor-pointer z-[70] transition-all hover:bg-slate-50 dark:hover:bg-[#1b1b1d]"
-          >
-            {isSidebarCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
-          </div>
-        )}
-
         <div 
           style={{ 
             width: isMobileSidebarOpen ? '100vw' : sidebarWidth,
@@ -643,8 +652,15 @@ const App: React.FC = () => {
       {/* MAIN */}
       <main className="flex-1 flex flex-col relative bg-white dark:bg-[#0a0a0b] min-w-0 w-full">
         {/* Desktop Header */}
-        <header className="hidden md:flex h-14 border-b border-slate-200 dark:border-white/5 items-center justify-between px-8 bg-white/80 dark:bg-[#0a0a0b]/80 glass shrink-0 z-20">
+        <header className="hidden md:flex h-12 items-center justify-between px-8 bg-white dark:bg-[#0a0a0b] shrink-0 z-20">
           <div className="flex items-center gap-6">
+            <button
+              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded transition-all"
+              title="Toggle Sidebar"
+            >
+              {isSidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+            </button>
             <div className="flex items-center gap-3">
               <div className="w-7 h-7 bg-brand-blue rounded flex items-center justify-center text-white font-bold text-sm">C</div>
               <h1 className="text-xs font-bold tracking-tight uppercase">ConstructLM</h1>
@@ -670,7 +686,10 @@ const App: React.FC = () => {
                 onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
                 className="h-9 px-4 text-[10px] font-bold uppercase border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1b1b1d] hover:bg-slate-50 dark:hover:bg-[#0f0f11] transition-all flex items-center gap-2 rounded"
               >
-                {selectedModel}
+                <div className="flex flex-col items-start leading-tight">
+                  <span className="text-[8px] opacity-60">{aiModel}</span>
+                  <span className="text-[9px]">{selectedModel}</span>
+                </div>
                 <span className="text-[8px]">▼</span>
               </button>
               
@@ -785,42 +804,6 @@ const App: React.FC = () => {
                   ))}
                 </div>
               )}
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <div className="flex gap-2">
-              {['GEMINI', 'CEREBRAS', 'GROQ', 'OPENROUTER'].map(m => (
-                <button 
-                  key={m}
-                  onClick={() => {
-                    const provider = m.toLowerCase() as 'gemini' | 'cerebras' | 'groq' | 'openrouter';
-                    setAiModel(provider);
-                    localStorage.setItem('ai_model', provider);
-                    
-                    const modelLists = {
-                      gemini: GeminiService.GEMINI_MODELS,
-                      cerebras: GeminiService.CEREBRAS_MODELS,
-                      groq: GeminiService.GROQ_MODELS,
-                      openrouter: GeminiService.OPENROUTER_MODELS
-                    };
-                    
-                    const isCompatible = modelLists[provider].some(model => model.id === selectedModel);
-                    if (!isCompatible) {
-                      const defaultModel = modelLists[provider][0].id;
-                      setSelectedModel(defaultModel);
-                      localStorage.setItem('selected_model', defaultModel);
-                    }
-                  }}
-                  className={`h-9 px-3 text-[10px] font-bold uppercase border border-slate-200 dark:border-white/10 rounded transition-all ${
-                    aiModel === m.toLowerCase()
-                      ? 'bg-brand-blue text-white border-brand-blue shadow-lg'
-                      : 'bg-white dark:bg-surface-800 text-slate-900 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-surface-700'
-                  }`}
-                >
-                  {m}
-                </button>
-              ))}
             </div>
           </div>
         </header>

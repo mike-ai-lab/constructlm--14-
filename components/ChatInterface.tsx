@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Image as ImageIcon, X, FileText, Play, Code, Download, Copy, Check, Undo, Redo } from 'lucide-react';
@@ -31,13 +31,17 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [codeBlockStates, setCodeBlockStates] = useState<{[key: string]: {showRendered: boolean}}>({});
   const [copiedBlocks, setCopiedBlocks] = useState<{[key: string]: boolean}>({});
   const [canvasOpen, setCanvasOpen] = useState(false);
-  const [canvasContent, setCanvasContent] = useState<{html: string, code: string, language: string, blockId: string} | null>(null);
+  const [canvasContent, setCanvasContent] = useState<{
+    html: string;
+    code: string;
+    language: string;
+    blockId: string;
+  } | null>(null);
   const [canvasShowCode, setCanvasShowCode] = useState(false);
   const [canvasEditedCode, setCanvasEditedCode] = useState('');
   const [editedCodeBlocks, setEditedCodeBlocks] = useState<{[blockId: string]: string}>({});
   const [iframeKey, setIframeKey] = useState(0);
   const [codeVersionHistory, setCodeVersionHistory] = useState<{[blockId: string]: {versions: string[], currentIndex: number}}>({});
-  const [autoOpenedBlocks, setAutoOpenedBlocks] = useState<Set<string>>(new Set());
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -261,65 +265,73 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Auto-open Canvas for React components
+  // Close canvas when switching chats
   useEffect(() => {
-    if (isStreaming || messages.length === 0) return;
+    setCanvasOpen(false);
+    setCanvasContent(null);
+    setCanvasEditedCode('');
+    setCanvasShowCode(false);
+  }, [messages]);
+
+  // Close citation tooltip when clicking outside (but not on the tooltip itself)
+  useEffect(() => {
+    if (!pinnedCitation) return;
     
-    const lastMessage = messages[messages.length - 1];
-    if (lastMessage.role !== 'model' || lastMessage.isStreaming) return;
-    
-    // Extract code blocks from the message
-    const codeBlockRegex = /```(\w+)\n([\s\S]*?)```/g;
-    let match;
-    
-    while ((match = codeBlockRegex.exec(lastMessage.content)) !== null) {
-      const language = match[1];
-      const code = match[2];
-      const blockId = `${lastMessage.id}-${code.substring(0, 20)}`;
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const citationCard = target.closest('[class*="group/cite"]');
+      const tooltip = target.closest('[class*="absolute bottom-full"]');
       
-      // Check if already auto-opened
-      if (autoOpenedBlocks.has(blockId)) continue;
-      
-      // Check if it's a React component
-      const isTsx = language === 'tsx' || language === 'jsx' || 
-                    language === 'typescript' || language === 'javascript' || language === 'ts' || language === 'js';
-      const isReactComponent = isTsx && (
-        code.includes('export default') || 
-        (code.includes('function') && code.includes('return')) ||
-        code.includes('const') && code.includes('=>') && code.includes('return')
-      );
-      
-      // Auto-open only for React components
-      if (isReactComponent) {
-        const html = generateReactPreviewHtml(code, language);
-        setCanvasContent({html, code, language, blockId});
-        setCanvasEditedCode(code);
-        setCanvasOpen(true);
-        setCanvasShowCode(false);
-        
-        // Initialize version history
-        if (!codeVersionHistory[blockId]) {
-          setCodeVersionHistory(prev => ({
-            ...prev,
-            [blockId]: {versions: [code], currentIndex: 0}
-          }));
-        }
-        
-        // Mark as auto-opened
-        setAutoOpenedBlocks(prev => new Set(prev).add(blockId));
-        
-        // Only auto-open the first React component found
-        break;
+      // Only close if clicking outside both the card and tooltip
+      if (!citationCard && !tooltip) {
+        setPinnedCitation(null);
       }
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [pinnedCitation]);
+
+  // Debug: Log chat area width when canvas state changes
+  useEffect(() => {
+    const chatArea = document.querySelector('[class*="md:w-[35%]"]');
+    const messageContainer = document.querySelector('.max-w-3xl');
+    const reactCards = document.querySelectorAll('h4');
+    const reactComponentCards = Array.from(reactCards).filter(h4 => h4.textContent?.includes('React Component'));
+    
+    if (chatArea) {
+      const chatWidth = chatArea.getBoundingClientRect().width;
+      const messageWidth = messageContainer?.getBoundingClientRect().width || 0;
+      console.log('🔍 DEBUG: Chat area width:', chatWidth + 'px');
+      console.log('🔍 DEBUG: Message container width:', messageWidth + 'px');
+      console.log('🔍 DEBUG: Canvas open:', canvasOpen);
+      console.log('🔍 DEBUG: React component cards found:', reactComponentCards.length);
+      
+      reactComponentCards.forEach((h4, i) => {
+        const card = h4.closest('div[class*="border"]');
+        if (card) {
+          const cardWidth = card.getBoundingClientRect().width;
+          const cardScrollWidth = (card as HTMLElement).scrollWidth;
+          const parentWidth = card.parentElement?.getBoundingClientRect().width || 0;
+          console.log(`🔍 DEBUG: Card ${i + 1}:`);
+          console.log(`  - Card width: ${cardWidth}px`);
+          console.log(`  - Card scrollWidth: ${cardScrollWidth}px`);
+          console.log(`  - Parent width: ${parentWidth}px`);
+          console.log(`  - Overflowing: ${cardScrollWidth > cardWidth}`);
+          console.log(`  - Card classes:`, card.className);
+        }
+      });
     }
-  }, [messages, isStreaming]);
+  }, [canvasOpen, messages]);
+
+
 
   return (
     <div className="flex h-full bg-white dark:bg-[#0a0a0b] relative overflow-hidden">
       {/* Main Chat Area */}
-      <div className={`flex flex-col bg-white dark:bg-[#0a0a0b] relative overflow-hidden transition-all duration-300 ${canvasOpen ? 'w-1/2' : 'w-full'}`}>
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-12 flex flex-col items-center relative" style={{ WebkitOverflowScrolling: 'touch' }}>
-        <div className="w-full max-w-3xl space-y-10">
+      <div className={`flex flex-col bg-white dark:bg-[#0a0a0b] relative overflow-hidden transition-all duration-300 ${canvasOpen ? 'md:w-[35%] md:mr-4' : 'w-full'}`}>
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 flex flex-col items-center relative" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <div className={`w-full space-y-10 ${canvasOpen ? 'max-w-full' : 'max-w-3xl'}`}>
           {messages.length === 0 && (
             <div className="max-w-3xl mx-auto space-y-4 py-20">
               <div className="flex items-center gap-2 opacity-50">
@@ -428,17 +440,17 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                             // If this React component is open in Canvas, show a compact card instead
                             if (isReactComponent && isOpenInCanvas) {
                               return (
-                                <div className="border border-slate-200 dark:border-white/10 p-4 my-4 flex items-center justify-between group hover:bg-slate-50 dark:hover:bg-[#1b1b1d] transition-all rounded-lg">
-                                  <div className="flex items-center gap-3">
-                                    <div className="border border-slate-200 dark:border-white/10 p-2 bg-brand-blue text-white rounded">
-                                      <Code size={18} />
+                                <div className="react-card-container border border-slate-200 dark:border-white/10 p-2 my-4 flex items-center justify-between group hover:bg-slate-50 dark:hover:bg-[#1b1b1d] transition-all rounded-lg max-w-full overflow-hidden min-w-0">
+                                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                                    <div className="border border-slate-200 dark:border-white/10 p-1.5 bg-brand-blue text-white rounded shrink-0">
+                                      <Code size={16} />
                                     </div>
-                                    <div>
-                                      <h4 className="text-sm font-bold uppercase tracking-tight">React Component</h4>
-                                      <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase">{language} • Currently in Canvas</p>
+                                    <div className="min-w-0 flex-1">
+                                      <h4 className="text-xs font-bold uppercase tracking-tight truncate">React Component</h4>
+                                      <p className="text-[9px] text-slate-500 dark:text-slate-400 font-bold uppercase truncate">{language} • Currently in Canvas</p>
                                     </div>
                                   </div>
-                                  <div className="flex gap-2">
+                                  <div className="react-card-actions flex gap-1 shrink-0">
                                     <button
                                       onClick={() => copyCode(code, blockId)}
                                       className="p-2 border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1b1b1d] hover:bg-slate-50 dark:hover:bg-[#0f0f11] text-[10px] font-mono flex items-center gap-1 rounded transition-colors"
@@ -461,17 +473,17 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                             // If it's a React component but Canvas is closed, show card with "Open Canvas" button
                             if (isReactComponent && !canvasOpen) {
                               return (
-                                <div className="border border-slate-200 dark:border-white/10 p-4 my-4 flex items-center justify-between group hover:bg-slate-50 dark:hover:bg-[#1b1b1d] transition-all rounded-lg">
-                                  <div className="flex items-center gap-3">
-                                    <div className="border border-slate-200 dark:border-white/10 p-2 bg-brand-blue text-white rounded">
-                                      <Code size={18} />
+                                <div className="react-card-container border border-slate-200 dark:border-white/10 p-2 my-4 flex items-center justify-between group hover:bg-slate-50 dark:hover:bg-[#1b1b1d] transition-all rounded-lg max-w-full overflow-hidden min-w-0">
+                                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                                    <div className="border border-slate-200 dark:border-white/10 p-1.5 bg-brand-blue text-white rounded shrink-0">
+                                      <Code size={16} />
                                     </div>
-                                    <div>
-                                      <h4 className="text-sm font-bold uppercase tracking-tight">React Component</h4>
-                                      <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase">{language} • Ready to render</p>
+                                    <div className="min-w-0 flex-1">
+                                      <h4 className="text-xs font-bold uppercase tracking-tight truncate">React Component</h4>
+                                      <p className="text-[9px] text-slate-500 dark:text-slate-400 font-bold uppercase truncate">{language} • Ready to render</p>
                                     </div>
                                   </div>
-                                  <div className="flex gap-2">
+                                  <div className="react-card-actions flex gap-1 shrink-0">
                                     <button
                                       onClick={() => copyCode(code, blockId)}
                                       className="p-2 border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1b1b1d] hover:bg-slate-50 dark:hover:bg-[#0f0f11] rounded transition-colors"
@@ -618,54 +630,59 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
                     {/* Premium Citation Styles - Inline within text */}
                     {msg.citations && msg.citations.length > 0 && (
-                      <div className="mt-8 pt-4 border-t border-slate-100 dark:border-white/5 flex flex-col gap-3">
-                        <p className="text-[9px] font-bold uppercase opacity-40 tracking-widest">Sources Discovered</p>
-                        {msg.citations.map((cite, i) => {
-                          const citationId = `${msg.id}-${i}`;
-                          const isPinned = pinnedCitation === citationId;
-                          
-                          return (
-                            <div 
-                              key={i}
-                              onClick={() => setPinnedCitation(isPinned ? null : citationId)}
-                              className="group/cite relative flex items-center gap-3 px-3 py-2 bg-slate-50 dark:bg-white/5 rounded-lg border border-slate-200 dark:border-white/10 hover:border-brand-blue/40 transition-all cursor-pointer w-fit"
-                            >
-                              <svg className="w-3.5 h-3.5 opacity-50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" strokeWidth="2"></path>
-                              </svg>
-                              <div className="flex flex-col">
-                                <span className="text-[11px] font-bold">{cite.docName}</span>
-                                <span className="text-[9px] opacity-50">Similarity: {cite.similarity.toFixed(3)}</span>
+                      <div className="mt-8 pt-4 border-t border-slate-100 dark:border-white/5">
+                        <p className="text-[9px] font-bold uppercase opacity-40 tracking-widest mb-3">Sources Discovered</p>
+                        <div className="grid grid-cols-3 gap-3">
+                          {msg.citations.map((cite, i) => {
+                            const citationId = `${msg.id}-${i}`;
+                            const isPinned = pinnedCitation === citationId;
+                            
+                            return (
+                              <div 
+                                key={i}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setPinnedCitation(isPinned ? null : citationId);
+                                }}
+                                className="group/cite relative flex items-center gap-2 px-3 py-2 bg-slate-50 dark:bg-white/5 rounded-lg border border-slate-200 dark:border-white/10 hover:border-brand-blue/40 transition-all cursor-pointer min-h-[44px]"
+                              >
+                                <svg className="w-3.5 h-3.5 opacity-50 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" strokeWidth="2"></path>
+                                </svg>
+                                <div className="flex flex-col min-w-0 flex-1 overflow-hidden">
+                                  <span className="text-[11px] font-bold truncate" title={cite.docName}>{cite.docName}</span>
+                                  <span className="text-[9px] opacity-50 truncate">Similarity: {cite.similarity.toFixed(3)}</span>
+                                </div>
+                                
+                                {/* Click-triggered Tooltip */}
+                                <div className={`absolute bottom-full left-0 mb-2 w-80 md:w-96 p-3 bg-white dark:bg-[#1b1b1d] border border-slate-200 dark:border-white/10 rounded-lg shadow-xl transition-all text-[10px] z-50 pointer-events-auto select-none ${
+                                  isPinned ? 'opacity-100 visible' : 'opacity-0 invisible pointer-events-none'
+                                }`}>
+                                  <div className="flex justify-between items-start mb-2 pb-2 border-b border-slate-200 dark:border-white/10">
+                                    <p className="font-bold text-xs">{cite.docName}</p>
+                                    {isPinned && (
+                                      <button 
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setPinnedCitation(null);
+                                        }}
+                                        className="text-lg font-bold hover:bg-slate-100 dark:hover:bg-white/10 px-1 leading-none rounded"
+                                      >
+                                        ×
+                                      </button>
+                                    )}
+                                  </div>
+                                  <div className="bg-brand-blue/10 border-l-2 border-brand-blue pl-2 py-1 mb-2 italic text-[11px] leading-relaxed">
+                                    "{cite.text.substring(0, 200)}{cite.text.length > 200 ? '...' : ''}"
+                                  </div>
+                                  <div className="text-[9px] opacity-50">
+                                    Click to pin this citation
+                                  </div>
+                                </div>
                               </div>
-                              
-                              {/* Hover Tooltip */}
-                              <div className={`absolute bottom-full left-0 mb-2 w-80 md:w-96 p-3 bg-white dark:bg-[#1b1b1d] border border-slate-200 dark:border-white/10 rounded-lg shadow-xl transition-all text-[10px] z-50 ${
-                                isPinned ? 'opacity-100 visible' : 'opacity-0 invisible group-hover/cite:opacity-100 group-hover/cite:visible'
-                              }`}>
-                                <div className="flex justify-between items-start mb-2 pb-2 border-b border-slate-200 dark:border-white/10">
-                                  <p className="font-bold text-xs">{cite.docName}</p>
-                                  {isPinned && (
-                                    <button 
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setPinnedCitation(null);
-                                      }}
-                                      className="text-lg font-bold hover:bg-slate-100 dark:hover:bg-white/10 px-1 leading-none rounded"
-                                    >
-                                      ×
-                                    </button>
-                                  )}
-                                </div>
-                                <div className="bg-brand-blue/10 border-l-2 border-brand-blue pl-2 py-1 mb-2 italic text-[11px] leading-relaxed">
-                                  "{cite.text.substring(0, 200)}{cite.text.length > 200 ? '...' : ''}"
-                                </div>
-                                <div className="text-[9px] opacity-50">
-                                  Click to {isPinned ? 'unpin' : 'pin'} this citation
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                        </div>
                       </div>
                     )}
                   </div>
@@ -697,16 +714,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         </div>
       )}
 
-      {/* Gradient Fade Effect at bottom */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white dark:from-[#0a0a0b] via-white/90 dark:via-[#0a0a0b]/90 to-transparent pointer-events-none z-10" />
-      
+
       <div 
         ref={dropZoneRef}
         onDragEnter={handleDragEnter}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`p-6 md:p-10 shrink-0 bg-white dark:bg-[#0a0a0b] relative z-20 ${isDragging ? 'bg-gray-100' : ''}`}
+        className={`bg-white dark:bg-[#0a0a0b] relative z-20 flex-shrink-0 overflow-visible p-4 md:p-6 ${isDragging ? 'bg-gray-100' : ''}`}
       >
         {isDragging && (
           <div className="absolute inset-0 bg-slate-100/50 dark:bg-white/5 border-4 border-dashed border-brand-blue flex items-center justify-center z-10 pointer-events-none rounded-2xl">
@@ -719,7 +734,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         
         {selectedImages.length > 0 && (
           <div className="absolute bottom-full left-1/2 -translate-x-1/2 w-full max-w-3xl mb-1 px-6">
-            <div className="border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1b1b1d] rounded-lg shadow-lg">
+            <div className="bg-white dark:bg-[#1b1b1d] rounded-lg shadow-lg">
               <div className="flex justify-between items-center p-2 border-b border-slate-200 dark:border-white/10">
                 <span className="text-[10px] font-mono font-bold">{selectedImages.length} IMAGE{selectedImages.length > 1 ? 'S' : ''} ATTACHED</span>
                 <div className="flex gap-2">
@@ -741,20 +756,20 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   </button>
                 </div>
               </div>
-              <div className="p-3 space-y-2 max-h-[280px] overflow-y-auto">
+              <div className="p-2 space-y-1 max-h-[400px] overflow-y-auto">
                 {(isImagesExpanded ? selectedImages : selectedImages.slice(0, 2)).map((img, idx) => (
-                  <div key={idx} className="flex items-center gap-3 bg-white dark:bg-surface-800 border border-slate-200 dark:border-white/10 p-3 rounded-lg">
-                    <img src={img.preview} alt={img.name} className="h-12 w-12 object-cover border border-slate-200 dark:border-white/10 rounded" />
-                    <div className="flex-1 text-[10px] font-sans">
+                  <div key={idx} className="flex items-center gap-2 p-2 rounded transition-colors hover:bg-[#0a0a0b]/5 dark:hover:bg-[#0a0a0b]">
+                    <img src={img.preview} alt={img.name} className="h-10 w-10 object-cover rounded" />
+                    <div className="flex-1 text-[9px] font-sans min-w-0">
                       <div className="font-semibold truncate">{img.name}</div>
-                      <div className="text-slate-500 dark:text-slate-400">{img.tokens} tokens • {(img.size / 1024 / 1024).toFixed(2)} MB</div>
+                      <div className="text-slate-500 dark:text-slate-400">{img.tokens} tokens • {img.size >= 1024 * 1024 ? (img.size / 1024 / 1024).toFixed(2) + ' MB' : (img.size / 1024).toFixed(2) + ' KB'}</div>
                     </div>
                     <button
                       onClick={() => removeImage(idx)}
-                      className="p-1 hover:bg-slate-100 dark:hover:bg-surface-700 border border-slate-200 dark:border-white/10 rounded transition-colors"
+                      className="p-1 hover:bg-slate-100 dark:hover:bg-white/10 rounded transition-colors shrink-0"
                       type="button"
                     >
-                      <X size={14} />
+                      <X size={12} />
                     </button>
                   </div>
                 ))}
@@ -763,10 +778,17 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           </div>
         )}
         
-        <div className="w-full max-w-3xl relative">
+        <div className="w-full flex justify-center">
+          <div className="w-full max-w-3xl relative -mt-3 md:-mt-4 z-30">
           <form onSubmit={handleSubmit} className="relative">
+            {/* Token Estimator */}
+            {estimatedTokens > 0 && (
+              <div className="text-[9px] text-slate-500 dark:text-slate-400 mb-2 px-1">
+                ~{estimatedTokens} tokens
+              </div>
+            )}
             {/* Premium Input Field from mockup */}
-            <div className="relative flex items-center bg-slate-50 dark:bg-[#1b1b1d] border border-slate-200 dark:border-white/10 rounded-2xl p-2 pl-5 shadow-2xl focus-within:border-brand-blue/50 transition-all group glass">
+            <div className="relative flex items-end gap-2 bg-slate-50 dark:bg-[#1b1b1d] border border-slate-200 dark:border-white/10 rounded-2xl p-2 pl-5 shadow-2xl focus-within:border-brand-blue/50 transition-all group glass min-h-[70px]">
               <textarea
                 ref={textareaRef}
                 value={input}
@@ -774,8 +796,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 onFocus={() => setIsInputFocused(true)}
                 onBlur={() => setIsInputFocused(false)}
                 placeholder={selectedImages.length > 0 ? "Add description (optional)..." : "Inquire about building codes or design specs..."}
-                className="flex-1 bg-transparent border-none outline-none py-3 text-sm font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none overflow-y-auto"
-                style={{ height: '48px' }}
+                className="flex-1 bg-transparent border-none outline-none py-2 text-sm font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none overflow-y-auto"
+                style={{ height: '48px', maxHeight: '200px' }}
                 disabled={isStreaming}
               />
               <input
@@ -814,12 +836,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             </div>
           </form>
         </div>
+        </div>
       </div>
       </div>
 
       {/* Canvas Side Panel - Mockup Inspired */}
       {canvasOpen && canvasContent && (
-        <div className="w-1/2 border-l border-slate-200 dark:border-white/5 bg-white dark:bg-[#0f0f11] flex flex-col">
+        <div className="md:w-[65%] w-full border-l border-slate-200 dark:border-white/5 bg-white dark:bg-[#0f0f11] flex flex-col rounded-xl md:mr-4 md:mb-4 overflow-hidden">
           <style>{`
             /* Syntax Highlighting Styles */
             .syntax-editor {
@@ -849,6 +872,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           {/* Canvas Header - Mockup Style */}
           <div className="h-10 border-b border-slate-200 dark:border-white/5 flex items-center justify-between px-4 shrink-0 bg-white dark:bg-[#0f0f11]">
             <div className="flex items-center gap-3">
+              <button
+                onClick={() => setCanvasOpen(false)}
+                className="md:hidden p-1 hover:bg-slate-100 dark:hover:bg-white/10 rounded transition-colors"
+                title="Back to Chat"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
               <span className="text-[10px] font-bold uppercase tracking-widest opacity-50">Visual Canvas</span>
               <span className="text-[9px] font-bold uppercase bg-brand-blue text-white px-2 py-0.5 rounded">
                 {canvasContent.language}
