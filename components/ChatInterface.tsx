@@ -437,8 +437,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                               return code;
                             };
                             
-                            // If this React component is open in Canvas, show a compact card instead
-                            if (isReactComponent && isOpenInCanvas) {
+                            // Always show React components as cards (never as code blocks)
+                            if (isReactComponent) {
+                              const statusText = isOpenInCanvas ? 'In Canvas' : 'Ready to render';
+                              const showButton = !isOpenInCanvas;
+                              
                               return (
                                 <div className="react-card-container border border-slate-200 dark:border-white/10 p-2 my-4 flex items-center justify-between group hover:bg-slate-50 dark:hover:bg-[#1b1b1d] transition-all rounded-lg max-w-full overflow-hidden min-w-0">
                                   <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -447,40 +450,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                     </div>
                                     <div className="min-w-0 flex-1">
                                       <h4 className="text-xs font-bold uppercase tracking-tight truncate">React Component</h4>
-                                      <p className="text-[9px] text-slate-500 dark:text-slate-400 font-bold uppercase truncate">{language} • Currently in Canvas</p>
-                                    </div>
-                                  </div>
-                                  <div className="react-card-actions flex gap-1 shrink-0">
-                                    <button
-                                      onClick={() => copyCode(code, blockId)}
-                                      className="p-2 border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1b1b1d] hover:bg-slate-50 dark:hover:bg-[#0f0f11] text-[10px] font-mono flex items-center gap-1 rounded transition-colors"
-                                      title="Copy Code"
-                                    >
-                                      {isCopied ? <Check size={14} /> : <Copy size={14} />}
-                                    </button>
-                                    <button
-                                      onClick={() => downloadCode(code, language)}
-                                      className="p-2 border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1b1b1d] hover:bg-slate-50 dark:hover:bg-[#0f0f11] text-[10px] font-mono flex items-center gap-1 rounded transition-colors"
-                                      title="Download"
-                                    >
-                                      <Download size={14} />
-                                    </button>
-                                  </div>
-                                </div>
-                              );
-                            }
-                            
-                            // If it's a React component but Canvas is closed, show card with "Open Canvas" button
-                            if (isReactComponent && !canvasOpen) {
-                              return (
-                                <div className="react-card-container border border-slate-200 dark:border-white/10 p-2 my-4 flex items-center justify-between group hover:bg-slate-50 dark:hover:bg-[#1b1b1d] transition-all rounded-lg max-w-full overflow-hidden min-w-0">
-                                  <div className="flex items-center gap-2 min-w-0 flex-1">
-                                    <div className="border border-slate-200 dark:border-white/10 p-1.5 bg-brand-blue text-white rounded shrink-0">
-                                      <Code size={16} />
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                      <h4 className="text-xs font-bold uppercase tracking-tight truncate">React Component</h4>
-                                      <p className="text-[9px] text-slate-500 dark:text-slate-400 font-bold uppercase truncate">{language} • Ready to render</p>
+                                      <p className="text-[9px] text-slate-500 dark:text-slate-400 font-bold uppercase truncate">{language} • {statusText}</p>
                                     </div>
                                   </div>
                                   <div className="react-card-actions flex gap-1 shrink-0">
@@ -498,24 +468,26 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                     >
                                       <Download size={14} />
                                     </button>
-                                    <button
-                                      onClick={() => {
-                                        setCanvasContent({html: generatePreviewHtml(), code, language, blockId});
-                                        setCanvasEditedCode(code);
-                                        setCanvasOpen(true);
-                                        setCanvasShowCode(false);
-                                        
-                                        if (!codeVersionHistory[blockId]) {
-                                          setCodeVersionHistory(prev => ({
-                                            ...prev,
-                                            [blockId]: {versions: [code], currentIndex: 0}
-                                          }));
-                                        }
-                                      }}
-                                      className="border border-brand-blue px-4 py-2 text-xs font-black uppercase bg-white dark:bg-[#1b1b1d] hover:bg-brand-blue hover:text-white transition-all flex items-center gap-2 rounded"
-                                    >
-                                      Open Canvas <Play size={12} />
-                                    </button>
+                                    {showButton && (
+                                      <button
+                                        onClick={() => {
+                                          setCanvasContent({html: generatePreviewHtml(), code, language, blockId});
+                                          setCanvasEditedCode(code);
+                                          setCanvasOpen(true);
+                                          setCanvasShowCode(false);
+                                          
+                                          if (!codeVersionHistory[blockId]) {
+                                            setCodeVersionHistory(prev => ({
+                                              ...prev,
+                                              [blockId]: {versions: [code], currentIndex: 0}
+                                            }));
+                                          }
+                                        }}
+                                        className="border border-brand-blue px-4 py-2 text-xs font-black uppercase bg-white dark:bg-[#1b1b1d] hover:bg-brand-blue hover:text-white transition-all flex items-center gap-2 rounded"
+                                      >
+                                        Show Preview <Play size={12} />
+                                      </button>
+                                    )}
                                   </div>
                                 </div>
                               );

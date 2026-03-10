@@ -317,6 +317,10 @@ async function initializeApp() {
     PreviewManager.init()
     console.log('Preview system initialized')
     
+    // Initialize semantic patch client
+    window.patchClient = new SemanticPatchClient('http://localhost:5000')
+    console.log('Semantic patch client initialized')
+    
     // Restore chat history if available
     if (chatHistory && chatHistory.length > 0) {
       chatHistory.forEach(msg => {
@@ -555,7 +559,76 @@ async function sendMessage() {
   addChatMessage(instruction, 'user')
   input.value = ''
   
+  // Check if this looks like a patch request (modifying existing code)
+  // Only use patches for clear modification keywords, not creation keywords
+  const isPatchRequest = /^(add|modify|update|change|fix|improve|enhance|refactor|remove|delete|replace|optimize|smooth|faster|slower|better|worse)\s+/i.test(instruction)
+  
+  if (isPatchRequest && Object.keys(files).length > 0) {
+    // Try semantic patch approach first
+    await handleSemanticPatch(instruction)
+  } else {
+    // Fall back to full generation
+    await handleFullGeneration(instruction)
+  }
+}
+
+/**
+ * Handle semantic patch requests - modify existing code intelligently
+ */
+async function handleSemanticPatch(instruction) {
   const loadingMsg = addChatMessage('', 'ai', true)
+  const sendBtn = document.getElementById('sendBtn')
+  const status = document.getElementById('status')
+  
+  isEditing = true
+  sendBtn.disabled = true
+  status.textContent = 'Analyzing files...'
+  status.className = 'status editing'
+  
+  try {
+    updateChatMessage(loadingMsg, '🔍 Searching for relevant files...', 'ai')
+    
+    // Request patches from semantic patch system
+    const result = await window.patchClient.requestPatches(instruction, files)
+    
+    if (result.error) {
+      updateChatMessage(loadingMsg, `⚠️ Patch failed: ${result.error}\n\nTry:\n• Simpler instruction\n• More specific file names\n• Or ask to create new files`, 'ai')
+      return
+    }
+    
+    // Apply patches to local files
+    Object.assign(files, result.files)
+    saveFilesToStorage()
+    updateExplorer()
+    
+    // Show summary
+    const summary = window.patchClient.getSummary(result)
+    updateChatMessage(loadingMsg, summary, 'ai')
+    
+    logActivity(`Applied patches to ${result.results.applied.length} file(s)`, 'success')
+    
+    // Refresh editor if current file was modified
+    if (currentFile && result.results.filesModified.includes(currentFile)) {
+      openFile(currentFile)
+    }
+  } catch (error) {
+    updateChatMessage(loadingMsg, `❌ Error: ${error.message}`, 'error')
+    console.error(error)
+  } finally {
+    isEditing = false
+    sendBtn.disabled = false
+    status.textContent = 'Ready'
+    status.className = 'status ready'
+  }
+}
+
+/**
+ * Handle full code generation requests
+ */
+async function handleFullGeneration(instruction) {
+  const loadingMsg = addChatMessage('', 'ai', true)
+  const sendBtn = document.getElementById('sendBtn')
+  const status = document.getElementById('status')
   
   isEditing = true
   sendBtn.disabled = true
@@ -563,10 +636,9 @@ async function sendMessage() {
   status.className = 'status editing'
   
   try {
-    // Only send instruction - NO FILES unless explicitly needed
     const payload = {
       instruction,
-      files: {}, // Empty - let AI create from scratch
+      files: {},
       currentFile: currentFile
     }
     
@@ -1301,16 +1373,19 @@ function isRenderableFile(filename, content) {
   if (!/export\s+default\s+/m.test(content)) return false
   
   // Check for JSX syntax - more comprehensive patterns
-  const hasJSX = /<[A-Z][a-zA-Z0-9]*[\s>]/.test(content) ||  // <Component> or <Component ...>
-                 /<[a-z]+[\s>]/.test(content) ||              // <div> or <button ...>
-                 /<>/.test(content) ||                         // Fragment <>
-                 /<\//.test(content) ||                        // Closing tag </>
-                 /React\.createElement/.test(content) ||       // React.createElement
-                 /jsx\s*\(/.test(content)                      // jsx() function
+  const hasJSX = /<[A-Z][a-zA-Z0-9]*[\s/>]/m.test(content) ||  // <Component> or <Component ...> or <Component/>
+                 /<[a-z]+[\s/>]/m.test(content) ||              // <div> or <button ...> or <div/>
+                 /<>/m.test(content) ||                         // Fragment <>
+                 /<\//m.test(content) ||                        // Closing tag </
+                 /React\.createElement/m.test(content) ||       // React.createElement
+                 /jsx\s*\(/m.test(content)                      // jsx() function
   
   const hasReactImport = /import\s+.*\s+from\s+['"]react['"]/m.test(content)
   
-  return hasJSX || hasReactImport
+  // If it has export default and imports other components, it's likely renderable
+  const hasComponentImport = /import\s+\w+\s+from\s+['"][./]/m.test(content)
+  
+  return hasJSX || hasReactImport || (hasComponentImport && /return\s*\(/m.test(content))
 }
 
 /**
