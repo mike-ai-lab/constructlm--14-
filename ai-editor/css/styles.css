@@ -486,6 +486,7 @@
       background: #1e1e1e;
       overflow: hidden;
       position: relative;
+      min-height: 0;
     }
     
     .editor-placeholder {
@@ -524,12 +525,14 @@
     }
     
     #editor, #diffEditor {
-      flex: 1;
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 40px;
+      flex: 1 1 auto;
+      min-height: 0;
+      background: #1e1e1e;
+      display: none;
+    }
+    
+    #editor {
+      display: block;
     }
     
     #diffEditor {
@@ -544,11 +547,33 @@
       display: none;
     }
     
+    .simple-editor {
+      flex: 1 1 auto;
+      min-height: 0;
+      background: #1e1e1e;
+      color: #e0e0e0;
+      border: none;
+      padding: 16px;
+      font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      resize: none;
+      outline: none;
+      overflow: auto;
+    }
+    
+    .simple-editor:focus {
+      outline: none;
+      background: #252526;
+    }
+    
+    .simple-editor::selection {
+      background: #0e639c;
+      color: #ffffff;
+    }
+    
     .editor-footer {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
+      flex-shrink: 0;
       background: #1e1e1e;
       border-top: 1px solid #3e3e42;
       padding: 8px 12px;

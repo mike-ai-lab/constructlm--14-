@@ -1,0 +1,173 @@
+/* Clean Editor Styles - No Flickering */
+
+.editor-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #1e1e1e;
+}
+
+.editor-tabs {
+  background: #252526;
+  border-bottom: 1px solid #3e3e42;
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  height: 35px;
+  flex-shrink: 0;
+}
+
+.editor-tabs::-webkit-scrollbar {
+  height: 3px;
+}
+
+.editor-tabs::-webkit-scrollbar-thumb {
+  background: #3e3e42;
+  border-radius: 2px;
+}
+
+.editor-tab {
+  padding: 8px 12px;
+  background: #2d2d30;
+  border-right: 1px solid #3e3e42;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: background 0.2s;
+}
+
+.editor-tab:hover {
+  background: #37373d;
+}
+
+.editor-tab.active {
+  background: #1e1e1e;
+  color: #ffffff;
+  border-bottom: 2px solid #0e639c;
+}
+
+.editor-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+  position: relative;
+}
+
+#editor {
+  flex: 1;
+  min-height: 0;
+  background: #1e1e1e;
+}
+
+#diffEditor {
+  flex: 1;
+  min-height: 0;
+  background: #1e1e1e;
+  display: none;
+}
+
+#diffEditor.show {
+  display: block;
+}
+
+#editor.hide {
+  display: none;
+}
+
+.editor-placeholder {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: #6a6a6a;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.editor-placeholder.hidden {
+  display: none;
+}
+
+.editor-placeholder svg {
+  opacity: 0.3;
+  width: 64px;
+  height: 64px;
+}
+
+.editor-placeholder p {
+  font-size: 16px;
+  font-weight: 500;
+  margin: 0;
+}
+
+.editor-placeholder span {
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+.editor-footer {
+  flex-shrink: 0;
+  background: #1e1e1e;
+  border-top: 1px solid #3e3e42;
+  padding: 8px 12px;
+  font-size: 11px;
+  color: #858585;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 40px;
+}
+
+.diff-actions {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: none;
+  gap: 8px;
+  z-index: 100;
+}
+
+.diff-actions.show {
+  display: flex;
+}
+
+.diff-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.diff-btn-accept {
+  background: #4ec9b0;
+  color: #000;
+}
+
+.diff-btn-accept:hover {
+  background: #5ed9c0;
+}
+
+.diff-btn-reject {
+  background: #f48771;
+  color: #000;
+}
+
+.diff-btn-reject:hover {
+  background: #ff9781;
+}

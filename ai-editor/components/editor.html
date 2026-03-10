@@ -9,17 +9,11 @@
       <p>No file open</p>
       <span>Select a file from the explorer or create a new one</span>
     </div>
-    <div id="editor"></div>
-    <div id="diffEditor"></div>
-
-    <div class="diff-actions" id="diffActions">
-      <button class="diff-btn diff-btn-accept" onclick="acceptChanges()">✓ Accept</button>
-      <button class="diff-btn diff-btn-reject" onclick="rejectChanges()">✗ Reject</button>
-    </div>
+    <textarea id="editor" class="simple-editor" placeholder="Select a file to edit..."></textarea>
 
     <div class="editor-footer">
       <span id="lineInfo">Line 1, Col 1</span>
-      <span id="langInfo">JavaScript</span>
+      <span id="langInfo">Plain Text</span>
     </div>
   </div>
 </div>
