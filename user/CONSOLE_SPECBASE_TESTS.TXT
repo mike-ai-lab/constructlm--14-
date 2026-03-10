@@ -1,44 +1,467 @@
-13:36:35.292 favicon.ico:1  GET http://localhost:5000/favicon.ico 404 (Not Found)
-13:36:40.647 react-dom.production.min.js:121 ReferenceError: useState is not defined
-    at Sidebar (eval at __require (eval at <anonymous> (about:srcdoc:13:30)), <anonymous>:3:1319)
-    at mf (https://unpkg.com/react-dom@18/umd/react-dom.production.min.js:105:412)
-    at Qk (https://unpkg.com/react-dom@18/umd/react-dom.production.min.js:250:214)
-    at Ri (https://unpkg.com/react-dom@18/umd/react-dom.production.min.js:195:185)
-    at Ok (https://unpkg.com/react-dom@18/umd/react-dom.production.min.js:195:116)
-    at Nd (https://unpkg.com/react-dom@18/umd/react-dom.production.min.js:194:492)
-    at Qf (https://unpkg.com/react-dom@18/umd/react-dom.production.min.js:187:439)
-    at Ni (https://unpkg.com/react-dom@18/umd/react-dom.production.min.js:185:400)
-    at S (https://unpkg.com/react@18/umd/react.production.min.js:17:25)
-    at MessagePort.U (https://unpkg.com/react@18/umd/react.production.min.js:21:229)
-wf @ react-dom.production.min.js:121
-c.callback @ react-dom.production.min.js:121
-Hh @ react-dom.production.min.js:103
-Ji @ react-dom.production.min.js:180
-Hi @ react-dom.production.min.js:179
-Hk @ react-dom.production.min.js:178
-Rk @ react-dom.production.min.js:197
-xb @ react-dom.production.min.js:196
-Ni @ react-dom.production.min.js:186
-S @ react.production.min.js:17
-U @ react.production.min.js:21
-13:36:40.648 react-dom.production.min.js:198 Uncaught ReferenceError: useState is not defined
-    at Sidebar (eval at __require (eval at <anonymous> (about:srcdoc:13:30)), <anonymous>:3:1319)
-    at mf (https://unpkg.com/react-dom@18/umd/react-dom.production.min.js:105:412)
-    at Qk (https://unpkg.com/react-dom@18/umd/react-dom.production.min.js:250:214)
-    at Ri (https://unpkg.com/react-dom@18/umd/react-dom.production.min.js:195:185)
-    at Ok (https://unpkg.com/react-dom@18/umd/react-dom.production.min.js:195:116)
-    at Nd (https://unpkg.com/react-dom@18/umd/react-dom.production.min.js:194:492)
-    at Qf (https://unpkg.com/react-dom@18/umd/react-dom.production.min.js:187:439)
-    at Ni (https://unpkg.com/react-dom@18/umd/react-dom.production.min.js:185:400)
-    at S (https://unpkg.com/react@18/umd/react.production.min.js:17:25)
-    at MessagePort.U (https://unpkg.com/react@18/umd/react.production.min.js:21:229)
-Sidebar @ VM8441:3
-mf @ react-dom.production.min.js:105
-Qk @ react-dom.production.min.js:250
-Ri @ react-dom.production.min.js:195
-Ok @ react-dom.production.min.js:195
-Nd @ react-dom.production.min.js:194
-Qf @ react-dom.production.min.js:187
-Ni @ react-dom.production.min.js:185
-S @ react.production.min.js:17
-U @ react.production.min.js:21
+14:21:40.851 app.js:83 Retrying Monaco initialization...
+14:21:40.851 installHook.js:1 Editor container #editor not found! Available elements: (3) ['app', 'dev-wand-floating-btn', 'dev-wand-visual-editor-btn']
+overrideMethod @ installHook.js:1
+initializeMonacoEditor @ app.js:78
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:55
+setTimeout
+(anonymous) @ app.js:44
+Promise.then
+initializeApp @ app.js:40
+14:21:41.358 app.js:83 Retrying Monaco initialization...
+14:21:41.358 installHook.js:1 Editor container #editor not found! Available elements: (3) ['app', 'dev-wand-floating-btn', 'dev-wand-visual-editor-btn']
+overrideMethod @ installHook.js:1
+initializeMonacoEditor @ app.js:78
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:55
+setTimeout
+(anonymous) @ app.js:44
+Promise.then
+initializeApp @ app.js:40
+14:21:41.872 app.js:83 Retrying Monaco initialization...
+14:21:41.872 installHook.js:1 Editor container #editor not found! Available elements: (3) ['app', 'dev-wand-floating-btn', 'dev-wand-visual-editor-btn']
+overrideMethod @ installHook.js:1
+initializeMonacoEditor @ app.js:78
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:55
+setTimeout
+(anonymous) @ app.js:44
+Promise.then
+initializeApp @ app.js:40
+14:21:42.388 app.js:83 Retrying Monaco initialization...
+14:21:42.389  Editor container #editor not found! Available elements: (3) ['app', 'dev-wand-floating-btn', 'dev-wand-visual-editor-btn']
+overrideMethod @ chrome-extension://f…ld/installHook.js:1
+initializeMonacoEditor @ app.js:78
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:55
+setTimeout
+(anonymous) @ app.js:44
+Promise.then
+initializeApp @ app.js:40
+14:21:42.556 Navigated to http://localhost:5000/
+14:21:42.742 app.js:32 Initializing AI Code Editor...
+14:21:42.818 app.js:41 All components loaded
+14:21:42.843 favicon.ico:1  GET http://localhost:5000/favicon.ico 404 (Not Found)
+14:21:42.854 app.js:62 Fetch finished loading: GET "http://localhost:5000/components/header.html".
+loadComponent @ app.js:62
+initializeApp @ app.js:36
+14:21:42.859 app.js:62 Fetch finished loading: GET "http://localhost:5000/components/explorer.html".
+loadComponent @ app.js:62
+initializeApp @ app.js:37
+14:21:42.875 app.js:62 Fetch finished loading: GET "http://localhost:5000/components/editor.html".
+loadComponent @ app.js:62
+initializeApp @ app.js:38
+14:21:42.876 app.js:62 Fetch finished loading: GET "http://localhost:5000/components/chat.html".
+loadComponent @ app.js:62
+initializeApp @ app.js:39
+14:21:42.920 app.js:345 Preview system initialized
+14:21:42.920 app.js:349 Semantic patch client initialized
+14:21:42.922 installHook.js:1 Editor container #editor not found! Available elements: (3) ['app', 'dev-wand-floating-btn', 'dev-wand-visual-editor-btn']
+overrideMethod @ installHook.js:1
+initializeMonacoEditor @ app.js:78
+(anonymous) @ app.js:55
+setTimeout
+(anonymous) @ app.js:44
+Promise.then
+initializeApp @ app.js:40
+14:21:43.431 app.js:83 Retrying Monaco initialization...
+14:21:43.432 installHook.js:1 Editor container #editor not found! Available elements: (3) ['app', 'dev-wand-floating-btn', 'dev-wand-visual-editor-btn']
+overrideMethod @ installHook.js:1
+initializeMonacoEditor @ app.js:78
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:55
+setTimeout
+(anonymous) @ app.js:44
+Promise.then
+initializeApp @ app.js:40
+14:21:43.943 app.js:83 Retrying Monaco initialization...
+14:21:43.943 installHook.js:1 Editor container #editor not found! Available elements: (3) ['app', 'dev-wand-floating-btn', 'dev-wand-visual-editor-btn']
+overrideMethod @ installHook.js:1
+initializeMonacoEditor @ app.js:78
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:55
+setTimeout
+(anonymous) @ app.js:44
+Promise.then
+initializeApp @ app.js:40
+14:21:44.459 app.js:83 Retrying Monaco initialization...
+14:21:44.460 installHook.js:1 Editor container #editor not found! Available elements: (3) ['app', 'dev-wand-floating-btn', 'dev-wand-visual-editor-btn']
+overrideMethod @ installHook.js:1
+initializeMonacoEditor @ app.js:78
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:55
+setTimeout
+(anonymous) @ app.js:44
+Promise.then
+initializeApp @ app.js:40
+14:21:44.976 app.js:83 Retrying Monaco initialization...
+14:21:44.977 installHook.js:1 Editor container #editor not found! Available elements: (3) ['app', 'dev-wand-floating-btn', 'dev-wand-visual-editor-btn']
+overrideMethod @ installHook.js:1
+initializeMonacoEditor @ app.js:78
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:55
+setTimeout
+(anonymous) @ app.js:44
+Promise.then
+initializeApp @ app.js:40
+14:21:45.486 app.js:83 Retrying Monaco initialization...
+14:21:45.487 installHook.js:1 Editor container #editor not found! Available elements: (3) ['app', 'dev-wand-floating-btn', 'dev-wand-visual-editor-btn']
+overrideMethod @ installHook.js:1
+initializeMonacoEditor @ app.js:78
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:55
+setTimeout
+(anonymous) @ app.js:44
+Promise.then
+initializeApp @ app.js:40
+14:21:45.997 app.js:83 Retrying Monaco initialization...
+14:21:45.998 installHook.js:1 Editor container #editor not found! Available elements: (3) ['app', 'dev-wand-floating-btn', 'dev-wand-visual-editor-btn']
+overrideMethod @ installHook.js:1
+initializeMonacoEditor @ app.js:78
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:55
+setTimeout
+(anonymous) @ app.js:44
+Promise.then
+initializeApp @ app.js:40
+14:21:46.513 app.js:83 Retrying Monaco initialization...
+14:21:46.514 installHook.js:1 Editor container #editor not found! Available elements: (3) ['app', 'dev-wand-floating-btn', 'dev-wand-visual-editor-btn']
+overrideMethod @ installHook.js:1
+initializeMonacoEditor @ app.js:78
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:55
+setTimeout
+(anonymous) @ app.js:44
+Promise.then
+initializeApp @ app.js:40
+14:21:47.031 app.js:83 Retrying Monaco initialization...
+14:21:47.032 installHook.js:1 Editor container #editor not found! Available elements: (3) ['app', 'dev-wand-floating-btn', 'dev-wand-visual-editor-btn']
+overrideMethod @ installHook.js:1
+initializeMonacoEditor @ app.js:78
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:55
+setTimeout
+(anonymous) @ app.js:44
+Promise.then
+initializeApp @ app.js:40
+14:21:47.537 app.js:83 Retrying Monaco initialization...
+14:21:47.537 installHook.js:1 Editor container #editor not found! Available elements: (3) ['app', 'dev-wand-floating-btn', 'dev-wand-visual-editor-btn']
+overrideMethod @ installHook.js:1
+initializeMonacoEditor @ app.js:78
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:55
+setTimeout
+(anonymous) @ app.js:44
+Promise.then
+initializeApp @ app.js:40
+14:21:48.051 app.js:83 Retrying Monaco initialization...
+14:21:48.051 installHook.js:1 Editor container #editor not found! Available elements: (3) ['app', 'dev-wand-floating-btn', 'dev-wand-visual-editor-btn']
+overrideMethod @ installHook.js:1
+initializeMonacoEditor @ app.js:78
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:84
+setTimeout
+initializeMonacoEditor @ app.js:82
+(anonymous) @ app.js:55
+setTimeout
+(anonymous) @ app.js:44
+Promise.then
+initializeApp @ app.js:40
