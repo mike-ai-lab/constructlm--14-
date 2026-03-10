@@ -114,9 +114,9 @@ function transformCode(code: string, imports: Array<{source: string; specifiers:
   transformed = injections.join('\n') + '\n\n' + transformed;
   
   // Transform export
-  transformed = transformed
-    .replace(/export\s+default\s+function\s+(\w+)/m, 'const Component = function $1')
-    .replace(/export\s+default\s+/m, 'const Component = ');
+    transformed = transformed
+      .replace(/export\s+default\s+function\s+(\w+)/, 'function $1')
+      .replace(/export\s+default\s+/, 'const Component = ');
   
   return transformed.trim();
 }
@@ -244,7 +244,7 @@ export function generateBundledPreview(code: string, language: string): BundleRe
           
           const { useState, useEffect, useRef, useCallback, useMemo, useContext, useReducer, createElement, Fragment } = window.React;
           
-          const sourceCode = ${JSON.stringify(transformedCode)};
+          const sourceCode = decodeURIComponent("${encodeURIComponent(transformedCode)}");
           
           console.log('[Canvas] Compiling component...');
           

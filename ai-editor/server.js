@@ -149,6 +149,100 @@ app.get("/health", (req, res) => {
   res.json({ status: "ok", groqConfigured: !!GROQ_API_KEY })
 })
 
+// Simple runtime bundler endpoint to support the in-browser preview.
+app.post('/runtime-bundle', (req, res) => {
+  try {
+    const { files: postedFiles, entry, code, language } = req.body || {}
+    let entryCode = ''
+
+    if (code && typeof code === 'string') {
+      entryCode = code
+    } else if (postedFiles && entry && postedFiles[entry]) {
+      entryCode = postedFiles[entry]
+    } else if (postedFiles && Object.keys(postedFiles).length > 0) {
+      const firstKey = Object.keys(postedFiles)[0]
+      entryCode = postedFiles[firstKey]
+    } else {
+      return res.status(400).json({ error: 'No code or files provided' })
+    }
+
+    // Minimal HTML wrapper that uses Babel in the iframe to compile TSX/JSX
+    const safeCode = String(entryCode).replace(/<\/script>/gi, '<\\/script>')
+    const encoded = Buffer.from(safeCode, 'utf8').toString('base64')
+
+    const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>body{margin:0;font-family:Inter,system-ui,Arial,sans-serif}#root{padding:20px}</style>
+</head>
+<body>
+  <div id="root"></div>
+  <script>
+    (function(){
+      try{
+        function b64ToUtf8(b64) {
+          return decodeURIComponent(Array.prototype.map.call(atob(b64), function(c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+          }).join(''));
+        }
+        const sourceCode = b64ToUtf8('${encoded}');
+        const compiled = Babel.transform(sourceCode, { presets: ['react','typescript'], filename: 'component.tsx' }).code;
+        const execute = new Function('React','ReactDOM', compiled + '\nreturn typeof Component !== "undefined" ? Component : null;');
+        const Component = execute(window.React, window.ReactDOM);
+        if (!Component) {
+          document.getElementById('root').innerHTML = '<div style="color:orange">No component found to render</div>';
+        } else {
+          const root = window.ReactDOM.createRoot(document.getElementById('root'));
+          root.render(React.createElement(Component));
+        }
+      } catch (err) {
+        document.getElementById('root').innerHTML = '<pre style="color:red">' + String(err.message || err) + '\n' + String(err.stack || '') + '</pre>';
+        console.error('Bundler exec error', err);
+      }
+    })();
+  </script>
+</body>
+</html>`
+
+    return res.json({ html })
+  } catch (error) {
+    console.error('runtime-bundle error', error)
+    return res.status(500).json({ error: error.message || String(error) })
+  }
+})
+
+// Backwards-compatible alias
+app.post('/bundle', (req, res) => {
+  try {
+    const { files: postedFiles, entry, code } = req.body || {}
+    let entryCode = ''
+
+    if (code && typeof code === 'string') {
+      entryCode = code
+    } else if (postedFiles && entry && postedFiles[entry]) {
+      entryCode = postedFiles[entry]
+    } else if (postedFiles && Object.keys(postedFiles).length > 0) {
+      const firstKey = Object.keys(postedFiles)[0]
+      entryCode = postedFiles[firstKey]
+    } else {
+      return res.status(400).json({ error: 'No code or files provided' })
+    }
+
+    const safeCode = String(entryCode).replace(/<\/script>/gi, '<\\/script>')
+    const encoded = Buffer.from(safeCode, 'utf8').toString('base64')
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8" /><meta name="viewport" content="width=device-width,initial-scale=1" /><script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script><script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script><script src="https://unpkg.com/@babel/standalone/babel.min.js"></script><style>body{margin:0;font-family:Inter,system-ui,Arial,sans-serif}#root{padding:20px}</style></head><body><div id="root"></div><script>(function(){try;function b64ToUtf8(b64){return decodeURIComponent(Array.prototype.map.call(atob(b64),function(c){return'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)}).join(''))}const sourceCode=b64ToUtf8('${encoded}');const compiled=Babel.transform(sourceCode,{presets:['react','typescript'],filename:'component.tsx'}).code;const execute=new Function('React','ReactDOM',compiled+'\nreturn typeof Component !== "undefined" ? Component : null;');const Component=execute(window.React,window.ReactDOM);if(!Component){document.getElementById('root').innerHTML='<div style="color:orange">No component found to render</div>'}else{const root=window.ReactDOM.createRoot(document.getElementById('root'));root.render(React.createElement(Component))}}catch(err){document.getElementById('root').innerHTML='<pre style="color:red">'+String(err.message||err)+'\n'+String(err.stack||'')+'</pre>';console.error('Bundler exec error',err)}})();</script></body></html>`
+    return res.json({ html })
+  } catch (error) {
+    console.error('bundle alias error', error)
+    return res.status(500).json({ error: error.message || String(error) })
+  }
+})
+
 const PORT = process.env.PORT || 3000
 app.listen(PORT, () => {
   console.log(`✓ AI Code Editor running on http://localhost:${PORT}`)
