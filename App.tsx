@@ -19,6 +19,7 @@ const App: React.FC = () => {
   const [isStreaming, setIsStreaming] = useState(false);
   const [aiModel, setAiModel] = useState<'gemini' | 'cerebras' | 'groq' | 'openrouter'>('cerebras');
   const [selectedModel, setSelectedModel] = useState('llama3.1-8b');
+  const [selectedOpenRouterModel, setSelectedOpenRouterModel] = useState('openai/gpt-oss-20b:free');
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(300);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);

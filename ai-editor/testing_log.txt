@@ -1,0 +1,147 @@
+06:15:16.513 Navigated to http://localhost:3000/
+06:15:17.125 app.js:258 Fetch finished loading: GET "http://localhost:3000/components/header.html".
+initializeApp @ app.js:258
+06:15:17.150 favicon.ico:1  GET http://localhost:3000/favicon.ico 404 (Not Found)
+06:15:17.204 app.js:262 Fetch finished loading: GET "http://localhost:3000/components/explorer.html".
+initializeApp @ app.js:262
+06:15:17.208 app.js:266 Fetch finished loading: GET "http://localhost:3000/components/editor.html".
+initializeApp @ app.js:266
+06:15:17.218 app.js:270 Fetch finished loading: GET "http://localhost:3000/components/chat.html".
+initializeApp @ app.js:270
+06:15:17.301 app.js:318 Preview system initialized
+06:15:18.585 app.js:425 Monaco editors initialized successfully
+06:15:21.881 app.js:1434 Fetch finished loading: POST "http://localhost:3000/runtime-bundle".
+open @ app.js:1434
+action @ app.js:1154
+menuItem.onclick @ app.js:1178
+06:15:23.786 VM3446 about:srcdoc:187 Module loaded: gemcomonent.tsx Type: object Keys: ['default']
+06:15:23.786 VM3446 about:srcdoc:207 Final component: function ƒ ImageCarousel() {
+  var images = [{
+    src: "https://via.placeholder.com/1200x600/D3D3D3/000000?text=External+Plastering",
+    alt: "External cement plastering work in progress, related to Saveto Pr…
+06:15:23.812 react-dom.production.min.js:121 Error: Minified React error #130; visit https://reactjs.org/docs/error-decoder.html?invariant=130&args[]=undefined&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at rd (react-dom.production.min.js:206:306)
+    at v (react-dom.production.min.js:94:136)
+    at aa (react-dom.production.min.js:123:401)
+    at Qk (react-dom.production.min.js:253:416)
+    at Ri (react-dom.production.min.js:195:185)
+    at Ok (react-dom.production.min.js:195:116)
+    at Nd (react-dom.production.min.js:194:492)
+    at Qf (react-dom.production.min.js:187:439)
+    at Ni (react-dom.production.min.js:185:400)
+    at S (react.production.min.js:17:25)
+    at MessagePort.U (react.production.min.js:21:229)
+wf @ react-dom.production.min.js:121
+c.callback @ react-dom.production.min.js:121
+Hh @ react-dom.production.min.js:103
+Ji @ react-dom.production.min.js:180
+Hi @ react-dom.production.min.js:179
+Hk @ react-dom.production.min.js:178
+Rk @ react-dom.production.min.js:197
+xb @ react-dom.production.min.js:196
+Ni @ react-dom.production.min.js:186
+S @ react.production.min.js:17
+U @ react.production.min.js:21
+06:15:23.813 react-dom.production.min.js:121 Error: Minified React error #130; visit https://reactjs.org/docs/error-decoder.html?invariant=130&args[]=undefined&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at rd (react-dom.production.min.js:206:306)
+    at v (react-dom.production.min.js:94:136)
+    at aa (react-dom.production.min.js:123:401)
+    at Qk (react-dom.production.min.js:253:416)
+    at Ri (react-dom.production.min.js:195:185)
+    at Ok (react-dom.production.min.js:195:116)
+    at Nd (react-dom.production.min.js:194:492)
+    at Qf (react-dom.production.min.js:187:439)
+    at Ni (react-dom.production.min.js:185:400)
+    at S (react.production.min.js:17:25)
+    at MessagePort.U (react.production.min.js:21:229)
+wf @ react-dom.production.min.js:121
+c.callback @ react-dom.production.min.js:121
+Hh @ react-dom.production.min.js:103
+Ji @ react-dom.production.min.js:180
+Hi @ react-dom.production.min.js:179
+Hk @ react-dom.production.min.js:178
+Rk @ react-dom.production.min.js:197
+xb @ react-dom.production.min.js:196
+Ni @ react-dom.production.min.js:186
+S @ react.production.min.js:17
+U @ react.production.min.js:21
+06:15:23.813 react-dom.production.min.js:121 Error: Minified React error #130; visit https://reactjs.org/docs/error-decoder.html?invariant=130&args[]=undefined&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at rd (react-dom.production.min.js:206:306)
+    at v (react-dom.production.min.js:94:136)
+    at aa (react-dom.production.min.js:123:401)
+    at Qk (react-dom.production.min.js:253:416)
+    at Ri (react-dom.production.min.js:195:185)
+    at Ok (react-dom.production.min.js:195:116)
+    at Nd (react-dom.production.min.js:194:492)
+    at Qf (react-dom.production.min.js:187:439)
+    at Ni (react-dom.production.min.js:185:400)
+    at S (react.production.min.js:17:25)
+    at MessagePort.U (react.production.min.js:21:229)
+wf @ react-dom.production.min.js:121
+c.callback @ react-dom.production.min.js:121
+Hh @ react-dom.production.min.js:103
+Ji @ react-dom.production.min.js:180
+Hi @ react-dom.production.min.js:179
+Hk @ react-dom.production.min.js:178
+Rk @ react-dom.production.min.js:197
+xb @ react-dom.production.min.js:196
+Ni @ react-dom.production.min.js:186
+S @ react.production.min.js:17
+U @ react.production.min.js:21
+06:15:23.814 react-dom.production.min.js:121 Error: Minified React error #130; visit https://reactjs.org/docs/error-decoder.html?invariant=130&args[]=undefined&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at rd (react-dom.production.min.js:206:306)
+    at v (react-dom.production.min.js:94:136)
+    at aa (react-dom.production.min.js:123:401)
+    at Qk (react-dom.production.min.js:253:416)
+    at Ri (react-dom.production.min.js:195:185)
+    at Ok (react-dom.production.min.js:195:116)
+    at Nd (react-dom.production.min.js:194:492)
+    at Qf (react-dom.production.min.js:187:439)
+    at Ni (react-dom.production.min.js:185:400)
+    at S (react.production.min.js:17:25)
+    at MessagePort.U (react.production.min.js:21:229)
+wf @ react-dom.production.min.js:121
+c.callback @ react-dom.production.min.js:121
+Hh @ react-dom.production.min.js:103
+Ji @ react-dom.production.min.js:180
+Hi @ react-dom.production.min.js:179
+Hk @ react-dom.production.min.js:178
+Rk @ react-dom.production.min.js:197
+xb @ react-dom.production.min.js:196
+Ni @ react-dom.production.min.js:186
+S @ react.production.min.js:17
+U @ react.production.min.js:21
+06:15:23.814 react-dom.production.min.js:206 Uncaught Error: Minified React error #130; visit https://reactjs.org/docs/error-decoder.html?invariant=130&args[]=undefined&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings.
+    at rd (react-dom.production.min.js:206:306)
+    at v (react-dom.production.min.js:94:136)
+    at aa (react-dom.production.min.js:123:401)
+    at Qk (react-dom.production.min.js:253:416)
+    at Ri (react-dom.production.min.js:195:185)
+    at Ok (react-dom.production.min.js:195:116)
+    at Nd (react-dom.production.min.js:194:492)
+    at Qf (react-dom.production.min.js:187:439)
+    at Ni (react-dom.production.min.js:185:400)
+    at S (react.production.min.js:17:25)
+    at MessagePort.U (react.production.min.js:21:229)
+rd @ react-dom.production.min.js:206
+v @ react-dom.production.min.js:94
+aa @ react-dom.production.min.js:123
+Qk @ react-dom.production.min.js:253
+Ri @ react-dom.production.min.js:195
+Ok @ react-dom.production.min.js:195
+Nd @ react-dom.production.min.js:194
+Qf @ react-dom.production.min.js:187
+Ni @ react-dom.production.min.js:185
+S @ react.production.min.js:17
+U @ react.production.min.js:21
+06:15:26.734 via.placeholder.com/1200x600/D3D3D3/000000?text=External+Plastering:1  GET https://via.placeholder.com/1200x600/D3D3D3/000000?text=External+Plastering net::ERR_NAME_NOT_RESOLVED
+Image
+$d @ react-dom.production.min.js:16
+xk @ react-dom.production.min.js:152
+Qi @ react-dom.production.min.js:195
+Ri @ react-dom.production.min.js:195
+Ok @ react-dom.production.min.js:195
+Nd @ react-dom.production.min.js:194
+Ni @ react-dom.production.min.js:185
+S @ react.production.min.js:17
+U @ react.production.min.js:21

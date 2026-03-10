@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Preview Detection Debugger</title>
+  <style>
+    body {
+      font-family: monospace;
+      padding: 20px;
+      background: #1e1e1e;
+      color: #e0e0e0;
+    }
+    .test {
+      background: #252526;
+      border: 1px solid #3e3e42;
+      border-radius: 4px;
+      padding: 16px;
+      margin: 16px 0;
+    }
+    .pass { border-left: 4px solid #4ec9b0; }
+    .fail { border-left: 4px solid #f48771; }
+    .code {
+      background: #1e1e1e;
+      padding: 8px;
+      border-radius: 4px;
+      margin: 8px 0;
+      white-space: pre-wrap;
+      font-size: 12px;
+    }
+    h1 { color: #569cd6; }
+    h2 { color: #4ec9b0; font-size: 16px; }
+    .result { font-weight: bold; margin-top: 8px; }
+    .pass .result { color: #4ec9b0; }
+    .fail .result { color: #f48771; }
+  </style>
+</head>
+<body>
+  <h1>🔍 Preview Detection Debugger</h1>
+  <p>This tool tests if your files will show the preview option.</p>
+
+  <div id="tests"></div>
+
+  <script>
+    // Copy the isRenderableFile function from app.js
+    function isRenderableFile(filename, content) {
+      if (!filename || !content) return false
+      
+      if (!/\.(tsx?|jsx?)$/i.test(filename)) return false
+      if (!/export\s+default\s+/m.test(content)) return false
+      
+      // Check for JSX syntax - more comprehensive patterns
+      const hasJSX = /<[A-Z][a-zA-Z0-9]*[\s>]/.test(content) ||  // <Component> or <Component ...>
+                     /<[a-z]+[\s>]/.test(content) ||              // <div> or <button ...>
+                     /<>/.test(content) ||                         // Fragment <>
+                     /<\//.test(content) ||                        // Closing tag </>
+                     /React\.createElement/.test(content) ||       // React.createElement
+                     /jsx\s*\(/.test(content)                      // jsx() function
+      
+      const hasReactImport = /import\s+.*\s+from\s+['"]react['"]/m.test(content)
+      
+      return hasJSX || hasReactImport
+    }
+
+    // Test cases
+    const tests = [
+      {
+        name: 'Valid Button Component',
+        filename: 'Button.tsx',
+        content: `export default function Button() {
+  return <button>Click</button>;
+}`,
+        expected: true
+      },
+      {
+        name: 'Valid with React Import',
+        filename: 'Component.tsx',
+        content: `import React from 'react';
+
+export default function Component() {
+  return React.createElement('div', {}, 'Hello');
+}`,
+        expected: true
+      },
+      {
+        name: 'Missing export default',
+        filename: 'Button.tsx',
+        content: `function Button() {
+  return <button>Click</button>;
+}`,
+        expected: false
+      },
+      {
+        name: 'No JSX or React import',
+        filename: 'utils.ts',
+        content: `export default function add(a, b) {
+  return a + b;
+}`,
+        expected: false
+      },
+      {
+        name: 'Wrong extension',
+        filename: 'component.js',
+        content: `export default function Component() {
+  return <div>Test</div>;
+}`,
+        expected: true // .js with JSX should work
+      },
+      {
+        name: 'Fragment syntax',
+        filename: 'Fragment.tsx',
+        content: `export default function Fragment() {
+  return <>Hello</>;
+}`,
+        expected: true
+      },
+      {
+        name: 'Class component',
+        filename: 'ClassComp.tsx',
+        content: `import React from 'react';
+
+export default class ClassComp extends React.Component {
+  render() {
+    return <div>Class</div>;
+  }
+}`,
+        expected: true
+      },
+      {
+        name: 'Arrow function',
+        filename: 'Arrow.tsx',
+        content: `const Arrow = () => <div>Arrow</div>;
+
+export default Arrow;`,
+        expected: true
+      }
+    ];
+
+    // Run tests
+    const container = document.getElementById('tests');
+    
+    tests.forEach(test => {
+      const result = isRenderableFile(test.filename, test.content);
+      const passed = result === test.expected;
+      
+      const div = document.createElement('div');
+      div.className = `test ${passed ? 'pass' : 'fail'}`;
+      div.innerHTML = `
+        <h2>${test.name}</h2>
+        <div><strong>File:</strong> ${test.filename}</div>
+        <div class="code">${test.content}</div>
+        <div class="result">
+          ${passed ? '✅ PASS' : '❌ FAIL'} - 
+          Expected: ${test.expected}, Got: ${result}
+        </div>
+      `;
+      container.appendChild(div);
+    });
+
+    // Add custom test section
+    const customTest = document.createElement('div');
+    customTest.innerHTML = `
+      <h1 style="margin-top: 40px;">🧪 Test Your Own Code</h1>
+      <div style="background: #252526; padding: 16px; border-radius: 4px;">
+        <div style="margin-bottom: 12px;">
+          <label>Filename: </label>
+          <input type="text" id="customFilename" value="MyComponent.tsx" 
+                 style="background: #1e1e1e; color: #e0e0e0; border: 1px solid #3e3e42; padding: 4px 8px; border-radius: 4px; width: 200px;">
+        </div>
+        <div style="margin-bottom: 12px;">
+          <label>Code:</label><br>
+          <textarea id="customCode" rows="10" 
+                    style="background: #1e1e1e; color: #e0e0e0; border: 1px solid #3e3e42; padding: 8px; border-radius: 4px; width: 100%; font-family: monospace; font-size: 12px;">export default function MyComponent() {
+  return <div>Test</div>;
+}</textarea>
+        </div>
+        <button onclick="testCustom()" 
+                style="background: #0e639c; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-weight: bold;">
+          Test
+        </button>
+        <div id="customResult" style="margin-top: 12px; font-size: 14px;"></div>
+      </div>
+    `;
+    container.appendChild(customTest);
+
+    window.testCustom = function() {
+      const filename = document.getElementById('customFilename').value;
+      const content = document.getElementById('customCode').value;
+      const result = isRenderableFile(filename, content);
+      
+      const resultDiv = document.getElementById('customResult');
+      resultDiv.innerHTML = `
+        <div style="background: ${result ? '#4ec9b0' : '#f48771'}22; border: 1px solid ${result ? '#4ec9b0' : '#f48771'}; padding: 12px; border-radius: 4px;">
+          <strong>${result ? '✅ WILL SHOW PREVIEW' : '❌ WON\'T SHOW PREVIEW'}</strong><br><br>
+          ${result ? 
+            'This file will show the "👁 Preview Component" option in the context menu.' : 
+            'This file will NOT show the preview option. Check:<br>• Has .tsx/.jsx/.ts/.js extension<br>• Has "export default"<br>• Has JSX syntax or React import'
+          }
+        </div>
+      `;
+    };
+  </script>
+</body>
+</html>

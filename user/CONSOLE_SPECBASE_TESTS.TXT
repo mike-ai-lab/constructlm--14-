@@ -1,0 +1,35 @@
+06:43:03.986 index-BfB1FYep.js:2338 PDF.js worker configured: https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.624/build/pdf.worker.min.mjs
+06:43:07.729 index-BfB1FYep.js:505 🔍 DEBUG: Chat area width: 814.90625px
+06:43:07.729 index-BfB1FYep.js:505 🔍 DEBUG: Message container width: 754.90625px
+06:43:07.729 index-BfB1FYep.js:505 🔍 DEBUG: Canvas open: true
+06:43:07.729 index-BfB1FYep.js:505 🔍 DEBUG: React component cards found: 2
+06:43:07.729 index-BfB1FYep.js:505 🔍 DEBUG: Card 1:
+06:43:07.729 index-BfB1FYep.js:505   - Card width: 695.90625px
+06:43:07.729 index-BfB1FYep.js:505   - Card scrollWidth: 694px
+06:43:07.730 index-BfB1FYep.js:505   - Parent width: 695.90625px
+06:43:07.730 index-BfB1FYep.js:505   - Overflowing: false
+06:43:07.730 index-BfB1FYep.js:505   - Card classes: react-card-container border border-slate-200 dark:border-white/10 p-2 my-4 flex items-center justify-between group hover:bg-slate-50 dark:hover:bg-[#1b1b1d] transition-all rounded-lg max-w-full overflow-hidden min-w-0
+06:43:07.730 index-BfB1FYep.js:505 🔍 DEBUG: Card 2:
+06:43:07.730 index-BfB1FYep.js:505   - Card width: 695.90625px
+06:43:07.730 index-BfB1FYep.js:505   - Card scrollWidth: 694px
+06:43:07.730 index-BfB1FYep.js:505   - Parent width: 695.90625px
+06:43:07.730 index-BfB1FYep.js:505   - Overflowing: false
+06:43:07.730 index-BfB1FYep.js:505   - Card classes: react-card-container border border-slate-200 dark:border-white/10 p-2 my-4 flex items-center justify-between group hover:bg-slate-50 dark:hover:bg-[#1b1b1d] transition-all rounded-lg max-w-full overflow-hidden min-w-0
+06:45:49.620 index-BfB1FYep.js:2564 [RAG Query] DESIGN A REACT COMPONENT FOR A CAROUSEL WITH 4 VERTICAL IMAGES THAT SLIDES LEFT AND RIGHT AS SMOOTH AS BUTTER
+06:45:49.621 index-BfB1FYep.js:2338 🔄 Loading embedding model (Xenova/all-MiniLM-L6-v2)...
+06:46:20.914 index-BfB1FYep.js:2338 ✅ Embedding model loaded successfully
+06:46:21.105 index-BfB1FYep.js:2340 Searching across 0 chunks from 0 enabled files (0 total)
+06:46:21.105 index-BfB1FYep.js:2340 Top 10 scores before filtering:
+06:46:21.105 index-BfB1FYep.js:2340 Found 0 relevant chunks (threshold: 0.15)
+06:46:21.107 index-BfB1FYep.js:2564 [Citations Found] 0 sources:
+06:46:23.756 index-BfB1FYep.js:2533  POST https://openrouter.ai/api/v1/chat/completions 429 (Too Many Requests)
+streamChatResponse @ index-BfB1FYep.js:2533
+Ie @ index-BfB1FYep.js:2564
+06:46:23.757 installHook.js:1 Chat Error Error: OpenRouter API error: {"error":{"message":"Provider returned error","code":429,"metadata":{"raw":"openai/gpt-oss-20b:free is temporarily rate-limited upstream. Please retry shortly, or add your own key to accumulate your rate limits: https://openrouter.ai/settings/integrations","provider_name":"OpenInference","is_byok":false}},"user_id":"user_34QZB6xa4VoqIWLF4xtvE7tU1th"}
+    at Module.streamChatResponse (index-BfB1FYep.js:2533:694)
+    at async Ie (index-BfB1FYep.js:2564:1668)
+overrideMethod @ installHook.js:1
+Ie @ index-BfB1FYep.js:2564
+06:46:23.760 index-BfB1FYep.js:2533 Fetch failed loading: POST "https://openrouter.ai/api/v1/chat/completions".
+streamChatResponse @ index-BfB1FYep.js:2533
+Ie @ index-BfB1FYep.js:2564

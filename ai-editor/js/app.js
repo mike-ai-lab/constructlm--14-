@@ -5,21 +5,166 @@ let diffEditor
 let isEditing = false
 let pendingCode = null
 let originalCode = null
-let files = {}
-let currentFile = 'index.js'
-let previewTimer = null
+let files = {} // Now supports nested structure: { 'folder/file.js': 'content', 'file.js': 'content' }
+let currentFile = null // null when no file is open
+let openTabs = [] // Array of open file paths
+let selectedFiles = new Set()
+let draggedItem = null
+let expandedFolders = new Set()
+let activityLogVisible = false
 
 // Storage keys
 const STORAGE_KEY = 'aiEditorFiles'
 const CURRENT_FILE_KEY = 'aiEditorCurrentFile'
+const OPEN_TABS_KEY = 'aiEditorOpenTabs'
 const CHAT_HISTORY_KEY = 'aiEditorChatHistory'
-const PREVIEW_VISIBLE_KEY = 'aiEditorPreviewVisible'
+const EXPANDED_FOLDERS_KEY = 'aiEditorExpandedFolders'
+
+// Activity Log Functions
+function logActivity(message, type = 'info') {
+  const logContent = document.getElementById('activityLogContent')
+  if (!logContent) return
+  
+  const item = document.createElement('div')
+  item.className = `activity-item ${type}`
+  
+  const icon = type === 'success' ? '✓' : type === 'error' ? '✗' : 'ℹ'
+  const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  
+  item.innerHTML = `
+    <span class="activity-icon">${icon}</span>
+    <span>${message}</span>
+    <span class="activity-time">${time}</span>
+  `
+  
+  logContent.appendChild(item)
+  logContent.scrollTop = logContent.scrollHeight
+  
+  // Keep only last 100 items
+  while (logContent.children.length > 100) {
+    logContent.removeChild(logContent.firstChild)
+  }
+}
+
+function toggleActivityLog() {
+  activityLogVisible = !activityLogVisible
+  const log = document.getElementById('activityLog')
+  if (log) {
+    if (activityLogVisible) {
+      log.classList.add('show')
+    } else {
+      log.classList.remove('show')
+    }
+  }
+}
+
+function clearActivityLog() {
+  const logContent = document.getElementById('activityLogContent')
+  if (logContent) {
+    logContent.innerHTML = ''
+  }
+  logActivity('Activity log cleared', 'info')
+}
+
+// Tab Management Functions
+function updateTabs() {
+  const tabsContainer = document.getElementById('editorTabs')
+  if (!tabsContainer) return
+  
+  tabsContainer.innerHTML = ''
+  
+  openTabs.forEach(filePath => {
+    if (!files[filePath]) return // Skip if file was deleted
+    
+    const fileName = filePath.split('/').pop()
+    const ext = fileName.split('.').pop().toLowerCase()
+    const iconClass = ['js', 'ts', 'jsx', 'tsx', 'html', 'css', 'json', 'md'].includes(ext) ? ext : 'default'
+    const iconText = getFileIconText(ext)
+    
+    const tab = document.createElement('div')
+    tab.className = `editor-tab ${filePath === currentFile ? 'active' : ''}`
+    tab.setAttribute('data-file', filePath)
+    
+    tab.innerHTML = `
+      <div class="tab-icon ${iconClass}">${iconText}</div>
+      <span class="tab-name">${fileName}</span>
+      <span class="tab-close">×</span>
+    `
+    
+    tab.onclick = (e) => {
+      if (e.target.classList.contains('tab-close')) {
+        e.stopPropagation()
+        closeTab(filePath)
+      } else {
+        openFile(filePath)
+      }
+    }
+    
+    tabsContainer.appendChild(tab)
+  })
+}
+
+function closeTab(filePath) {
+  const tabIndex = openTabs.indexOf(filePath)
+  if (tabIndex === -1) return
+  
+  openTabs.splice(tabIndex, 1)
+  
+  // If closing current file, switch to another tab or show placeholder
+  if (filePath === currentFile) {
+    if (openTabs.length > 0) {
+      // Switch to previous tab or first tab
+      const newIndex = Math.max(0, tabIndex - 1)
+      openFile(openTabs[newIndex])
+    } else {
+      currentFile = null
+      showPlaceholder()
+    }
+  }
+  
+  updateTabs()
+  saveFilesToStorage()
+}
+
+function showPlaceholder() {
+  const placeholder = document.getElementById('editorPlaceholder')
+  const editorDiv = document.getElementById('editor')
+  const diffEditor = document.getElementById('diffEditor')
+  
+  if (placeholder) {
+    placeholder.classList.remove('hidden')
+    placeholder.style.display = 'flex'
+  }
+  if (editorDiv) {
+    editorDiv.style.display = 'none'
+  }
+  if (diffEditor) {
+    diffEditor.style.display = 'none'
+  }
+  
+  currentFile = null
+}
+
+function hidePlaceholder() {
+  const placeholder = document.getElementById('editorPlaceholder')
+  const editorDiv = document.getElementById('editor')
+  
+  if (placeholder) {
+    placeholder.classList.add('hidden')
+    placeholder.style.display = 'none'
+  }
+  if (editorDiv) {
+    editorDiv.style.display = 'block'
+  }
+}
 
 // localStorage functions
 function saveFilesToStorage() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(files))
-    localStorage.setItem(CURRENT_FILE_KEY, currentFile)
+    localStorage.setItem(CURRENT_FILE_KEY, currentFile || '')
+    localStorage.setItem(OPEN_TABS_KEY, JSON.stringify(openTabs))
+    localStorage.setItem(EXPANDED_FOLDERS_KEY, JSON.stringify([...expandedFolders]))
   } catch (error) {
     console.warn('Failed to save to localStorage:', error)
   }
@@ -29,13 +174,25 @@ function loadFilesFromStorage() {
   try {
     const stored = localStorage.getItem(STORAGE_KEY)
     const storedCurrentFile = localStorage.getItem(CURRENT_FILE_KEY)
+    const storedTabs = localStorage.getItem(OPEN_TABS_KEY)
+    const storedExpanded = localStorage.getItem(EXPANDED_FOLDERS_KEY)
     
     if (stored) {
       files = JSON.parse(stored)
     }
     
+    if (storedTabs) {
+      openTabs = JSON.parse(storedTabs).filter(path => files[path]) // Only keep tabs for existing files
+    }
+    
     if (storedCurrentFile && files[storedCurrentFile]) {
       currentFile = storedCurrentFile
+    } else if (openTabs.length > 0) {
+      currentFile = openTabs[0]
+    }
+    
+    if (storedExpanded) {
+      expandedFolders = new Set(JSON.parse(storedExpanded))
     }
     
     return Object.keys(files).length > 0
@@ -110,10 +267,6 @@ async function initializeApp() {
       if (!r.ok) throw new Error(`Failed to load editor: ${r.status}`)
       return r.text()
     })
-    const previewHTML = await fetch(basePath + 'components/preview.html').then(r => {
-      if (!r.ok) throw new Error(`Failed to load preview: ${r.status}`)
-      return r.text()
-    })
     const chatHTML = await fetch(basePath + 'components/chat.html').then(r => {
       if (!r.ok) throw new Error(`Failed to load chat: ${r.status}`)
       return r.text()
@@ -124,7 +277,6 @@ async function initializeApp() {
       <div class="container">
         ${explorerHTML}
         ${editorHTML}
-        ${previewHTML}
         ${chatHTML}
       </div>
     `
@@ -132,50 +284,38 @@ async function initializeApp() {
     // Load saved files and chat history
     const hasStoredFiles = loadFilesFromStorage()
 
-    // If no files are stored, seed with a ready-to-use React canvas component
+    // If no files are stored, seed with a default file
     if (!hasStoredFiles) {
-      const gradientCanvas = `export default function GradientCanvas() {
-  const canvasRef = React.useRef(null)
-  React.useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-    const w = canvas.width = 400
-    const h = canvas.height = 400
-    const gradient = ctx.createLinearGradient(0, 0, w, h)
-    gradient.addColorStop(0, '#1e3a8a')
-    gradient.addColorStop(1, '#9333ea')
-    ctx.fillStyle = gradient
-    ctx.fillRect(0, 0, w, h)
-    ctx.beginPath()
-    ctx.arc(w/2, h/2, 60, 0, Math.PI * 2)
-    ctx.fillStyle = 'rgba(255,255,255,0.9)'
-    ctx.shadowBlur = 20
-    ctx.shadowColor = 'rgba(255,255,255,0.6)'
-    ctx.fill()
-  }, [])
-
-  return React.createElement('canvas', { ref: canvasRef, width: 400, height: 400, style: { borderRadius: 8, display: 'block' } })
+      files['index.js'] = `function hello() {
+  console.log("Hello World!")
 }`
-
-      files['GradientCanvas.tsx'] = gradientCanvas
-      currentFile = 'GradientCanvas.tsx'
+      currentFile = null // Start with no file open
+      openTabs = []
       saveFilesToStorage()
     }
-    const chatHistory = loadChatHistory()
     
-    // Restore preview visibility state
-    restorePreviewVisibility()
+    const chatHistory = loadChatHistory()
     
     // Initialize Monaco editors after DOM is ready
     initializeMonacoEditors()
     
-    // Update file explorer with any loaded files
+    // Update file explorer and tabs
     updateExplorer()
+    updateTabs()
+    
+    // Open current file if exists
+    if (currentFile && files[currentFile]) {
+      openFile(currentFile)
+    } else {
+      showPlaceholder()
+    }
     
     // Setup event listeners
     setupEventListeners()
+    
+    // Initialize preview system
+    PreviewManager.init()
+    console.log('Preview system initialized')
     
     // Restore chat history if available
     if (chatHistory && chatHistory.length > 0) {
@@ -241,6 +381,7 @@ function initializeMonacoEditors() {
       } catch (e) {
         console.warn('Could not set TypeScript compiler options:', e)
       }
+      
       // Diff editor
       const diffContainer = document.getElementById('diffEditor')
       if (!diffContainer) {
@@ -275,19 +416,10 @@ function initializeMonacoEditors() {
         }, 500)
       })
       
-      // Setup preview auto-refresh
-      setupPreviewAutoRefresh()
-      
       // Ensure explorer reflects loaded files and open current file
       updateExplorer()
       if (files[currentFile]) {
         openFile(currentFile)
-      }
-      
-      // If preview is visible, render initial content
-      const previewSection = document.querySelector('.preview-section')
-      if (previewSection && !previewSection.classList.contains('hidden')) {
-        refreshPreview()
       }
       
       console.log('Monaco editors initialized successfully')
@@ -314,7 +446,7 @@ function setupEventListeners() {
   sendBtn.addEventListener('click', sendMessage)
 }
 
-// Chat message functions
+// Chat message functions (only for user/AI conversation)
 function addChatMessage(text, type = 'ai', isLoading = false) {
   const messagesDiv = document.getElementById('chatMessages')
   const messageDiv = document.createElement('div')
@@ -389,13 +521,13 @@ function acceptChanges() {
       editor.setValue(pendingCode.code)
     }
     hideDiff()
-    addChatMessage('✓ Changes applied', 'ai')
+    logActivity('Changes applied', 'success')
   }
 }
 
 function rejectChanges() {
   hideDiff()
-  addChatMessage('✗ Changes rejected', 'ai')
+  logActivity('Changes rejected', 'info')
 }
 
 function hideDiff() {
@@ -431,14 +563,14 @@ async function sendMessage() {
   status.className = 'status editing'
   
   try {
-    // Send ALL files as working set context
+    // Only send instruction - NO FILES unless explicitly needed
     const payload = {
       instruction,
-      files: files,
+      files: {}, // Empty - let AI create from scratch
       currentFile: currentFile
     }
     
-    const res = await fetch('http://localhost:3000/edit', {
+    const res = await fetch('http://localhost:5000/edit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -454,29 +586,31 @@ async function sendMessage() {
     loadingMsg.remove()
     
     if (data.files) {
-      // Multi-file response - update all files
+      // Multi-file response - add to ROOT only
       Object.entries(data.files).forEach(([filename, content]) => {
-        files[filename] = content
+        // Extract just the filename, ignore any path
+        const justFilename = filename.split('/').pop()
+        files[justFilename] = content
       })
       
       saveFilesToStorage()
       updateExplorer()
       
-      // Open first modified file
-      const firstFile = Object.keys(data.files)[0]
-      if (firstFile) {
+      // Open first file
+      const firstFile = Object.keys(data.files)[0].split('/').pop()
+      if (firstFile && files[firstFile]) {
         openFile(firstFile)
       }
       
-      addChatMessage(`✓ Generated ${Object.keys(data.files).length} file(s)`, 'ai')
+      logActivity(`Generated ${Object.keys(data.files).length} file(s)`, 'success')
     } else if (data.code) {
-      // Single file response (backward compat)
+      // Single file response
       files[currentFile] = data.code
       editor.setValue(data.code)
       saveFilesToStorage()
-      addChatMessage('✓ Code generated', 'ai')
+      logActivity('Code generated', 'success')
     } else {
-      addChatMessage('No code generated', 'ai')
+      logActivity('No code generated', 'info')
     }
   } catch (error) {
     updateChatMessage(loadingMsg, '✗ Error: ' + error.message, 'error')
@@ -489,96 +623,29 @@ async function sendMessage() {
   }
 }
 
-// Context building
-function buildContext(code, position, selection) {
-  const lines = code.split('\n')
-  const totalLines = lines.length
-  
-  // Extract imports and exports (symbols)
-  const symbols = extractSymbols(code)
-  
-  // If user has selection, use only that
-  if (selection && !selection.isEmpty()) {
-    const selectedCode = editor.getModel().getValueInRange(selection)
-    return {
-      mode: 'selection',
-      selectedCode,
-      symbols,
-      startLine: selection.startLineNumber,
-      endLine: selection.endLineNumber,
-      totalLines
-    }
-  }
-  
-  // Otherwise use cursor window (100 lines above/below)
-  const cursorLine = position.lineNumber
-  const windowSize = 100
-  const startLine = Math.max(1, cursorLine - windowSize)
-  const endLine = Math.min(totalLines, cursorLine + windowSize)
-  
-  const contextLines = lines.slice(startLine - 1, endLine)
-  const contextCode = contextLines.join('\n')
-  
-  return {
-    mode: 'window',
-    contextCode,
-    symbols,
-    cursorLine,
-    startLine,
-    endLine,
-    totalLines
-  }
-}
-
-function extractSymbols(code) {
-  const symbols = {
-    imports: [],
-    exports: [],
-    functions: [],
-    classes: []
-  }
-  
-  const lines = code.split('\n')
-  
-  lines.forEach(line => {
-    const trimmed = line.trim()
-    
-    // Extract imports
-    if (trimmed.startsWith('import ')) {
-      symbols.imports.push(trimmed)
-    }
-    
-    // Extract exports
-    if (trimmed.startsWith('export ')) {
-      const match = trimmed.match(/export (?:default |const |function |class )?(\w+)/)
-      if (match) symbols.exports.push(match[1])
-    }
-    
-    // Extract function names
-    const funcMatch = trimmed.match(/(?:function|const|let|var)\s+(\w+)\s*[=\(]/)
-    if (funcMatch) symbols.functions.push(funcMatch[1])
-    
-    // Extract class names
-    const classMatch = trimmed.match(/class\s+(\w+)/)
-    if (classMatch) symbols.classes.push(classMatch[1])
-  })
-  
-  return symbols
-}
-
 function newFile() {
   saveCurrentFile()
-  const filename = prompt('Enter filename (e.g., index.js, style.css, index.html):')
-  if (filename) {
-    files[filename] = ''
-    currentFile = filename
-    editor.setValue('')
-    const model = editor.getModel()
-    const language = getLanguage(filename)
-    monaco.editor.setModelLanguage(model, language)
+  const filename = prompt('Enter filename (e.g., index.js, folder/file.js):')
+  if (filename && filename.trim()) {
+    const trimmed = filename.trim()
+    files[trimmed] = ''
+    
+    // Auto-expand parent folders
+    const parts = trimmed.split('/')
+    if (parts.length > 1) {
+      let path = ''
+      for (let i = 0; i < parts.length - 1; i++) {
+        path += (path ? '/' : '') + parts[i]
+        expandedFolders.add(path)
+      }
+    }
+    
     updateExplorer()
     saveFilesToStorage()
-    addChatMessage(`Created ${filename}. Describe what you want!`, 'ai')
+    
+    // Open the new file
+    openFile(trimmed)
+    logActivity(`Created ${trimmed}`, 'success')
   }
 }
 
@@ -605,561 +672,844 @@ function saveCurrentFile() {
 
 function openFile(filename) {
   if (!editor) {
-    console.warn('Editor is not initialized.');
-    return;
+    console.warn('Editor is not initialized.')
+    return
   }
-  saveCurrentFile();
-  currentFile = filename;
+  
+  saveCurrentFile()
+  currentFile = filename
 
   if (!files[filename]) {
-    files[filename] = '';
+    files[filename] = ''
+  }
+  
+  // Add to open tabs if not already there
+  if (!openTabs.includes(filename)) {
+    openTabs.push(filename)
   }
 
-  editor.setValue(files[filename]);
-  saveFilesToStorage();
+  editor.setValue(files[filename])
+  hidePlaceholder()
+  saveFilesToStorage()
 
   // Set language correctly
-  const model = editor.getModel();
-  const language = getLanguage(filename);
-  monaco.editor.setModelLanguage(model, language);
+  const model = editor.getModel()
+  const language = getLanguage(filename)
+  monaco.editor.setModelLanguage(model, language)
 
+  // Update explorer active state
   document.querySelectorAll('.file-item').forEach(item => {
-    item.classList.remove('active');
-  });
-  document.querySelector(`[data-file="${filename}"]`)?.classList.add('active');
+    item.classList.remove('active')
+  })
+  document.querySelector(`[data-file="${filename}"]`)?.classList.add('active')
 
-  // Always show editor when opening a file
-  const editorDiv = document.getElementById('editor');
+  // Update tabs
+  updateTabs()
+  
+  // Ensure editor is visible
+  const editorDiv = document.getElementById('editor')
   if (editorDiv) {
-    editorDiv.classList.remove('hide');
-    if (editor) editor.layout();
-  }
-
-  // Refresh preview for new file if visible
-  const previewSection = document.querySelector('.preview-section');
-  if (previewSection && !previewSection.classList.contains('hidden')) {
-    refreshPreview();
+    editorDiv.classList.remove('hide')
+    if (editor) editor.layout()
   }
 }
 
 function closeFile(filename, e) {
   e.stopPropagation()
+  
+  if (!confirm(`Delete "${filename}"?`)) return
+  
   delete files[filename]
   
+  // Remove from open tabs
+  const tabIndex = openTabs.indexOf(filename)
+  if (tabIndex !== -1) {
+    openTabs.splice(tabIndex, 1)
+  }
+  
+  // If closing current file, switch to another or show placeholder
   if (currentFile === filename) {
-    const remaining = Object.keys(files)
-    currentFile = remaining.length > 0 ? remaining[0] : 'index.js'
-    if (remaining.length > 0) {
-      openFile(currentFile)
+    if (openTabs.length > 0) {
+      openFile(openTabs[0])
     } else {
-      editor.setValue('')
+      currentFile = null
+      showPlaceholder()
     }
   }
   
   saveFilesToStorage()
   updateExplorer()
+  updateTabs()
 }
 
 function updateExplorer() {
   const explorer = document.getElementById('explorerFiles')
   explorer.innerHTML = ''
   
-  Object.keys(files).forEach(filename => {
-    const item = document.createElement('div')
-    item.className = `file-item ${filename === currentFile ? 'active' : ''}`
-    item.setAttribute('data-file', filename)
-    item.innerHTML = `
-      <span class="file-name">${filename}</span>
-      <span class="file-close" onclick="closeFile('${filename}', event)">×</span>
-    `
-    item.onclick = () => openFile(filename)
-    explorer.appendChild(item)
+  // Build tree structure
+  const tree = buildFileTree(files)
+  
+  // Render tree
+  renderTree(tree, explorer, '')
+  
+  // Setup drag and drop on explorer
+  setupExplorerDragDrop()
+}
+
+function buildFileTree(files) {
+  const tree = { folders: {}, files: [] }
+  
+  Object.keys(files).forEach(path => {
+    const parts = path.split('/')
+    
+    if (parts.length === 1) {
+      // Root level file
+      tree.files.push(path)
+    } else {
+      // Nested file
+      let current = tree
+      for (let i = 0; i < parts.length - 1; i++) {
+        const folder = parts[i]
+        if (!current.folders[folder]) {
+          current.folders[folder] = { folders: {}, files: [] }
+        }
+        current = current.folders[folder]
+      }
+      current.files.push(path)
+    }
   })
+  
+  return tree
+}
+
+function renderTree(tree, container, prefix) {
+  // Render folders first
+  Object.keys(tree.folders).sort().forEach(folderName => {
+    const folderPath = prefix ? `${prefix}/${folderName}` : folderName
+    const isExpanded = expandedFolders.has(folderPath)
+    
+    const folderDiv = document.createElement('div')
+    folderDiv.className = 'folder-item'
+    
+    const folderHeader = document.createElement('div')
+    folderHeader.className = 'folder-header'
+    folderHeader.setAttribute('data-path', folderPath)
+    folderHeader.innerHTML = `
+      <svg class="folder-chevron ${isExpanded ? 'expanded' : ''}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="9 18 15 12 9 6"/>
+      </svg>
+      <svg class="folder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+      </svg>
+      <span class="folder-name">${folderName}</span>
+      <span class="file-close" onclick="deleteFolder('${folderPath}', event)">×</span>
+    `
+    
+    folderHeader.onclick = (e) => {
+      if (e.target.classList.contains('file-close')) return
+      toggleFolder(folderPath)
+    }
+    
+    folderHeader.oncontextmenu = (e) => {
+      e.preventDefault()
+      showContextMenu(e, folderPath, true)
+    }
+    
+    // Drag and drop for folders
+    folderHeader.draggable = true
+    folderHeader.ondragstart = (e) => handleDragStart(e, folderPath, true)
+    folderHeader.ondragover = (e) => handleDragOver(e)
+    folderHeader.ondrop = (e) => handleDrop(e, folderPath, true)
+    folderHeader.ondragleave = (e) => handleDragLeave(e)
+    folderHeader.ondragend = (e) => handleDragEnd(e)
+    
+    const folderContents = document.createElement('div')
+    folderContents.className = `folder-contents ${isExpanded ? 'expanded' : ''}`
+    
+    folderDiv.appendChild(folderHeader)
+    folderDiv.appendChild(folderContents)
+    container.appendChild(folderDiv)
+    
+    if (isExpanded) {
+      renderTree(tree.folders[folderName], folderContents, folderPath)
+    }
+  })
+  
+  // Render files
+  tree.files.sort().forEach(filePath => {
+    const fileName = filePath.split('/').pop()
+    const item = document.createElement('div')
+    item.className = `file-item ${filePath === currentFile ? 'active' : ''} ${selectedFiles.has(filePath) ? 'selected' : ''}`
+    item.setAttribute('data-file', filePath)
+    
+    const ext = fileName.split('.').pop().toLowerCase()
+    const iconClass = ['js', 'ts', 'jsx', 'tsx', 'html', 'css', 'json', 'md'].includes(ext) ? ext : 'default'
+    const iconText = getFileIconText(ext)
+    
+    item.innerHTML = `
+      <div class="file-icon ${iconClass}">${iconText}</div>
+      <span class="file-name">${fileName}</span>
+      <span class="file-close" onclick="closeFile('${filePath}', event)">×</span>
+    `
+    
+    item.onclick = (e) => {
+      if (e.target.classList.contains('file-close')) return
+      
+      if (e.ctrlKey || e.metaKey) {
+        toggleFileSelection(filePath)
+      } else if (e.shiftKey && selectedFiles.size > 0) {
+        selectFileRange(filePath)
+      } else {
+        selectedFiles.clear()
+        openFile(filePath)
+      }
+      updateExplorer()
+    }
+    
+    item.oncontextmenu = (e) => {
+      e.preventDefault()
+      if (!selectedFiles.has(filePath)) {
+        selectedFiles.clear()
+        selectedFiles.add(filePath)
+        updateExplorer()
+      }
+      showContextMenu(e, filePath, false)
+    }
+    
+    // Drag and drop
+    item.draggable = true
+    item.ondragstart = (e) => handleDragStart(e, filePath, false)
+    item.ondragover = (e) => handleDragOver(e)
+    item.ondrop = (e) => handleDrop(e, filePath, false)
+    item.ondragleave = (e) => handleDragLeave(e)
+    item.ondragend = (e) => handleDragEnd(e)
+    
+    container.appendChild(item)
+  })
+}
+
+function getFileIconText(ext) {
+  const icons = {
+    'js': 'JS',
+    'ts': 'TS',
+    'jsx': '<>',
+    'tsx': '<>',
+    'html': '<>',
+    'css': '{}',
+    'json': '{}',
+    'md': 'MD'
+  }
+  return icons[ext] || '•'
+}
+
+function toggleFolder(folderPath) {
+  if (expandedFolders.has(folderPath)) {
+    expandedFolders.delete(folderPath)
+  } else {
+    expandedFolders.add(folderPath)
+  }
+  saveFilesToStorage()
+  updateExplorer()
+}
+
+function toggleFileSelection(filePath) {
+  if (selectedFiles.has(filePath)) {
+    selectedFiles.delete(filePath)
+  } else {
+    selectedFiles.add(filePath)
+  }
+}
+
+function selectFileRange(endPath) {
+  const allFiles = Object.keys(files).sort()
+  const lastSelected = [...selectedFiles][selectedFiles.size - 1]
+  const startIdx = allFiles.indexOf(lastSelected)
+  const endIdx = allFiles.indexOf(endPath)
+  
+  if (startIdx !== -1 && endIdx !== -1) {
+    const [min, max] = [Math.min(startIdx, endIdx), Math.max(startIdx, endIdx)]
+    for (let i = min; i <= max; i++) {
+      selectedFiles.add(allFiles[i])
+    }
+  }
+}
+
+function newFolder() {
+  const folderName = prompt('Enter folder name:')
+  if (folderName && folderName.trim()) {
+    const sanitized = folderName.trim().replace(/[^a-zA-Z0-9_-]/g, '-')
+    
+    // Create a placeholder file to make the folder exist
+    const placeholderPath = `${sanitized}/.gitkeep`
+    files[placeholderPath] = ''
+    
+    // Add to expanded folders so it shows open
+    expandedFolders.add(sanitized)
+    
+    saveFilesToStorage()
+    updateExplorer()
+    logActivity(`Created folder: ${sanitized}`, 'success')
+  }
+}
+
+function deleteFolder(folderPath, e) {
+  e.stopPropagation()
+  
+  if (!confirm(`Delete folder "${folderPath}" and all its contents?`)) return
+  
+  // Delete all files in folder
+  Object.keys(files).forEach(path => {
+    if (path.startsWith(folderPath + '/')) {
+      delete files[path]
+    }
+  })
+  
+  expandedFolders.delete(folderPath)
+  saveFilesToStorage()
+  updateExplorer()
+  logActivity(`Deleted folder: ${folderPath}`, 'success')
+}
+
+function uploadFiles() {
+  document.getElementById('fileUploadInput').click()
+}
+
+async function handleFileUpload(event) {
+  const uploadedFiles = event.target.files
+  if (!uploadedFiles || uploadedFiles.length === 0) return
+  
+  for (const file of uploadedFiles) {
+    try {
+      const content = await readFileContent(file)
+      const fileName = file.name
+      files[fileName] = content
+      logActivity(`Uploaded: ${fileName}`, 'success')
+    } catch (error) {
+      logActivity(`Failed to upload ${file.name}: ${error.message}`, 'error')
+    }
+  }
+  
+  saveFilesToStorage()
+  updateExplorer()
+  
+  // Reset input
+  event.target.value = ''
+}
+
+function readFileContent(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (e) => resolve(e.target.result)
+    reader.onerror = (e) => reject(new Error('Failed to read file'))
+    reader.readAsText(file)
+  })
+}
+
+function setupExplorerDragDrop() {
+  const explorerFiles = document.getElementById('explorerFiles')
+  
+  explorerFiles.ondragover = (e) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'copy'
+  }
+  
+  explorerFiles.ondrop = async (e) => {
+    e.preventDefault()
+    
+    const items = e.dataTransfer.items
+    if (!items) return
+    
+    for (const item of items) {
+      if (item.kind === 'file') {
+        const file = item.getAsFile()
+        if (file) {
+          try {
+            const content = await readFileContent(file)
+            files[file.name] = content
+            logActivity(`Dropped: ${file.name}`, 'success')
+          } catch (error) {
+            logActivity(`Failed to read ${file.name}`, 'error')
+          }
+        }
+      }
+    }
+    
+    saveFilesToStorage()
+    updateExplorer()
+  }
+}
+
+function handleDragStart(e, path, isFolder) {
+  draggedItem = { path, isFolder }
+  e.target.classList.add('dragging')
+  e.dataTransfer.effectAllowed = 'move'
+  e.dataTransfer.setData('text/plain', path)
+}
+
+function handleDragOver(e) {
+  e.preventDefault()
+  e.stopPropagation()
+  e.dataTransfer.dropEffect = 'move'
+  
+  const target = e.currentTarget
+  if (target.classList.contains('folder-header')) {
+    target.classList.add('drag-over')
+  }
+}
+
+function handleDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over')
+}
+
+function handleDrop(e, targetPath, isTargetFolder) {
+  e.preventDefault()
+  e.stopPropagation()
+  e.currentTarget.classList.remove('drag-over')
+  
+  if (!draggedItem) return
+  
+  const sourcePath = draggedItem.path
+  
+  // Can't drop on itself
+  if (sourcePath === targetPath) return
+  
+  // Move to folder
+  if (isTargetFolder) {
+    moveToFolder(sourcePath, targetPath, draggedItem.isFolder)
+  }
+}
+
+function handleDragEnd(e) {
+  e.target.classList.remove('dragging')
+  draggedItem = null
+  
+  // Clean up all drag-over classes
+  document.querySelectorAll('.drag-over').forEach(el => {
+    el.classList.remove('drag-over')
+  })
+}
+
+function moveToFolder(sourcePath, targetFolder, isSourceFolder) {
+  const sourceName = sourcePath.split('/').pop()
+  const newPath = `${targetFolder}/${sourceName}`
+  
+  if (isSourceFolder) {
+    // Move entire folder
+    const filesToMove = Object.keys(files).filter(path => path.startsWith(sourcePath + '/'))
+    filesToMove.forEach(oldPath => {
+      const relativePath = oldPath.substring(sourcePath.length + 1)
+      const newFullPath = `${newPath}/${relativePath}`
+      files[newFullPath] = files[oldPath]
+      delete files[oldPath]
+    })
+    
+    expandedFolders.delete(sourcePath)
+    expandedFolders.add(newPath)
+  } else {
+    // Move single file
+    if (files[newPath]) {
+      if (!confirm(`File ${newPath} already exists. Overwrite?`)) return
+    }
+    
+    files[newPath] = files[sourcePath]
+    delete files[sourcePath]
+    
+    if (currentFile === sourcePath) {
+      currentFile = newPath
+    }
+  }
+  
+  saveFilesToStorage()
+  updateExplorer()
+  logActivity(`Moved ${sourcePath} to ${targetFolder}`, 'success')
+}
+
+function showContextMenu(e, path, isFolder) {
+  e.preventDefault()
+  
+  // Remove existing context menu
+  const existing = document.querySelector('.context-menu')
+  if (existing) existing.remove()
+  
+  const menu = document.createElement('div')
+  menu.className = 'context-menu show'
+  menu.style.left = e.pageX + 'px'
+  menu.style.top = e.pageY + 'px'
+  
+  // Check if file is renderable for preview option
+  const canPreview = !isFolder && 
+                     files[path] && 
+                     isRenderableFile(path, files[path])
+  
+  const items = isFolder ? [
+    { label: 'New File in Folder', action: () => newFileInFolder(path) },
+    { label: 'New Subfolder', action: () => newSubfolder(path) },
+    { label: 'Rename', action: () => renameItem(path, true) },
+    { separator: true },
+    { label: 'Delete Folder', action: () => deleteFolder(path, { stopPropagation: () => {} }) }
+  ] : [
+    ...(canPreview ? [
+      { 
+        label: '👁 Preview Component', 
+        action: () => PreviewManager.open(path),
+        icon: true
+      },
+      { separator: true }
+    ] : []),
+    { label: 'Rename', action: () => renameItem(path, false) },
+    { label: 'Duplicate', action: () => duplicateFile(path) },
+    { separator: true },
+    { label: 'Delete', action: () => closeFile(path, { stopPropagation: () => {} }) }
+  ]
+  
+  items.forEach(item => {
+    if (item.separator) {
+      const sep = document.createElement('div')
+      sep.className = 'context-menu-separator'
+      menu.appendChild(sep)
+    } else {
+      const menuItem = document.createElement('div')
+      menuItem.className = 'context-menu-item'
+      if (item.icon) {
+        menuItem.style.fontWeight = '500'
+      }
+      menuItem.textContent = item.label
+      menuItem.onclick = () => {
+        item.action()
+        menu.remove()
+      }
+      menu.appendChild(menuItem)
+    }
+  })
+  
+  document.body.appendChild(menu)
+  
+  // Close menu on click outside
+  setTimeout(() => {
+    document.addEventListener('click', function closeMenu() {
+      menu.remove()
+      document.removeEventListener('click', closeMenu)
+    })
+  }, 0)
+}
+
+function newFileInFolder(folderPath) {
+  const fileName = prompt('Enter file name:')
+  if (fileName && fileName.trim()) {
+    const newPath = `${folderPath}/${fileName.trim()}`
+    files[newPath] = ''
+    expandedFolders.add(folderPath)
+    saveFilesToStorage()
+    updateExplorer()
+    openFile(newPath)
+    logActivity(`Created ${newPath}`, 'success')
+  }
+}
+
+function newSubfolder(parentPath) {
+  const folderName = prompt('Enter subfolder name:')
+  if (folderName && folderName.trim()) {
+    const sanitized = folderName.trim().replace(/[^a-zA-Z0-9_-]/g, '-')
+    const newPath = `${parentPath}/${sanitized}`
+    // Just add to expanded folders, no placeholder file
+    expandedFolders.add(parentPath)
+    expandedFolders.add(newPath)
+    saveFilesToStorage()
+    updateExplorer()
+    logActivity(`Created folder: ${newPath}`, 'success')
+  }
+}
+
+function renameItem(oldPath, isFolder) {
+  const oldName = oldPath.split('/').pop()
+  const newName = prompt(`Rename ${isFolder ? 'folder' : 'file'}:`, oldName)
+  
+  if (!newName || newName.trim() === '' || newName === oldName) return
+  
+  const pathParts = oldPath.split('/')
+  pathParts[pathParts.length - 1] = newName.trim()
+  const newPath = pathParts.join('/')
+  
+  if (isFolder) {
+    // Rename folder and all contents
+    Object.keys(files).forEach(path => {
+      if (path.startsWith(oldPath + '/')) {
+        const newFullPath = path.replace(oldPath, newPath)
+        files[newFullPath] = files[path]
+        delete files[path]
+      }
+    })
+    
+    if (expandedFolders.has(oldPath)) {
+      expandedFolders.delete(oldPath)
+      expandedFolders.add(newPath)
+    }
+  } else {
+    // Rename file
+    files[newPath] = files[oldPath]
+    delete files[oldPath]
+    
+    if (currentFile === oldPath) {
+      currentFile = newPath
+    }
+  }
+  
+  saveFilesToStorage()
+  updateExplorer()
+  logActivity(`Renamed to ${newPath}`, 'success')
+}
+
+function duplicateFile(filePath) {
+  const fileName = filePath.split('/').pop()
+  const baseName = fileName.substring(0, fileName.lastIndexOf('.')) || fileName
+  const ext = fileName.includes('.') ? fileName.substring(fileName.lastIndexOf('.')) : ''
+  
+  let counter = 1
+  let newPath
+  do {
+    const newName = `${baseName}-copy${counter}${ext}`
+    newPath = filePath.replace(fileName, newName)
+    counter++
+  } while (files[newPath])
+  
+  files[newPath] = files[filePath]
+  saveFilesToStorage()
+  updateExplorer()
+  logActivity(`Duplicated to ${newPath}`, 'success')
 }
 
 function copyCode() {
   const code = editor.getValue()
   navigator.clipboard.writeText(code).then(() => {
-    addChatMessage('✓ Code copied to clipboard', 'ai')
+    logActivity('Code copied to clipboard', 'success')
   }).catch(() => {
-    addChatMessage('✗ Failed to copy', 'ai')
+    logActivity('Failed to copy code', 'error')
   })
 }
 
-// Preview functions
-function refreshPreview() {
-  clearTimeout(previewTimer)
-  previewTimer = setTimeout(() => {
-    if (!editor) {
-      console.warn('Editor is not initialized.');
-      return;
-    }
-    const code = editor.getValue();
-    const filename = currentFile;
-    const ext = filename.split('.').pop().toLowerCase();
+// ============================================================================
+// PREVIEW SYSTEM
+// ============================================================================
 
-    try {
-      if (!isPreviewableFile(filename, code)) {
-        showPreviewError('Preview unavailable for this file. Supported: .html, .jsx, .tsx, .js, .ts (React/JSX files only)');
-        return;
-      }
-
-      if (ext === 'html') {
-        renderHTMLPreview(code);
-      } else {
-        renderReactPreview(code);
-      }
-    } catch (error) {
-      showPreviewError(error.message);
-    }
-  }, 200)
-}
-
-function isPreviewableFile(filename, code = '') {
-  const ext = filename.split('.').pop().toLowerCase();
-  const previewable = ['html', 'jsx', 'tsx', 'js', 'ts'];
-  if (!previewable.includes(ext)) return false;
-  if (ext === 'html') return true;
-  // For plain js/ts, require JSX/react hints
-  const reactHint = /\bReact\b/.test(code) || /from ['\"]react['\"]/.test(code) || /<\s*[A-Z]/.test(code) || /ReactDOM/.test(code) || /createRoot\(/.test(code);
-  return ext === 'jsx' || ext === 'tsx' || reactHint;
-}
-
-function renderHTMLPreview(html) {
-  const frame = document.getElementById('previewFrame')
-  if (!frame) return
+/**
+ * Check if a file is renderable (has React component with export default)
+ */
+function isRenderableFile(filename, content) {
+  if (!filename || !content) return false
   
-  try {
-    clearPreviewError()
-    frame.srcdoc = html
-    console.log('HTML preview rendered')
-  } catch (error) {
-    showPreviewError('Failed to render HTML: ' + error.message)
+  if (!/\.(tsx?|jsx?)$/i.test(filename)) return false
+  if (!/export\s+default\s+/m.test(content)) return false
+  
+  // Check for JSX syntax - more comprehensive patterns
+  const hasJSX = /<[A-Z][a-zA-Z0-9]*[\s>]/.test(content) ||  // <Component> or <Component ...>
+                 /<[a-z]+[\s>]/.test(content) ||              // <div> or <button ...>
+                 /<>/.test(content) ||                         // Fragment <>
+                 /<\//.test(content) ||                        // Closing tag </>
+                 /React\.createElement/.test(content) ||       // React.createElement
+                 /jsx\s*\(/.test(content)                      // jsx() function
+  
+  const hasReactImport = /import\s+.*\s+from\s+['"]react['"]/m.test(content)
+  
+  return hasJSX || hasReactImport
+}
+
+/**
+ * Find the entry file to render (the main component)
+ */
+function findEntryFile(files, currentFile) {
+  if (files[currentFile] && isRenderableFile(currentFile, files[currentFile])) {
+    return currentFile
   }
+  
+  const folderParts = currentFile.split('/')
+  folderParts.pop()
+  const folder = folderParts.join('/')
+  
+  for (const [path, content] of Object.entries(files)) {
+    const pathFolder = path.split('/').slice(0, -1).join('/')
+    if (pathFolder === folder && isRenderableFile(path, content)) {
+      return path
+    }
+  }
+  
+  return null
 }
 
-async function renderReactPreview(code) {
-  const frame = document.getElementById('previewFrame')
-  if (!frame) return
+/**
+ * Get all related files from the same folder as the entry file
+ */
+function getRelatedFiles(files, entryFile) {
+  const folderParts = entryFile.split('/')
+  folderParts.pop()
+  const folder = folderParts.join('/')
   
-  try {
-    // Check if the code is empty or just whitespace
-    if (!code || !code.trim()) {
-      const emptyHtml = `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>React Preview</title>
-        </head>
-        <body style="margin: 0; padding: 20px; background: #f5f5f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-          <div style="text-align: center; color: #999; padding: 40px 20px;">
-            <p>Empty file. Start typing to see preview...</p>
+  const related = {}
+  
+  for (const [path, content] of Object.entries(files)) {
+    const pathFolder = path.split('/').slice(0, -1).join('/')
+    
+    if (pathFolder === folder || path === entryFile) {
+      related[path] = content
+    }
+  }
+  
+  return related
+}
+
+/**
+ * Preview Manager
+ */
+const PreviewManager = {
+  modal: null,
+  iframe: null,
+  isOpen: false,
+  currentEntry: null,
+  
+  init() {
+    if (this.modal) return
+    
+    const modal = document.createElement('div')
+    modal.id = 'previewModal'
+    modal.className = 'preview-modal'
+    modal.style.display = 'none'
+    
+    modal.innerHTML = `
+      <div class="preview-modal-content">
+        <div class="preview-modal-header">
+          <span class="preview-modal-title">Component Preview</span>
+          <button class="preview-modal-close" onclick="PreviewManager.close()">×</button>
+        </div>
+        <div class="preview-modal-body">
+          <div class="preview-loading">
+            <div class="preview-spinner"></div>
+            <span>Loading preview...</span>
           </div>
-        </body>
-        </html>
-      `
-      clearPreviewError()
-      frame.srcdoc = emptyHtml
-      console.log('Empty file preview rendered')
-      return
-    }
-
-    // First try server-side bundler endpoints (fastest and most robust for multi-file apps)
-    const bundlerEndpoints = ['/bundle', '/api/bundle', '/runtime-bundle', '/api/runtime-bundle']
-    const payload = { files: files, entry: currentFile }
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 2500)
-    for (const ep of bundlerEndpoints) {
-      try {
-        const res = await fetch(ep, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-          signal: controller.signal
-        })
-        if (!res.ok) continue
-        // Accept JSON { html } or raw text
-        const ct = res.headers.get('content-type') || ''
-        clearTimeout(timeout)
-        if (ct.includes('application/json')) {
-          const json = await res.json()
-          if (json && json.html) {
-            clearPreviewError()
-            frame.srcdoc = json.html
-            console.log('React preview rendered via bundler', ep)
-            return
-          }
-        } else {
-          const text = await res.text()
-          if (text && text.trim().startsWith('<!DOCTYPE')) {
-            clearPreviewError()
-            frame.srcdoc = text
-            console.log('React preview rendered via bundler (text)', ep)
-            return
-          }
-        }
-      } catch (err) {
-        // try next endpoint
-        console.warn('Bundler endpoint failed:', ep, err)
-      }
-    }
-    clearTimeout(timeout)
-
-    // Process code to extract and handle imports properly
-    // if multiple JS/JSX files present, include their contents so components are available
-    let combined = ''
-    Object.entries(files).forEach(([fname, fcontent]) => {
-      const fext = fname.split('.').pop().toLowerCase()
-      if (['js','jsx','ts','tsx'].includes(fext)) {
-        if (fname !== currentFile) {
-          combined += '\n' + fcontent
-        }
+          <div class="preview-error" style="display: none;">
+            <div class="preview-error-icon">⚠</div>
+            <div class="preview-error-message"></div>
+          </div>
+          <iframe class="preview-iframe" sandbox="allow-scripts allow-same-origin"></iframe>
+        </div>
+      </div>
+    `
+    
+    document.body.appendChild(modal)
+    this.modal = modal
+    this.iframe = modal.querySelector('.preview-iframe')
+    
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        this.close()
       }
     })
-    combined += '\n' + code
     
-    let processedCode = combined
-      // strip import/export lines - Babel standalone doesn't support modules
-      .replace(/^\s*import\s+.*$/gm, '')
-      .replace(/^\s*export\s+default\s+/gm, '')
-      .replace(/^\s*export\s+/gm, '')
-
-    // Escape any closing script tags to avoid breaking the template
-    const safeCode = processedCode.replace(/<\/script>/gi, '<\\/script>')
-
-    // Create a complete HTML document with React and a resilient Babel loader
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>React Preview</title>
-        <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-        <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-        <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-          #root { padding: 20px; }
-        </style>
-      </head>
-      <body>
-        <div id="root"></div>
-        <script>
-          (function(){
-            const babelUrls = [
-              'https://unpkg.com/@babel/standalone/babel.min.js',
-              'https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js',
-              'https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/6.26.0/babel.min.js'
-            ];
-
-            function loadScript(url){
-              return new Promise((resolve, reject) => {
-                const s = document.createElement('script');
-                s.src = url;
-                s.onload = () => resolve(url);
-                s.onerror = () => reject(new Error('Failed to load ' + url));
-                document.head.appendChild(s);
-              });
-            }
-
-            const userCode = window.__USER_CODE__ || '';
-            const cleanCode = userCode.replace(/import\s+['"][^'\"]*\.css['"];?/g, '');
-
-            (async function(){
-              let loaded = false;
-              for (const u of babelUrls) {
-                try {
-                  await loadScript(u);
-                  loaded = true;
-                  break;
-                } catch (e) {
-                  console.warn('Babel load failed:', u);
-                }
-              }
-
-              const root = document.getElementById('root');
-              if (!loaded) {
-                root.innerHTML = '<p style="color: #f48771;">Failed to load Babel. React preview unavailable.</p>';
-                return;
-              }
-
-              try {
-                // Parse imports and inject lightweight fallbacks for common libs (icons, UI, framer-motion)
-                function parseImports(code) {
-                  const imports = [];
-                  const regex = /import\s+(?:(\w+)|\{([^}]+)\})\s+from\s+['"]([^'"]+)['"]/g;
-                  let m;
-                  while ((m = regex.exec(code)) !== null) {
-                    const def = m[1];
-                    const named = m[2];
-                    const src = m[3];
-                    const specs = [];
-                    if (def) specs.push(def);
-                    if (named) {
-                      named.split(',').forEach(n => {
-                        const cleaned = n.trim().split(/\s+as\s+/).pop()?.trim();
-                        if (cleaned) specs.push(cleaned);
-                      })
-                    }
-                    imports.push({ source: src, specifiers: specs });
-                  }
-                  return imports;
-                }
-
-                const imports = parseImports(cleanCode);
-                const injections = [];
-                const injected = new Set();
-                imports.forEach(imp => {
-                  imp.specifiers.forEach(spec => {
-                    if (!spec || injected.has(spec) || !/^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(spec)) return;
-                    injected.add(spec);
-                    if (spec === 'Link') {
-                      injections.push('const Link = ({ to, href, children, ...props }) => React.createElement(\'a\', { href: to || href || \"#\", ...props }, children);');
-                    } else if (spec === 'Button') {
-                      injections.push('const Button = ({ children, ...props }) => React.createElement(\'button\', props, children);');
-                    } else if (spec === 'Card') {
-                      injections.push('const Card = ({ children, ...props }) => React.createElement(\'div\', props, children);');
-                    } else if (spec === 'Input') {
-                      injections.push('const Input = (props) => React.createElement(\'input\', props);');
-                    } else if (spec.includes('Icon') || /^(Chevron|Circle|Arrow|X|Check)/.test(spec)) {
-                      injections.push('const ' + spec + ' = (props) => React.createElement(\'svg\', Object.assign({ width: 24, height: 24, viewBox: \"0 0 24 24\", fill: \"none\", stroke: \"currentColor\" }, props), React.createElement(\'circle\', { cx: 12, cy: 12, r: 10 }));');
-                    } else if (spec === 'motion') {
-                      injections.push('const motion = window.Motion?.motion || new Proxy({}, { get: ()=>()=>()=>null });');
-                    } else if (spec === 'AnimatePresence') {
-                      injections.push('const AnimatePresence = window.Motion?.AnimatePresence || (({ children }) => children);');
-                    } else if (imp.source && imp.source.includes('framer-motion')) {
-                      injections.push('const ' + spec + ' = window.Motion?.' + spec + ' || (()=>null);');
-                    } else if (!['react','react-dom'].includes(imp.source)) {
-                      injections.push('const ' + spec + ' = (props) => React.createElement(\'div\', props, props.children || null);');
-                    }
-                  })
-                })
-
-                const finalCode = injections.join('\n') + '\n\n' + cleanCode;
-                const transformed = Babel.transform(finalCode, { filename: 'file.tsx', presets: ['react', 'typescript', 'env'] }).code;
-                // Evaluate transformed code in global scope
-                (0, eval)(transformed);
-
-                // Attempt to render common component names
-                if (typeof App !== 'undefined') {
-                  ReactDOM.createRoot(root).render(React.createElement(App));
-                  return;
-                }
-                if (typeof Component !== 'undefined') {
-                  ReactDOM.createRoot(root).render(React.createElement(Component));
-                  return;
-                }
-                for (const k in window) {
-                  if (/^[A-Z][A-Za-z0-9_]*$/.test(k) && typeof window[k] === 'function') {
-                    ReactDOM.createRoot(root).render(React.createElement(window[k]));
-                    return;
-                  }
-                }
-
-                root.innerHTML = '<p style="color: #f48771;">No App or Component found to render</p>';
-              } catch (err) {
-                root.innerHTML = '<pre style="color: red; padding: 20px; white-space: pre-wrap; font-size: 12px;">' +
-                  'Preview error: ' + err.message + '\\n\\n' + err.stack + '</pre>';
-                console.error('Preview render error:', err);
-              }
-            })();
-          })();
-        </script>
-      </body>
-      </html>
-    `
-    frame.srcdoc = html
-    // Inject user code into iframe after it loads
-    frame.onload = () => {
-      try {
-        if (frame.contentWindow) {
-          frame.contentWindow.__USER_CODE__ = safeCode
-        }
-      } catch (e) {
-        console.warn('Could not inject user code:', e)
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.isOpen) {
+        this.close()
       }
-    }
-    console.log('React preview rendered')
-  } catch (error) {
-    showPreviewError('Failed to render React: ' + error.message)
-  }
-}
-
-function renderJSPreview(code) {
-  // if code seems React/JSX, hand off to React renderer
-  const reactLike = /\bReact\b/.test(code) || /from ['\"]react['\"]/.test(code) || /<[^>]+>/.test(code)
-  if (reactLike) {
-    renderReactPreview(code)
-    return
-  }
-
-  const frame = document.getElementById('previewFrame')
-  if (!frame) return
+    })
+  },
   
-  try {
-    // Remove imports and exports before putting in iframe
-    let cleanCode = code
-      .replace(/^\s*import\s+.*?from\s+['"].*?['"];?$/gm, '')
-      .replace(/^\s*export\s+default\s+/gm, '')
-      .replace(/^\s*export\s+/gm, '')
+  async open(filename) {
+    if (!files[filename]) {
+      this.showError('File not found')
+      return
+    }
     
-    // Create a complete HTML document with JS
-    const html = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>JavaScript Preview</title>
-        <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; padding: 20px; }
-          #output { white-space: pre-wrap; font-family: monospace; }
-        </style>
-      </head>
-      <body>
-        <div id="output"></div>
-        <script>
-          (function() {
-            try {
-              const output = document.getElementById('output')
-              const originalLog = console.log
-              const logs = []
-              
-              console.log = function(...args) {
-                logs.push(args.map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)).join(' '))
-                originalLog.apply(console, args)
-              }
-              
-              ${cleanCode}
-              
-              if (logs.length > 0) {
-                output.textContent = logs.join('\\n')
-              } else {
-                output.textContent = 'Code executed. Check console for output.'
-              }
-            } catch (error) {
-              document.getElementById('output').innerHTML = '<span style="color: red;">Error: ' + error.message + '</span>'
-              console.error('Preview error:', error)
-            }
-          })()
-        </script>
-      </body>
-      </html>
-    `
-    clearPreviewError()
-    frame.srcdoc = html
-    console.log('JavaScript preview rendered')
-  } catch (error) {
-    showPreviewError('Failed to render JavaScript: ' + error.message)
-  }
-}
-
-function showPreviewError(message) {
-  const container = document.getElementById('previewContainer')
-  if (!container) return
-  
-  const frame = document.getElementById('previewFrame')
-  if (frame) {
-    frame.style.display = 'none'
-  }
-  
-  let errorDiv = container.querySelector('.preview-error')
-  if (errorDiv) {
-    errorDiv.textContent = message
-  } else {
-    const newErrorDiv = document.createElement('div')
-    newErrorDiv.className = 'preview-error'
-    newErrorDiv.style.cssText = 'padding: 16px; color: #f48771; font-family: monospace; font-size: 12px; overflow: auto;'
-    newErrorDiv.textContent = message
-    container.appendChild(newErrorDiv)
-  }
-}
-
-function clearPreviewError() {
-  const container = document.getElementById('previewContainer')
-  if (!container) return
-  
-  const errorDiv = container.querySelector('.preview-error')
-  if (errorDiv) {
-    errorDiv.remove()
-  }
-  
-  const frame = document.getElementById('previewFrame')
-  if (frame) {
-    frame.style.display = 'block'
-  }
-}
-
-function togglePreview() {
-  const previewSection = document.querySelector('.preview-section')
-  if (!previewSection) return
-  
-  const isHidden = previewSection.classList.toggle('hidden')
-  const isVisible = !isHidden
-  
-  // Save preference to localStorage
-  localStorage.setItem(PREVIEW_VISIBLE_KEY, isVisible ? 'true' : 'false')
-  
-  // Show editor if preview is hidden
-  const editorDiv = document.getElementById('editor');
-  if (editorDiv) {
-    if (isVisible) {
-      // Preview visible, just relayout editor
-      setTimeout(() => {
-        if (editor) editor.layout();
-      }, 300);
-    } else {
-      // Preview hidden, ensure editor is visible
-      editorDiv.classList.remove('hide');
-      setTimeout(() => {
-        if (editor) editor.layout();
-      }, 300);
+    const entryFile = findEntryFile(files, filename)
+    if (!entryFile) {
+      this.showError('No renderable component found. Make sure the file exports a React component.')
+      return
     }
-  }
-
-  // Refresh preview if becoming visible
-  if (isVisible) {
-    setTimeout(() => refreshPreview(), 100);
-  }
-}
-
-function restorePreviewVisibility() {
-  const previewVisible = localStorage.getItem(PREVIEW_VISIBLE_KEY)
-  const previewSection = document.querySelector('.preview-section')
-  
-  if (previewSection) {
-    // Default to visible if not set
-    if (previewVisible === 'false') {
-      previewSection.classList.add('hidden')
-    } else {
-      previewSection.classList.remove('hidden')
-    }
-  }
-}
-
-// Auto-refresh preview when code changes (debounced)
-let previewTimeout
-function setupPreviewAutoRefresh() {
-  if (!editor) return
-  
-  editor.onDidChangeModelContent(() => {
-    clearTimeout(previewTimeout)
-    previewTimeout = setTimeout(() => {
-      const filename = currentFile
-      const ext = filename.split('.').pop().toLowerCase()
+    
+    this.currentEntry = entryFile
+    
+    const relatedFiles = getRelatedFiles(files, entryFile)
+    
+    this.modal.style.display = 'flex'
+    this.isOpen = true
+    this.showLoading()
+    
+    try {
+      const response = await fetch('http://localhost:5000/runtime-bundle', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          files: relatedFiles,
+          entry: entryFile
+        })
+      })
       
-      // Only auto-refresh for previewable files
-      const code = editor.getValue()
-      if (isPreviewableFile(filename, code)) {
-        refreshPreview()
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to bundle component')
       }
-    }, 1000) // Debounce for 1 second
-  })
+      
+      const data = await response.json()
+      
+      this.iframe.srcdoc = data.html
+      this.hideLoading()
+      
+      logActivity(`Preview opened: ${entryFile}`, 'success')
+      
+    } catch (error) {
+      console.error('Preview error:', error)
+      this.showError(error.message)
+      logActivity(`Preview failed: ${error.message}`, 'error')
+    }
+  },
+  
+  close() {
+    if (this.modal) {
+      this.modal.style.display = 'none'
+    }
+    this.isOpen = false
+    this.currentEntry = null
+    
+    if (this.iframe) {
+      this.iframe.srcdoc = ''
+    }
+  },
+  
+  showLoading() {
+    const loading = this.modal.querySelector('.preview-loading')
+    const error = this.modal.querySelector('.preview-error')
+    const iframe = this.modal.querySelector('.preview-iframe')
+    
+    if (loading) loading.style.display = 'flex'
+    if (error) error.style.display = 'none'
+    if (iframe) iframe.style.display = 'none'
+  },
+  
+  hideLoading() {
+    const loading = this.modal.querySelector('.preview-loading')
+    const iframe = this.modal.querySelector('.preview-iframe')
+    
+    if (loading) loading.style.display = 'none'
+    if (iframe) iframe.style.display = 'block'
+  },
+  
+  showError(message) {
+    const loading = this.modal.querySelector('.preview-loading')
+    const error = this.modal.querySelector('.preview-error')
+    const errorMessage = this.modal.querySelector('.preview-error-message')
+    const iframe = this.modal.querySelector('.preview-iframe')
+    
+    if (loading) loading.style.display = 'none'
+    if (error) error.style.display = 'flex'
+    if (errorMessage) errorMessage.textContent = message
+    if (iframe) iframe.style.display = 'none'
+    
+    if (!this.isOpen) {
+      this.modal.style.display = 'flex'
+      this.isOpen = true
+    }
+  }
 }
+
+// ============================================================================
+// END PREVIEW SYSTEM
+// ============================================================================
 
 // Start the app when DOM is ready
 if (document.readyState === 'loading') {

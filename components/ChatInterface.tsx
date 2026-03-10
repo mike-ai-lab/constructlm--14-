@@ -107,7 +107,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     
     if (textareaRef.current) {
       const textarea = textareaRef.current;
-      textarea.style.height = '48px';
+      textarea.style.height = '40px';
       if (input) {
         textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
       }
@@ -331,7 +331,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       {/* Main Chat Area */}
       <div className={`flex flex-col bg-white dark:bg-[#0a0a0b] relative overflow-hidden transition-all duration-300 ${canvasOpen ? 'md:w-[35%] md:mr-4' : 'w-full'}`}>
       <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 flex flex-col items-center relative" style={{ WebkitOverflowScrolling: 'touch' }}>
-        <div className={`w-full space-y-10 ${canvasOpen ? 'max-w-full' : 'max-w-3xl'}`}>
+        <div className="w-full space-y-10 max-w-[630px]">
           {messages.length === 0 && (
             <div className="max-w-3xl mx-auto space-y-4 py-20">
               <div className="flex items-center gap-2 opacity-50">
@@ -377,7 +377,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   </div>
                 </div>
               ) : (
-                <div className="flex gap-4 items-start w-full">
+                <div className="flex gap-4 items-start w-full max-w-[630px]">
                   {/* AI Avatar from mockup */}
                   <div className="w-7 h-7 rounded bg-brand-blue shrink-0 flex items-center justify-center text-[10px] text-white font-bold shadow-lg shadow-brand-blue/20">
                     AI
@@ -400,14 +400,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                       </details>
                     )}
                     
-                    <div className="prose dark:prose-invert prose-slate max-w-none text-sm leading-relaxed opacity-90">
+                    <div className="prose dark:prose-invert prose-slate max-w-none text-sm leading-relaxed opacity-90 overflow-hidden w-full">
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         components={{
                           h1: ({node, ...props}) => <h1 className="text-xl font-bold mt-4 mb-2" {...props} />,
                           h2: ({node, ...props}) => <h2 className="text-lg font-bold mt-3 mb-2" {...props} />,
                           h3: ({node, ...props}) => <h3 className="text-base font-bold mt-2 mb-1" {...props} />,
-                          p: ({node, ...props}) => <p className="mb-3 last:mb-0" {...props} />,
+                          p: ({node, children, ...props}) => <div className="mb-3 last:mb-0" {...props}>{children}</div>,
                           ul: ({node, ...props}) => <ul className="list-disc list-inside mb-3 space-y-1" {...props} />,
                           ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-3 space-y-1" {...props} />,
                           li: ({node, ...props}) => <li className="ml-2" {...props} />,
@@ -779,7 +779,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         )}
         
         <div className="w-full flex justify-center">
-          <div className="w-full max-w-3xl relative -mt-3 md:-mt-4 z-30">
+          <div className="w-full max-w-[630px] relative -mt-3 md:-mt-4 z-30">
           <form onSubmit={handleSubmit} className="relative">
             {/* Token Estimator */}
             {estimatedTokens > 0 && (
@@ -788,7 +788,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               </div>
             )}
             {/* Premium Input Field from mockup */}
-            <div className="relative flex items-end gap-2 bg-slate-50 dark:bg-[#1b1b1d] border border-slate-200 dark:border-white/10 rounded-2xl p-2 pl-5 shadow-2xl focus-within:border-brand-blue/50 transition-all group glass min-h-[70px]">
+            <div className="relative flex items-end gap-2 bg-slate-50 dark:bg-[#1b1b1d] border border-slate-200 dark:border-white/10 rounded-2xl p-2 pl-5 shadow-2xl focus-within:border-brand-blue/50 transition-all group glass">
               <textarea
                 ref={textareaRef}
                 value={input}
@@ -797,7 +797,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 onBlur={() => setIsInputFocused(false)}
                 placeholder={selectedImages.length > 0 ? "Add description (optional)..." : "Inquire about building codes or design specs..."}
                 className="flex-1 bg-transparent border-none outline-none py-2 text-sm font-medium placeholder:text-slate-400 dark:placeholder:text-slate-500 resize-none overflow-y-auto"
-                style={{ height: '48px', maxHeight: '200px' }}
+                style={{ height: '40px', maxHeight: '120px' }}
                 disabled={isStreaming}
               />
               <input
@@ -816,18 +816,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   className="text-slate-400 dark:text-slate-500 hover:text-brand-blue dark:hover:text-brand-blue transition-colors disabled:opacity-50"
                   title="Upload Image"
                 >
-                  <ImageIcon size={18} />
+                  <ImageIcon size={16} />
                 </button>
                 {/* Premium Send Button from mockup */}
                 <button 
                   type="submit"
                   disabled={(!input.trim() && selectedImages.length === 0) || isStreaming}
-                  className="p-3 bg-brand-blue text-white rounded-xl shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100"
+                  className="p-2 bg-brand-blue text-white rounded-lg shadow-lg hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100 shrink-0"
                 >
                   {isStreaming ? (
-                    <div className="w-5 h-5 border-2 border-t-transparent border-white rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin" />
                   ) : (
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                     </svg>
                   )}
