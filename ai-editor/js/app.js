@@ -636,13 +636,38 @@ async function handleFullGeneration(instruction) {
   status.className = 'status editing'
   
   try {
-    const payload = {
+    // Detect if this is a project creation request
+    const isProjectCreation = /^(create|build|generate|make|setup|scaffold|init|start|new)\s+/i.test(instruction) && 
+                             (instruction.toLowerCase().includes('project') || 
+                              instruction.toLowerCase().includes('app') ||
+                              instruction.toLowerCase().includes('dashboard') ||
+                              instruction.toLowerCase().includes('website') ||
+                              instruction.toLowerCase().includes('site') ||
+                              instruction.toLowerCase().includes('application'))
+    
+    let endpoint = 'http://localhost:5000/edit'
+    let payload = {
       instruction,
       files: {},
       currentFile: currentFile
     }
     
-    const res = await fetch('http://localhost:5000/edit', {
+    // If creating a new project, use /create-project endpoint
+    if (isProjectCreation) {
+      endpoint = 'http://localhost:5000/create-project'
+      // Extract project name from instruction if possible
+      const nameMatch = instruction.match(/(?:create|build|generate|make)\s+(?:a\s+)?(?:new\s+)?(?:project|app|dashboard|website|site|application)?\s+(?:called|named|for)?\s+['\"]?([a-zA-Z0-9-_]+)['\"]?/i)
+      const projectName = nameMatch ? nameMatch[1] : 'my-project'
+      
+      payload = {
+        projectName,
+        instruction
+      }
+      
+      updateChatMessage(loadingMsg, '🏗️ Creating new project structure...', 'ai')
+    }
+    
+    const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
@@ -658,23 +683,32 @@ async function handleFullGeneration(instruction) {
     loadingMsg.remove()
     
     if (data.files) {
-      // Multi-file response - add to ROOT only
-      Object.entries(data.files).forEach(([filename, content]) => {
-        // Extract just the filename, ignore any path
-        const justFilename = filename.split('/').pop()
-        files[justFilename] = content
+      // Multi-file response - preserve folder structure
+      Object.entries(data.files).forEach(([filePath, content]) => {
+        // Keep the full path with folders
+        files[filePath] = content
+        
+        // Auto-expand parent folders
+        const parts = filePath.split('/')
+        if (parts.length > 1) {
+          let path = ''
+          for (let i = 0; i < parts.length - 1; i++) {
+            path += (path ? '/' : '') + parts[i]
+            expandedFolders.add(path)
+          }
+        }
       })
       
       saveFilesToStorage()
       updateExplorer()
       
       // Open first file
-      const firstFile = Object.keys(data.files)[0].split('/').pop()
+      const firstFile = Object.keys(data.files)[0]
       if (firstFile && files[firstFile]) {
         openFile(firstFile)
       }
       
-      logActivity(`Generated ${Object.keys(data.files).length} file(s)`, 'success')
+      logActivity(`Generated ${Object.keys(data.files).length} file(s) with folder structure`, 'success')
     } else if (data.code) {
       // Single file response
       files[currentFile] = data.code
@@ -1359,6 +1393,52 @@ function copyCode() {
   })
 }
 
+function downloadProject() {
+  if (Object.keys(files).length === 0) {
+    logActivity('No files to download', 'error')
+    return
+  }
+  
+  // Extract project name from first file path or use default
+  let projectName = 'my-project'
+  const firstFile = Object.keys(files)[0]
+  if (firstFile && firstFile.includes('/')) {
+    projectName = firstFile.split('/')[0]
+  }
+  
+  logActivity(`📦 Downloading project: ${projectName}...`, 'info')
+  
+  fetch('http://localhost:5000/download-project', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      projectName,
+      files
+    })
+  })
+  .then(response => {
+    if (!response.ok) throw new Error('Download failed')
+    return response.blob()
+  })
+  .then(blob => {
+    // Create download link
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${projectName}.zip`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    
+    logActivity(`✅ Downloaded: ${projectName}.zip`, 'success')
+  })
+  .catch(error => {
+    logActivity(`❌ Download failed: ${error.message}`, 'error')
+    console.error('Download error:', error)
+  })
+}
+
 // ============================================================================
 // PREVIEW SYSTEM
 // ============================================================================
@@ -1499,8 +1579,6 @@ const PreviewManager = {
     
     this.currentEntry = entryFile
     
-    const relatedFiles = getRelatedFiles(files, entryFile)
-    
     this.modal.style.display = 'flex'
     this.isOpen = true
     this.showLoading()
@@ -1510,7 +1588,7 @@ const PreviewManager = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          files: relatedFiles,
+          files: files,
           entry: entryFile
         })
       })
