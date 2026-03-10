@@ -35,7 +35,7 @@ console.log("✓ Groq API Key loaded successfully")
 // STRICT SYSTEM PROMPT - Prevents all common React errors
 // ============================================================================
 
-const SYSTEM_PROMPT = `You are a React component code generator. CRITICAL: Follow these rules EXACTLY or components will crash.
+const SYSTEM_PROMPT = `You are a React component and project code generator. CRITICAL: Follow these rules EXACTLY or components will crash.
 
 ⚠️ RULE 1: EXPORT FORMAT
 MUST be: export default function ComponentName() { return <div>...</div>; }
@@ -81,6 +81,41 @@ NEVER: export { ComponentName as default }
 ✅ useEffect(() => { fetch(...).then(...) }, [])
 ❌ async function Component() { ... }
 ❌ const data = await fetch(...);
+
+⚠️ RULE 8: PROJECT STRUCTURE (when creating projects)
+FOLDER STRUCTURE:
+- components/ - React components (PascalCase)
+- pages/ - Page components (PascalCase)
+- utils/ - Utility functions (camelCase)
+- hooks/ - Custom React hooks (camelCase)
+- styles/ - CSS/styling files (kebab-case)
+- services/ - API/business logic (camelCase)
+
+FILE NAMING:
+- Components: PascalCase (Button.js, Sidebar.js)
+- Utilities: camelCase (helpers.js, api.js)
+- Hooks: camelCase (useAuth.js, useFetch.js)
+- Styles: kebab-case (button-styles.css)
+
+EXAMPLE STRUCTURE:
+my-dashboard/
+├── components/
+│   ├── Sidebar.js
+│   ├── Header.js
+│   └── Card.js
+├── pages/
+│   ├── Dashboard.js
+│   └── Profile.js
+├── utils/
+│   ├── helpers.js
+│   └── api.js
+├── hooks/
+│   └── useAuth.js
+└── services/
+    └── api.js
+
+When generating project files, include full path in comments:
+// File: my-dashboard/components/Sidebar.js
 
 TEMPLATE:
 \`\`\`javascript
@@ -130,11 +165,18 @@ function sanitizeCode(code) {
   return sanitized;
 }
 
-function validateCode(code) {
+function validateCode(code, filePath = '') {
   const errors = [];
   
-  // Check 1: Must have export default function
-  if (!code.includes('export default function') && !code.includes('export default class')) {
+  // Determine file type from path
+  const isComponent = filePath.includes('/components/');
+  const isPage = filePath.includes('/pages/');
+  const isUtil = filePath.includes('/utils/');
+  const isService = filePath.includes('/services/');
+  const isHook = filePath.includes('/hooks/');
+  
+  // Check 1: Components and pages MUST have export default function
+  if ((isComponent || isPage) && !code.includes('export default function') && !code.includes('export default class')) {
     errors.push('Missing "export default function"');
   }
   
@@ -148,25 +190,27 @@ function validateCode(code) {
     errors.push('CSS imports not allowed - use inline styles');
   }
   
-  // Check 4: Must NOT have external library imports (except React)
+  // Check 4: Must NOT have external library imports (except React and react-dom for index files)
   const importRegex = /import\s+.*?from\s+['"]([^'"]+)['"]/gm;
   let match;
   while ((match = importRegex.exec(code)) !== null) {
     const moduleName = match[1];
-    if (!moduleName.startsWith('.') && moduleName !== 'react') {
+    if (!moduleName.startsWith('.') && moduleName !== 'react' && moduleName !== 'react-dom') {
       errors.push(`External library not allowed: "${moduleName}"`);
     }
   }
   
-  // Check 5: Must return JSX (not string, object, null)
-  const returnRegex = /return\s+([^;]+);/gm;
-  while ((match = returnRegex.exec(code)) !== null) {
-    const returnValue = match[1].trim();
-    if (returnValue.startsWith('"') || returnValue.startsWith("'") || returnValue.startsWith('`')) {
-      errors.push('Cannot return string - must return JSX');
-    }
-    if (returnValue === 'null' || returnValue === 'undefined') {
-      errors.push('Cannot return null/undefined - must return JSX');
+  // Check 5: Components must return JSX (not string, object, null)
+  if (isComponent || isPage) {
+    const returnRegex = /return\s+([^;]+);/gm;
+    while ((match = returnRegex.exec(code)) !== null) {
+      const returnValue = match[1].trim();
+      if (returnValue.startsWith('"') || returnValue.startsWith("'") || returnValue.startsWith('`')) {
+        errors.push('Cannot return string - must return JSX');
+      }
+      if (returnValue === 'null' || returnValue === 'undefined') {
+        errors.push('Cannot return null/undefined - must return JSX');
+      }
     }
   }
   
@@ -179,8 +223,223 @@ function validateCode(code) {
 }
 
 // ============================================================================
+// PROJECT STRUCTURE ANALYZER
+// ============================================================================
+
+/**
+ * Analyze instruction to determine project structure
+ */
+function analyzeProjectStructure(instruction) {
+  const projectTypes = {
+    dashboard: ['components', 'pages', 'utils', 'hooks', 'styles'],
+    ecommerce: ['components', 'pages', 'utils', 'hooks', 'styles', 'services'],
+    blog: ['components', 'pages', 'utils', 'hooks', 'styles', 'posts'],
+    portfolio: ['components', 'pages', 'utils', 'styles'],
+    app: ['components', 'pages', 'utils', 'hooks', 'styles', 'services']
+  };
+  
+  // Detect project type from keywords
+  let detectedType = 'app';
+  const keywords = {
+    dashboard: ['dashboard', 'analytics', 'metrics', 'charts', 'graph'],
+    ecommerce: ['shop', 'store', 'product', 'cart', 'checkout', 'ecommerce'],
+    blog: ['blog', 'post', 'article', 'news', 'content'],
+    portfolio: ['portfolio', 'project', 'showcase', 'work']
+  };
+  
+  for (const [type, typeKeywords] of Object.entries(keywords)) {
+    if (typeKeywords.some(k => instruction.toLowerCase().includes(k))) {
+      detectedType = type;
+      break;
+    }
+  }
+  
+  return {
+    projectType: detectedType,
+    folders: projectTypes[detectedType]
+  };
+}
+
+/**
+ * Generate project structure
+ */
+function generateProjectStructure(projectName, instruction) {
+  const { projectType, folders } = analyzeProjectStructure(instruction);
+  
+  const structure = {};
+  folders.forEach(folder => {
+    structure[folder] = [];
+  });
+  
+  return {
+    projectName,
+    projectType,
+    structure,
+    folders
+  };
+}
+
+// ============================================================================
+// FILE SYSTEM OPERATIONS
+// ============================================================================
+
+function writeFilesToDisk(files) {
+  try {
+    console.log(`📁 Writing ${Object.keys(files).length} files to disk...`);
+    console.log(`📍 Base directory: ${__dirname}`);
+    
+    for (const [filePath, content] of Object.entries(files)) {
+      const fullPath = path.join(__dirname, filePath);
+      const dir = path.dirname(fullPath);
+      
+      console.log(`  Creating directory: ${dir}`);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      
+      console.log(`  Writing file: ${fullPath}`);
+      fs.writeFileSync(fullPath, content, "utf8");
+      console.log(`  ✓ Created: ${filePath}`);
+    }
+    
+    console.log(`✅ All files written successfully!`);
+  } catch (error) {
+    console.error(`❌ Error writing files to disk:`, error);
+    throw error;
+  }
+}
+
+// ============================================================================
 // API ENDPOINTS
 // ============================================================================
+
+app.post("/create-project", async (req, res) => {
+  try {
+    const { projectName, instruction } = req.body;
+    
+    if (!projectName || !instruction) {
+      return res.status(400).json({ 
+        error: "Missing projectName or instruction" 
+      });
+    }
+    
+    // Validate project name
+    if (!/^[a-z0-9-]+$/.test(projectName)) {
+      return res.status(400).json({ 
+        error: "Project name must be lowercase alphanumeric with hyphens" 
+      });
+    }
+    
+    // Generate structure
+    const projectStructure = generateProjectStructure(projectName, instruction);
+    
+    // Request AI to generate files
+    const prompt = `Create a new project called "${projectName}".
+
+Project Type: ${projectStructure.projectType}
+Instruction: ${instruction}
+
+Generate all necessary files for this project. Use this folder structure:
+${projectStructure.folders.join(', ')}
+
+Return in this format:
+FILE: ${projectName}/components/Example.js
+<code>
+
+FILE: ${projectName}/pages/Example.js
+<code>
+
+Important:
+- Create at least 3-5 files
+- Use the folder structure provided
+- Follow the naming conventions
+- Each file must be a valid, working React component
+- Use inline styles only
+- No CSS imports`;
+
+    const response = await fetch(GROQ_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${GROQ_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          {
+            role: 'system',
+            content: SYSTEM_PROMPT
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 8192
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    const aiResponse = data.choices[0].message.content;
+    
+    // Parse files from response
+    const files = {};
+    const fileRegex = /FILE:\s*([^\n]+)\n([\s\S]*?)(?=FILE:|$)/g;
+    let match;
+    
+    console.log(`\n📝 Parsing AI response for files...`);
+    while ((match = fileRegex.exec(aiResponse)) !== null) {
+      const filePath = match[1].trim();
+      let content = match[2].trim();
+      
+      console.log(`  Found file: ${filePath}`);
+      
+      // Remove markdown code blocks
+      if (content.startsWith('```')) {
+        content = content.replace(/^```(?:javascript|jsx|typescript|tsx)?\n?/, '')
+                        .replace(/\n?```$/, '');
+      }
+      
+      // Sanitize and validate
+      content = sanitizeCode(content);
+      const validation = validateCode(content, filePath);
+      
+      if (!validation.valid) {
+        console.warn(`Validation errors in ${filePath}:`, validation.errors);
+      }
+      
+      files[filePath] = content.trim();
+    }
+    
+    console.log(`✅ Parsed ${Object.keys(files).length} files from AI response\n`);
+    
+    // Save files to disk
+    try {
+      writeFilesToDisk(files);
+    } catch (writeError) {
+      console.error('Failed to write files to disk:', writeError);
+    }
+    
+    res.json({
+      success: true,
+      projectName,
+      projectType: projectStructure.projectType,
+      structure: projectStructure.structure,
+      filesCreated: Object.keys(files).length,
+      files: files,
+      summary: `✅ Created project "${projectName}" with ${Object.keys(files).length} files in organized structure`
+    });
+    
+  } catch (error) {
+    console.error('Project creation error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 app.post("/edit", async (req, res) => {
   try {
@@ -251,7 +510,7 @@ FILE: filename2.tsx
       
       // Sanitize and validate
       content = sanitizeCode(content);
-      const validation = validateCode(content);
+      const validation = validateCode(content, filename);
       
       if (!validation.valid) {
         console.warn(`Validation errors in ${filename}:`, validation.errors);
