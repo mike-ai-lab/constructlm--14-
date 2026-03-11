@@ -20,9 +20,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   aiModel
 }) => {
   const [input, setInput] = useState('');
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  const [pinnedCitation, setPinnedCitation] = useState<string | null>(null);
   const [selectedImages, setSelectedImages] = useState<Array<{base64: string, preview: string, name: string, size: number, tokens: number}>>([]);
   const [estimatedTokens, setEstimatedTokens] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [isImagesExpanded, setIsImagesExpanded] = useState(true);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [codeBlockStates, setCodeBlockStates] = useState<{[key: string]: {showRendered: boolean}}>({});
   const [copiedBlocks, setCopiedBlocks] = useState<{[key: string]: boolean}>({});
@@ -51,6 +54,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     return extensions[lang.toLowerCase()] || 'txt';
   };
 
+  // Use the new runtime bundler for React preview
   const generateReactPreviewHtml = (code: string, language: string = 'tsx') => {
     const result = generateBundledPreview(code, language);
     return result.html || `<!DOCTYPE html>
@@ -58,11 +62,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 <head>
   <meta charset="UTF-8">
   <style>
-    body { margin: 20px; font-family: monospace; background: #0A0A0B; color: #fff; }
+    body { margin: 20px; font-family: monospace; }
   </style>
 </head>
 <body>
-  <div style="padding:20px;color:#ff6b6b;border:1px solid #ff6b6b;border-radius:8px;">
+  <div style="padding:20px;color:red;border:2px solid red;">
     <strong>Bundling Error</strong><br/>
     ${result.error || 'Unknown error occurred'}
   </div>
@@ -173,10 +177,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     e.stopPropagation();
   };
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
- 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -316,7 +316,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   return (
     <div className="flex h-full bg-[#0f0f11] relative overflow-hidden">
       {/* Main Chat Area */}
-      <div className={`flex flex-col bg-[#0f0f11] relative overflow-hidden transition-all duration-300 ${canvasOpen ? 'w-1/2' : 'w-full'}`}>
+      <div className={`flex flex-col bg-[#1b1b1d] relative overflow-hidden transition-all duration-300 ${canvasOpen ? 'w-1/2' : 'w-full'}`}>
       <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-12 flex flex-col items-center" style={{ WebkitOverflowScrolling: 'touch' }}>
         <div className="w-full max-w-3xl space-y-6">
           {messages.length === 0 && (
@@ -369,7 +369,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     {msg.reasoning && (
                       <details className="mb-4 border-2 border-blue-500 bg-blue-50">
                         <summary className="cursor-pointer p-3 font-mono text-xs font-bold uppercase bg-blue-100 hover:bg-blue-200 transition-colors flex items-center gap-2">
-                          <Brain size={16} className="text-blue-600" />
+                          <span className="text-blue-600">­ƒÆ¡</span>
                           Thinking Process
                           <span className="text-[10px] text-blue-600 font-normal ml-auto">
                             {msg.isStreaming ? 'Streaming...' : 'Click to expand'}
@@ -428,7 +428,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                     </div>
                                     <div>
                                       <h4 className="text-sm font-bold uppercase tracking-tight">React Component</h4>
-                                      <p className="text-[10px] text-gray-600 font-bold uppercase">{language} ◆ Currently in Canvas</p>
+                                      <p className="text-[10px] text-gray-600 font-bold uppercase">{language} ÔÇó Currently in Canvas</p>
                                     </div>
                                   </div>
                                   <div className="flex gap-2">
@@ -461,7 +461,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                     </div>
                                     <div>
                                       <h4 className="text-sm font-bold uppercase tracking-tight">React Component</h4>
-                                      <p className="text-[10px] text-gray-600 font-bold uppercase">{language} ◆ Ready to render</p>
+                                      <p className="text-[10px] text-gray-600 font-bold uppercase">{language} ÔÇó Ready to render</p>
                                     </div>
                                   </div>
                                   <div className="flex gap-2">
@@ -591,7 +591,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     {!msg.isStreaming && msg.outputTokens && (
                       <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between">
                         <div className="text-[10px] text-gray-600 italic font-mono">
-                          {msg.inputTokens && `Input: ~${msg.inputTokens} tokens ◆ `}
+                          {msg.inputTokens && `Input: ~${msg.inputTokens} tokens ÔÇó `}
                           Output: ~{msg.outputTokens} tokens
                           <span className="ml-2 text-[9px] text-gray-600">(estimates)</span>
                         </div>
@@ -603,8 +603,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                             className="text-[9px] px-2 py-1 bg-yellow-900/20 border border-yellow-600/50 text-yellow-400 hover:bg-yellow-900/30 transition-colors flex items-center gap-1"
                             title="High token usage - check your quota"
                           >
-                            <AlertCircle size={12} />
-                            Check Quota
+                            ÔÜá´©Å Check Quota
                           </a>
                         )}
                       </div>
@@ -623,13 +622,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                             <div key={i} className="group relative">
                               <div 
                                 onClick={() => setPinnedCitation(isPinned ? null : citationId)}
-                                className="bg-[#1b1b1d] border-2 border-white/5 p-2.5 flex items-center gap-3 cursor-pointer hover:border-white/10 hover:shadow-lg transition-all">
+                                className="bg-[#1b1b1d] border-2 border-white/5 p-2.5 flex items-center gap-3 cursor-pointer hover:border-white/10 hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all">
                                 <div className="w-1.5 h-1.5 bg-black" />
                                 <span className="text-[9px] font-bold uppercase text-gray-600 truncate">
                                   SRC {i + 1}: {cite.docName}
                                 </span>
                               </div>
-                              <div className={`fixed left-1/2 -translate-x-1/2 top-20 w-80 md:w-96 bg-[#1b1b1d] border-2 border-white/10 p-3 text-xs transition-all z-[100] shadow-lg max-h-96 overflow-y-auto ${
+                              <div className={`fixed left-1/2 -translate-x-1/2 top-20 w-80 md:w-96 bg-[#1b1b1d] border-2 border-white/10 p-3 text-xs transition-all z-[100] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] max-h-96 overflow-y-auto ${
                                 isPinned ? 'opacity-100 visible' : 'opacity-0 invisible group-hover:opacity-100 group-hover:visible'
                               }`}>
                                 <div className="flex justify-between items-start mb-2 border-b border-white/10 pb-1">
@@ -642,7 +641,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                       }}
                                       className="text-lg font-bold hover:bg-[#252526] px-1 leading-none"
                                     >
-                                      <X size={20} className="hover:opacity-70" />
+                                      ├ù
                                     </button>
                                   )}
                                 </div>
@@ -704,9 +703,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           />
           <button 
             onClick={() => setImagePreview(null)}
-            className="absolute top-4 right-4 text-white hover:bg-[#1b1b1d]/20 w-10 h-10 flex items-center justify-center"
+            className="absolute top-4 right-4 text-white text-3xl font-bold hover:bg-white/20 w-10 h-10 flex items-center justify-center"
           >
-            <X size={24} />
+            ├ù
           </button>
         </div>
       )}
@@ -765,7 +764,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     <img src={img.preview} alt={img.name} className="h-12 w-12 object-cover border border-white/10" />
                     <div className="flex-1 text-[10px] font-mono">
                       <div className="font-bold truncate">{img.name}</div>
-                      <div className="text-gray-600">{img.tokens} tokens ◆ {(img.size / 1024 / 1024).toFixed(2)} MB</div>
+                      <div className="text-gray-600">{img.tokens} tokens ÔÇó {(img.size / 1024 / 1024).toFixed(2)} MB</div>
                     </div>
                     <button
                       onClick={() => removeImage(idx)}
@@ -792,7 +791,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 onBlur={() => setIsInputFocused(false)}
                 placeholder={selectedImages.length > 0 ? "ADD DESCRIPTION (OPTIONAL)..." : "ASK A QUESTION..."}
                 className={`w-full border-2 border-white/10 p-3 pr-20 text-[11px] font-bold focus:outline-none uppercase placeholder:text-gray-600 bg-[#1b1b1d] transition-all duration-100 resize-none overflow-y-auto ${
-                  isInputFocused ? 'shadow-lg' : ''
+                  isInputFocused ? 'shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : ''
                 }`}
                 style={{ height: '48px' }}
                 disabled={isStreaming}
