@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat & Canvas Component</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --accent-blue: #3b82f6;
+      --accent-glow: rgba(59, 130, 246, 0.5);
+      --transition-speed: 0.4s;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      height: 100vh;
+      overflow: hidden;
+      background-color: #0A0A0B;
+      color: #ffffff;
+    }
+
+    /* Glass Panel Effect */
+    .glass-panel {
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      background: rgba(10, 10, 10, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      transition: all var(--transition-speed);
+    }
+
+    /* Chat Container */
+    .chat-container {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      width: 100%;
+      background: linear-gradient(135deg, #0A0A0B 0%, #141417 100%);
+      position: relative;
+    }
+
+    /* Chat Messages Area */
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      padding-bottom: 8rem;
+    }
+
+    .chat-messages::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .chat-messages::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .chat-messages::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+    }
+
+    .chat-messages::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Message Bubble */
+    .message {
+      display: flex;
+      gap: 1rem;
+      animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .message.user {
+      justify-content: flex-end;
+    }
+
+    .message-content {
+      max-width: 70%;
+      padding: 1rem 1.25rem;
+      border-radius: 12px;
+      line-height: 1.6;
+      word-wrap: break-word;
+    }
+
+    .message.assistant .message-content {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      color: #e0e7ff;
+    }
+
+    .message.user .message-content {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+      border-radius: 12px 2px 12px 12px;
+    }
+
+    /* Input Area */
+    .input-area {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      padding: 1.5rem;
+      background: linear-gradient(180deg, transparent 0%, rgba(10, 10, 10, 0.8) 50%, #0A0A0B 100%);
+      z-index: 50;
+    }
+
+    .input-wrapper {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-end;
+    }
+
+    .input-field {
+      flex: 1;
+      background: rgba(20, 20, 23, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 0.75rem 1rem;
+      color: white;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-size: 0.95rem;
+      resize: none;
+      max-height: 120px;
+      transition: all 0.3s;
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: rgba(59, 130, 246, 0.5);
+      background: rgba(20, 20, 23, 0.95);
+      box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+    }
+
+    .input-field::placeholder {
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .send-button {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      border: none;
+      border-radius: 10px;
+      padding: 0.75rem 1.5rem;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      white-space: nowrap;
+    }
+
+    .send-button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+    }
+
+    .send-button:active {
+      transform: translateY(0);
+    }
+
+    /* Canvas Panel */
+    .canvas-panel {
+      position: fixed;
+      right: 0;
+      top: 0;
+      height: 100vh;
+      width: 50%;
+      background: linear-gradient(135deg, #141417 0%, #1C1C21 100%);
+      border-left: 1px solid rgba(255, 255, 255, 0.08);
+      transform: translateX(100%);
+      transition: transform var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 40;
+      overflow-y: auto;
+      padding: 1.5rem;
+    }
+
+    .canvas-panel.open {
+      transform: translateX(0);
+    }
+
+    .canvas-panel::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .canvas-panel::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .canvas-panel::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+    }
+
+    .canvas-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .canvas-header h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: white;
+    }
+
+    .canvas-close-btn {
+      background: rgba(255, 255, 255, 0.1);
+      border: none;
+      border-radius: 8px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 1.25rem;
+    }
+
+    .canvas-close-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .canvas-content {
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+
+    .canvas-item {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
+      padding: 1.25rem;
+      transition: all 0.3s;
+    }
+
+    .canvas-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(59, 130, 246, 0.3);
+    }
+
+    .canvas-item-title {
+      font-weight: 600;
+      color: #3b82f6;
+      margin-bottom: 0.5rem;
+      font-size: 0.95rem;
+    }
+
+    .canvas-item-content {
+      color: rgba(255, 255, 255, 0.7);
+      font-size: 0.875rem;
+      line-height: 1.6;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .canvas-panel {
+        width: 60%;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .canvas-panel {
+        width: 100%;
+      }
+
+      .message-content {
+        max-width: 85%;
+      }
+
+      .chat-messages {
+        padding: 1rem;
+        padding-bottom: 6rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="chat-container">
+    <!-- Chat Messages Area -->
+    <div class="chat-messages" id="chatMessages">
+      <div class="message assistant">
+        <div class="message-content">
+          <p>Hello! I'm your AI assistant. How can I help you today?</p>
+        </div>
+      </div>
+
+      <div class="message user">
+        <div class="message-content">
+          <p>Can you help me with web development?</p>
+        </div>
+      </div>
+
+      <div class="message assistant">
+        <div class="message-content">
+          <p>Absolutely! I can help with HTML, CSS, JavaScript, React, and many other web technologies. What specific topic would you like to explore?</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="input-area">
+      <div class="input-wrapper">
+        <textarea 
+          class="input-field" 
+          id="messageInput"
+          placeholder="Type your message here..."
+          rows="1"
+        ></textarea>
+        <button class="send-button" id="sendBtn">
+          <span>Send</span>
+          <span>→</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Canvas Panel -->
+  <div class="canvas-panel" id="canvasPanel">
+    <div class="canvas-header">
+      <h2>Canvas Preview</h2>
+      <button class="canvas-close-btn" id="closeCanvasBtn">✕</button>
+    </div>
+
+    <div class="canvas-content">
+      <div class="canvas-item">
+        <div class="canvas-item-title">Code Preview</div>
+        <div class="canvas-item-content">
+          <pre style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 8px; overflow-x: auto; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem;">function hello() {
+  console.log('Hello, World!');
+}</pre>
+        </div>
+      </div>
+
+      <div class="canvas-item">
+        <div class="canvas-item-title">Live Preview</div>
+        <div class="canvas-item-content">
+          <div style="background: rgba(59, 130, 246, 0.1); padding: 1rem; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.2);">
+            <p>Your rendered content will appear here</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="canvas-item">
+        <div class="canvas-item-title">Documentation</div>
+        <div class="canvas-item-content">
+          <p>Reference materials and helpful links will be displayed in this section.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Auto-resize textarea
+    const messageInput = document.getElementById('messageInput');
+    messageInput.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+
+    // Send message
+    const sendBtn = document.getElementById('sendBtn');
+    const chatMessages = document.getElementById('chatMessages');
+
+    sendBtn.addEventListener('click', sendMessage);
+    messageInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    function sendMessage() {
+      const text = messageInput.value.trim();
+      if (!text) return;
+
+      // Add user message
+      const userMsg = document.createElement('div');
+      userMsg.className = 'message user';
+      userMsg.innerHTML = `<div class="message-content"><p>${escapeHtml(text)}</p></div>`;
+      chatMessages.appendChild(userMsg);
+
+      // Clear input
+      messageInput.value = '';
+      messageInput.style.height = 'auto';
+
+      // Scroll to bottom
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+
+      // Simulate assistant response
+      setTimeout(() => {
+        const assistantMsg = document.createElement('div');
+        assistantMsg.className = 'message assistant';
+        assistantMsg.innerHTML = `<div class="message-content"><p>Thanks for your message! This is a demo response.</p></div>`;
+        chatMessages.appendChild(assistantMsg);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }, 500);
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Canvas toggle
+    const canvasPanel = document.getElementById('canvasPanel');
+    const closeCanvasBtn = document.getElementById('closeCanvasBtn');
+
+    closeCanvasBtn.addEventListener('click', () => {
+      canvasPanel.classList.remove('open');
+    });
+
+    // Demo: Open canvas on page load
+    setTimeout(() => {
+      canvasPanel.classList.add('open');
+    }, 500);
+  </script>
+</body>
+</html>

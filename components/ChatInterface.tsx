@@ -314,13 +314,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   }, [messages, isStreaming]);
 
   return (
-    <div className="flex h-full bg-white relative overflow-hidden">
+    <div className="flex h-full bg-[#0f0f11] relative overflow-hidden">
       {/* Main Chat Area */}
-      <div className={`flex flex-col bg-white relative overflow-hidden transition-all duration-300 ${canvasOpen ? 'w-1/2' : 'w-full'}`}>
+      <div className={`flex flex-col bg-[#0f0f11] relative overflow-hidden transition-all duration-300 ${canvasOpen ? 'w-1/2' : 'w-full'}`}>
       <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-12 flex flex-col items-center" style={{ WebkitOverflowScrolling: 'touch' }}>
         <div className="w-full max-w-3xl space-y-6">
           {messages.length === 0 && (
-            <div className="h-full flex flex-col items-center justify-center text-gray-400 opacity-50 select-none py-20">
+            <div className="h-full flex flex-col items-center justify-center text-gray-600 opacity-50 select-none py-20">
               <svg className="w-12 h-12 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
               </svg>
@@ -332,8 +332,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             <div key={msg.id} className="w-full">
               {msg.role === 'user' ? (
                 <div className="flex flex-col items-end">
-                  <div className="mb-1 font-mono text-[10px] text-gray-400 uppercase">YOU</div>
-                  <div className="max-w-[80%] md:max-w-[70%] p-3.5 border-2 bg-black text-white border-black">
+                  <div className="mb-1 font-mono text-[10px] text-gray-600 uppercase">YOU</div>
+                  <div className="max-w-[80%] md:max-w-[70%] p-3.5 border-2 bg-black text-white border-white/10">
                     <div className="leading-relaxed text-sm font-mono whitespace-pre-wrap">
                       {msg.content}
                     </div>
@@ -353,7 +353,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                       </div>
                     )}
                     {msg.metadata?.activeSources && msg.metadata.activeSources.length > 0 && (
-                      <div className="mt-2 pt-2 border-t border-gray-600 text-[10px] text-gray-300 flex items-center gap-2">
+                      <div className="mt-2 pt-2 border-t border-gray-600 text-[10px] text-gray-600 flex items-center gap-2">
                         <FileText size={12} />
                         <span>Sources ({msg.metadata.activeSources.length}): {msg.metadata.activeSources.join(', ')}</span>
                       </div>
@@ -362,8 +362,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 </div>
               ) : (
                 <div className="flex flex-col items-start w-full">
-                  <div className="mb-1 font-mono text-[10px] text-gray-400 uppercase">CONSTRUCT_LM</div>
-                  <div className="w-full bg-white border-2 border-black p-6 md:p-10 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+                  <div className="mb-1 font-mono text-[10px] text-gray-600 uppercase">CONSTRUCT_LM</div>
+                  <div className="w-full bg-[#1b1b1d] border-2 border-white/10 p-6 md:p-10 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
                     
                     {/* Reasoning/Thinking Display */}
                     {msg.reasoning && (
@@ -375,7 +375,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                             {msg.isStreaming ? 'Streaming...' : 'Click to expand'}
                           </span>
                         </summary>
-                        <div className="p-4 text-xs font-mono text-gray-700 leading-relaxed whitespace-pre-wrap border-t-2 border-blue-200">
+                        <div className="p-4 text-xs font-mono text-gray-600 leading-relaxed whitespace-pre-wrap border-t-2 border-blue-200">
                           {msg.reasoning}
                         </div>
                       </details>
@@ -394,7 +394,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                           li: ({node, ...props}) => <li className="ml-2 font-mono" {...props} />,
                           code: ({node, inline, className, children, ...props}: any) => {
                             if (inline) {
-                              return <code className="bg-gray-100 text-red-600 px-1.5 py-0.5 rounded text-xs font-mono" {...props}>{children}</code>;
+                              return <code className="bg-[#252526] text-red-600 px-1.5 py-0.5 rounded text-xs font-mono" {...props}>{children}</code>;
                             }
                             
                             const match = /language-(\w+)/.exec(className || '');
@@ -421,27 +421,27 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                             // If this React component is open in Canvas, show a compact card instead
                             if (isReactComponent && isOpenInCanvas) {
                               return (
-                                <div className="border-2 border-black p-4 my-4 flex items-center justify-between group hover:bg-gray-50 transition-all">
+                                <div className="border-2 border-white/10 p-4 my-4 flex items-center justify-between group hover:bg-[#252526] transition-all">
                                   <div className="flex items-center gap-3">
-                                    <div className="border-2 border-black p-2 bg-black text-white">
+                                    <div className="border-2 border-white/10 p-2 bg-black text-white">
                                       <Code size={18} />
                                     </div>
                                     <div>
                                       <h4 className="text-sm font-bold uppercase tracking-tight">React Component</h4>
-                                      <p className="text-[10px] text-gray-500 font-bold uppercase">{language} ◆ Currently in Canvas</p>
+                                      <p className="text-[10px] text-gray-600 font-bold uppercase">{language} ◆ Currently in Canvas</p>
                                     </div>
                                   </div>
                                   <div className="flex gap-2">
                                     <button
                                       onClick={() => copyCode(code, blockId)}
-                                      className="p-2 border-2 border-black bg-white hover:bg-gray-100 text-[10px] font-mono flex items-center gap-1"
+                                      className="p-2 border-2 border-white/10 bg-[#1b1b1d] hover:bg-[#252526] text-[10px] font-mono flex items-center gap-1"
                                       title="Copy Code"
                                     >
                                       {isCopied ? <Check size={14} /> : <Copy size={14} />}
                                     </button>
                                     <button
                                       onClick={() => downloadCode(code, language)}
-                                      className="p-2 border-2 border-black bg-white hover:bg-gray-100 text-[10px] font-mono flex items-center gap-1"
+                                      className="p-2 border-2 border-white/10 bg-[#1b1b1d] hover:bg-[#252526] text-[10px] font-mono flex items-center gap-1"
                                       title="Download"
                                     >
                                       <Download size={14} />
@@ -454,27 +454,27 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                             // If it's a React component but Canvas is closed, show card with "Open Canvas" button
                             if (isReactComponent && !canvasOpen) {
                               return (
-                                <div className="border-2 border-black p-4 my-4 flex items-center justify-between group hover:bg-gray-50 transition-all">
+                                <div className="border-2 border-white/10 p-4 my-4 flex items-center justify-between group hover:bg-[#252526] transition-all">
                                   <div className="flex items-center gap-3">
-                                    <div className="border-2 border-black p-2 bg-black text-white">
+                                    <div className="border-2 border-white/10 p-2 bg-black text-white">
                                       <Code size={18} />
                                     </div>
                                     <div>
                                       <h4 className="text-sm font-bold uppercase tracking-tight">React Component</h4>
-                                      <p className="text-[10px] text-gray-500 font-bold uppercase">{language} ◆ Ready to render</p>
+                                      <p className="text-[10px] text-gray-600 font-bold uppercase">{language} ◆ Ready to render</p>
                                     </div>
                                   </div>
                                   <div className="flex gap-2">
                                     <button
                                       onClick={() => copyCode(code, blockId)}
-                                      className="p-2 border-2 border-black bg-white hover:bg-gray-100"
+                                      className="p-2 border-2 border-white/10 bg-[#1b1b1d] hover:bg-[#252526]"
                                       title="Copy Code"
                                     >
                                       {isCopied ? <Check size={14} /> : <Copy size={14} />}
                                     </button>
                                     <button
                                       onClick={() => downloadCode(code, language)}
-                                      className="p-2 border-2 border-black bg-white hover:bg-gray-100"
+                                      className="p-2 border-2 border-white/10 bg-[#1b1b1d] hover:bg-[#252526]"
                                       title="Download"
                                     >
                                       <Download size={14} />
@@ -493,7 +493,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                           }));
                                         }
                                       }}
-                                      className="border-2 border-black px-4 py-2 text-xs font-black uppercase bg-white hover:bg-black hover:text-white transition-all flex items-center gap-2"
+                                      className="border-2 border-white/10 px-4 py-2 text-xs font-black uppercase bg-[#1b1b1d] hover:bg-black hover:text-white transition-all flex items-center gap-2"
                                     >
                                       Open Canvas <Play size={12} />
                                     </button>
@@ -513,14 +513,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                 <div className="absolute right-2 top-2 flex gap-1 z-10">
                                   <button
                                     onClick={() => copyCode(code, blockId)}
-                                    className="p-1 bg-white border border-black hover:bg-gray-100 text-[10px] font-mono flex items-center gap-1"
+                                    className="p-1 bg-[#1b1b1d] border border-white/10 hover:bg-[#252526] text-[10px] font-mono flex items-center gap-1"
                                     title="Copy Code"
                                   >
                                     {isCopied ? <Check size={12} /> : <Copy size={12} />}
                                   </button>
                                   <button
                                     onClick={() => downloadCode(code, language)}
-                                    className="p-1 bg-white border border-black hover:bg-gray-100 text-[10px] font-mono flex items-center gap-1"
+                                    className="p-1 bg-[#1b1b1d] border border-white/10 hover:bg-[#252526] text-[10px] font-mono flex items-center gap-1"
                                     title="Download"
                                   >
                                     <Download size={12} />
@@ -531,7 +531,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                         ...prev,
                                         [blockId]: {showRendered: !blockState.showRendered}
                                       }))}
-                                      className="p-1 bg-white border border-black hover:bg-gray-100 text-[10px] font-mono flex items-center gap-1"
+                                      className="p-1 bg-[#1b1b1d] border border-white/10 hover:bg-[#252526] text-[10px] font-mono flex items-center gap-1"
                                       title="Toggle View"
                                     >
                                       <Code size={12} />
@@ -540,7 +540,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                   )}
                                 </div>
                                 {blockState.showRendered && isHtml ? (
-                                  <div className="border border-gray-300 bg-white mt-8">
+                                  <div className="border border-white/15 bg-[#1b1b1d] mt-8">
                                     <iframe
                                       srcDoc={generatePreviewHtml()}
                                       className="w-full border-0"
@@ -561,7 +561,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                     />
                                   </div>
                                 ) : (
-                                  <code className="block bg-gray-100 p-3 pt-10 rounded text-xs font-mono overflow-x-auto border border-gray-300" {...props}>
+                                  <code className="block bg-[#252526] p-3 pt-10 rounded text-xs font-mono overflow-x-auto border border-white/15" {...props}>
                                     {children}
                                   </code>
                                 )}
@@ -570,16 +570,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                           },
                           pre: ({node, ...props}) => <pre className="my-2" {...props} />,
                           a: ({node, ...props}) => <a className="text-blue-600 hover:underline font-medium" target="_blank" rel="noopener noreferrer" {...props} />,
-                          blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-gray-300 pl-4 italic my-3 text-gray-700" {...props} />,
+                          blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-white/15 pl-4 italic my-3 text-gray-600" {...props} />,
                           table: ({node, ...props}) => (
                             <div className="overflow-x-auto my-3 -mx-3 px-3">
-                              <table className="border-collapse border border-gray-300 w-full text-xs min-w-max" {...props} />
+                              <table className="border-collapse border border-white/15 w-full text-xs min-w-max" {...props} />
                             </div>
                           ),
-                          thead: ({node, ...props}) => <thead className="bg-gray-100" {...props} />,
-                          th: ({node, ...props}) => <th className="border border-gray-300 px-2 py-1 font-bold text-left whitespace-nowrap" {...props} />,
-                          td: ({node, ...props}) => <td className="border border-gray-300 px-2 py-1 whitespace-nowrap" {...props} />,
-                          hr: ({node, ...props}) => <hr className="my-4 border-gray-300" {...props} />,
+                          thead: ({node, ...props}) => <thead className="bg-[#252526]" {...props} />,
+                          th: ({node, ...props}) => <th className="border border-white/15 px-2 py-1 font-bold text-left whitespace-nowrap" {...props} />,
+                          td: ({node, ...props}) => <td className="border border-white/15 px-2 py-1 whitespace-nowrap" {...props} />,
+                          hr: ({node, ...props}) => <hr className="my-4 border-white/15" {...props} />,
                           strong: ({node, ...props}) => <strong className="font-bold" {...props} />,
                           em: ({node, ...props}) => <em className="italic" {...props} />,
                         }}
@@ -589,11 +589,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     </div>
 
                     {!msg.isStreaming && msg.outputTokens && (
-                      <div className="mt-4 pt-3 border-t border-gray-200 flex items-center justify-between">
-                        <div className="text-[10px] text-gray-500 italic font-mono">
+                      <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between">
+                        <div className="text-[10px] text-gray-600 italic font-mono">
                           {msg.inputTokens && `Input: ~${msg.inputTokens} tokens ◆ `}
                           Output: ~{msg.outputTokens} tokens
-                          <span className="ml-2 text-[9px] text-gray-400">(estimates)</span>
+                          <span className="ml-2 text-[9px] text-gray-600">(estimates)</span>
                         </div>
                         {aiModel === 'gemini' && (msg.inputTokens || 0) + (msg.outputTokens || 0) > 5000 && (
                           <a
@@ -610,7 +610,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     )}
 
                     {msg.citations && msg.citations.length > 0 && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-8 pt-6 border-t-2 border-black">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-8 pt-6 border-t-2 border-white/10">
                         {msg.citations.map((cite, i) => {
                           const sentences = cite.text.split(/[.!?]+\s+/).filter(s => s.trim().length > 20);
                           const preview = sentences.slice(0, 2).join('. ') + (sentences.length > 2 ? '.' : '');
@@ -622,16 +622,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                             <div key={i} className="group relative">
                               <div 
                                 onClick={() => setPinnedCitation(isPinned ? null : citationId)}
-                                className="bg-white border-2 border-gray-100 p-2.5 flex items-center gap-3 cursor-pointer hover:border-black hover:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] transition-all">
+                                className="bg-[#1b1b1d] border-2 border-white/5 p-2.5 flex items-center gap-3 cursor-pointer hover:border-white/10 hover:shadow-lg transition-all">
                                 <div className="w-1.5 h-1.5 bg-black" />
-                                <span className="text-[9px] font-bold uppercase text-gray-500 truncate">
+                                <span className="text-[9px] font-bold uppercase text-gray-600 truncate">
                                   SRC {i + 1}: {cite.docName}
                                 </span>
                               </div>
-                              <div className={`fixed left-1/2 -translate-x-1/2 top-20 w-80 md:w-96 bg-white border-2 border-black p-3 text-xs transition-all z-[100] shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] max-h-96 overflow-y-auto ${
+                              <div className={`fixed left-1/2 -translate-x-1/2 top-20 w-80 md:w-96 bg-[#1b1b1d] border-2 border-white/10 p-3 text-xs transition-all z-[100] shadow-lg max-h-96 overflow-y-auto ${
                                 isPinned ? 'opacity-100 visible' : 'opacity-0 invisible group-hover:opacity-100 group-hover:visible'
                               }`}>
-                                <div className="flex justify-between items-start mb-2 border-b border-gray-200 pb-1">
+                                <div className="flex justify-between items-start mb-2 border-b border-white/10 pb-1">
                                   <div className="font-bold">{cite.docName}</div>
                                   {isPinned && (
                                     <button 
@@ -639,7 +639,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                         e.stopPropagation();
                                         setPinnedCitation(null);
                                       }}
-                                      className="text-lg font-bold hover:bg-gray-100 px-1 leading-none"
+                                      className="text-lg font-bold hover:bg-[#252526] px-1 leading-none"
                                     >
                                       <X size={20} className="hover:opacity-70" />
                                     </button>
@@ -648,17 +648,17 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                 <div className="bg-yellow-100 border-l-4 border-yellow-400 pl-2 py-1 mb-3 text-gray-800 font-medium text-[11px] leading-relaxed">
                                   {displayPreview}
                                 </div>
-                                <div className="text-[10px] text-gray-500 mb-2 font-bold uppercase">Full Context:</div>
-                                <div className="text-gray-700 prose prose-sm max-w-none">
+                                <div className="text-[10px] text-gray-600 mb-2 font-bold uppercase">Full Context:</div>
+                                <div className="text-gray-600 prose prose-sm max-w-none">
                                   <ReactMarkdown
                                     remarkPlugins={[remarkGfm]}
                                     components={{
                                       p: ({node, ...props}) => <div className="mb-2 last:mb-0" {...props} />,
                                       code: ({node, inline, ...props}: any) => 
                                         inline ? (
-                                          <code className="bg-gray-100 text-red-600 px-1 py-0.5 rounded text-[10px] font-mono" {...props} />
+                                          <code className="bg-[#252526] text-red-600 px-1 py-0.5 rounded text-[10px] font-mono" {...props} />
                                         ) : (
-                                          <code className="block bg-gray-100 p-2 rounded my-1 text-[10px] font-mono overflow-x-auto" {...props} />
+                                          <code className="block bg-[#252526] p-2 rounded my-1 text-[10px] font-mono overflow-x-auto" {...props} />
                                         ),
                                       ul: ({node, ...props}) => <ul className="list-disc list-inside mb-2 space-y-0.5" {...props} />,
                                       ol: ({node, ...props}) => <ol className="list-decimal list-inside mb-2 space-y-0.5" {...props} />,
@@ -672,7 +672,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                                     {cite.text}
                                   </ReactMarkdown>
                                 </div>
-                                <div className="mt-2 text-right text-[10px] text-gray-400 border-t border-gray-200 pt-1">
+                                <div className="mt-2 text-right text-[10px] text-gray-600 border-t border-white/10 pt-1">
                                   Similarity: {cite.similarity.toFixed(3)}
                                 </div>
                               </div>
@@ -703,7 +703,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           />
           <button 
             onClick={() => setImagePreview(null)}
-            className="absolute top-4 right-4 text-white hover:bg-white/20 w-10 h-10 flex items-center justify-center"
+            className="absolute top-4 right-4 text-white hover:bg-[#1b1b1d]/20 w-10 h-10 flex items-center justify-center"
           >
             <X size={24} />
           </button>
@@ -716,10 +716,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        className={`border-t-2 border-black bg-white shrink-0 flex flex-col items-center px-6 py-3 relative ${isDragging ? 'bg-gray-100' : ''}`}
+        className={`border-t-2 border-white/10 bg-[#1b1b1d] shrink-0 flex flex-col items-center px-6 py-3 relative ${isDragging ? 'bg-[#252526]' : ''}`}
       >
         {isDragging && (
-          <div className="absolute inset-0 bg-black/10 border-4 border-dashed border-black flex items-center justify-center z-10 pointer-events-none">
+          <div className="absolute inset-0 bg-black/10 border-4 border-dashed border-white/10 flex items-center justify-center z-10 pointer-events-none">
             <div className="text-center font-mono font-bold">
               <ImageIcon size={32} className="mx-auto mb-2" />
               DROP IMAGE HERE
@@ -728,22 +728,22 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         )}
         {(input || selectedImages.length > 0) && (
           <div className="w-full max-w-3xl mb-2 flex justify-end">
-            <div className="text-[10px] font-mono text-gray-500">
-              EST. TOKENS: <span className="font-bold text-black">{estimatedTokens}</span>
+            <div className="text-[10px] font-mono text-gray-600">
+              EST. TOKENS: <span className="font-bold text-white">{estimatedTokens}</span>
             </div>
           </div>
         )}
         
         {selectedImages.length > 0 && (
           <div className="absolute bottom-full left-1/2 -translate-x-1/2 w-full max-w-3xl mb-1 px-6">
-            <div className="border-2 border-black bg-gray-50">
-              <div className="flex justify-between items-center p-2 border-b border-gray-300">
+            <div className="border-2 border-white/10 bg-[#252526]">
+              <div className="flex justify-between items-center p-2 border-b border-white/15">
                 <span className="text-[10px] font-mono font-bold">{selectedImages.length} IMAGE{selectedImages.length > 1 ? 'S' : ''} ATTACHED</span>
                 <div className="flex gap-2">
                   {selectedImages.length > 2 && (
                     <button
                       onClick={() => setIsImagesExpanded(!isImagesExpanded)}
-                      className="text-[10px] font-mono hover:bg-gray-200 px-2 py-1"
+                      className="text-[10px] font-mono hover:bg-[#2d2d30] px-2 py-1"
                       type="button"
                     >
                       {isImagesExpanded ? 'Ôû╝ COLLAPSE' : 'Ôû▓ EXPAND'}
@@ -751,7 +751,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   )}
                   <button
                     onClick={clearAllImages}
-                    className="text-[10px] font-mono hover:bg-gray-200 px-2 py-1"
+                    className="text-[10px] font-mono hover:bg-[#2d2d30] px-2 py-1"
                     type="button"
                   >
                     CLEAR ALL
@@ -760,15 +760,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               </div>
               <div className="p-2 space-y-2 max-h-[280px] overflow-y-auto">
                 {(isImagesExpanded ? selectedImages : selectedImages.slice(0, 2)).map((img, idx) => (
-                  <div key={idx} className="flex items-center gap-3 bg-white border border-gray-300 p-2">
-                    <img src={img.preview} alt={img.name} className="h-12 w-12 object-cover border border-black" />
+                  <div key={idx} className="flex items-center gap-3 bg-[#1b1b1d] border border-white/15 p-2">
+                    <img src={img.preview} alt={img.name} className="h-12 w-12 object-cover border border-white/10" />
                     <div className="flex-1 text-[10px] font-mono">
                       <div className="font-bold truncate">{img.name}</div>
-                      <div className="text-gray-500">{img.tokens} tokens ◆ {(img.size / 1024 / 1024).toFixed(2)} MB</div>
+                      <div className="text-gray-600">{img.tokens} tokens ◆ {(img.size / 1024 / 1024).toFixed(2)} MB</div>
                     </div>
                     <button
                       onClick={() => removeImage(idx)}
-                      className="p-1 hover:bg-gray-200 border border-black"
+                      className="p-1 hover:bg-[#2d2d30] border border-white/10"
                       type="button"
                     >
                       <X size={14} />
@@ -790,8 +790,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 onFocus={() => setIsInputFocused(true)}
                 onBlur={() => setIsInputFocused(false)}
                 placeholder={selectedImages.length > 0 ? "ADD DESCRIPTION (OPTIONAL)..." : "ASK A QUESTION..."}
-                className={`w-full border-2 border-black p-3 pr-20 text-[11px] font-bold focus:outline-none uppercase placeholder:text-gray-300 bg-white transition-all duration-100 resize-none overflow-y-auto ${
-                  isInputFocused ? 'shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : ''
+                className={`w-full border-2 border-white/10 p-3 pr-20 text-[11px] font-bold focus:outline-none uppercase placeholder:text-gray-600 bg-[#1b1b1d] transition-all duration-100 resize-none overflow-y-auto ${
+                  isInputFocused ? 'shadow-lg' : ''
                 }`}
                 style={{ height: '48px' }}
                 disabled={isStreaming}
@@ -809,7 +809,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isStreaming}
-                  className="text-black hover:text-gray-600 transition-colors disabled:opacity-50"
+                  className="text-white hover:text-gray-600 transition-colors disabled:opacity-50"
                   title="Upload Image"
                 >
                   <ImageIcon size={16} />
@@ -817,10 +817,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                 <button 
                   type="submit"
                   disabled={(!input.trim() && selectedImages.length === 0) || isStreaming}
-                  className="text-black hover:text-gray-600 transition-colors disabled:opacity-50"
+                  className="text-white hover:text-gray-600 transition-colors disabled:opacity-50"
                 >
                   {isStreaming ? (
-                    <div className="w-4 h-4 border-2 border-t-transparent border-black rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-t-transparent border-white/10 rounded-full animate-spin" />
                   ) : (
                     <Send size={16} />
                   )}
@@ -834,16 +834,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
       {/* Canvas Side Panel */}
       {canvasOpen && canvasContent && (
-        <div className="w-1/2 border-l-2 border-black bg-white flex flex-col">
+        <div className="w-1/2 border-l-2 border-white/10 bg-[#1b1b1d] flex flex-col">
           {/* Canvas Header */}
-          <div className="h-14 border-b-2 border-black flex items-center justify-between px-4 bg-white shrink-0">
+          <div className="h-14 border-b-2 border-white/10 flex items-center justify-between px-4 bg-[#1b1b1d] shrink-0">
             <div className="flex items-center gap-2">
               <span className="text-[10px] font-bold uppercase bg-black text-white px-2 py-1">
                 {canvasContent.language}
               </span>
               <span className="text-xs font-mono">CANVAS</span>
               {codeVersionHistory[canvasContent.blockId] && (
-                <span className="text-[9px] font-mono text-gray-500">
+                <span className="text-[9px] font-mono text-gray-600">
                   v{codeVersionHistory[canvasContent.blockId].currentIndex + 1}/{codeVersionHistory[canvasContent.blockId].versions.length}
                 </span>
               )}
@@ -852,7 +852,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               <button
                 onClick={handleVersionUndo}
                 disabled={!codeVersionHistory[canvasContent.blockId] || codeVersionHistory[canvasContent.blockId].currentIndex <= 0}
-                className="p-1 border border-black hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-[10px] font-mono flex items-center gap-1"
+                className="p-1 border border-white/10 hover:bg-[#252526] disabled:opacity-30 disabled:cursor-not-allowed text-[10px] font-mono flex items-center gap-1"
                 title="Undo (Previous Version)"
               >
                 <Undo size={14} />
@@ -860,7 +860,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               <button
                 onClick={handleVersionRedo}
                 disabled={!codeVersionHistory[canvasContent.blockId] || codeVersionHistory[canvasContent.blockId].currentIndex >= codeVersionHistory[canvasContent.blockId].versions.length - 1}
-                className="p-1 border border-black hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed text-[10px] font-mono flex items-center gap-1"
+                className="p-1 border border-white/10 hover:bg-[#252526] disabled:opacity-30 disabled:cursor-not-allowed text-[10px] font-mono flex items-center gap-1"
                 title="Redo (Next Version)"
               >
                 <Redo size={14} />
@@ -895,20 +895,20 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   setIframeKey(prev => prev + 1);
                   setCanvasShowCode(false);
                 }}
-                className="px-2 py-1 border border-black hover:bg-gray-100 text-[10px] font-mono font-bold"
+                className="px-2 py-1 border border-white/10 hover:bg-[#252526] text-[10px] font-mono font-bold"
               >
                 UPDATE
               </button>
               <button
                 onClick={() => setCanvasShowCode(!canvasShowCode)}
-                className="p-1 border border-black hover:bg-gray-100 text-[10px] font-mono flex items-center gap-1"
+                className="p-1 border border-white/10 hover:bg-[#252526] text-[10px] font-mono flex items-center gap-1"
               >
                 <Code size={14} />
                 {canvasShowCode ? 'PREVIEW' : 'CODE'}
               </button>
               <button
                 onClick={() => setCanvasOpen(false)}
-                className="p-1 border border-black hover:bg-gray-100"
+                className="p-1 border border-white/10 hover:bg-[#252526]"
                 title="Close Canvas"
               >
                 <X size={14} />
@@ -922,7 +922,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               <textarea
                 value={canvasEditedCode}
                 onChange={(e) => setCanvasEditedCode(e.target.value)}
-                className="w-full h-full p-4 text-xs font-mono bg-gray-50 border-0 resize-none focus:outline-none"
+                className="w-full h-full p-4 text-xs font-mono bg-[#252526] border-0 resize-none focus:outline-none"
                 spellCheck={false}
               />
             ) : (
