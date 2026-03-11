@@ -90,7 +90,9 @@ export const processFile = async (
       const rawChunks = chunkText(text);
       
       onProgress(`Embedding ${rawChunks.length} chunks...`);
-      const vectors = await embeddingService.getEmbeddings(rawChunks);
+      const vectors = await embeddingService.getEmbeddings(rawChunks, (current, total) => {
+        onProgress(`Embedding chunk ${current}/${total}...`);
+      });
       
       const chunks: TextChunk[] = rawChunks.map((chunk, i) => ({
         id: crypto.randomUUID(),

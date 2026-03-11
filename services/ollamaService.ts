@@ -1,34 +1,32 @@
 import { ChatMessage, Citation } from "../types";
 import { validateAndFixCitations, logCitationValidation } from "./citationValidator";
 
-// Local Ollama models (commonly available)
+// Local Ollama models (commonly available - 2026)
 export const OLLAMA_LOCAL_MODELS = [
-  { id: "llama2", name: "Llama 2 7B", context: "4K tokens", tags: ["LOCAL", "TEXT"], vision: false },
-  { id: "llama2:13b", name: "Llama 2 13B", context: "4K tokens", tags: ["LOCAL", "TEXT"], vision: false },
-  { id: "llama2:70b", name: "Llama 2 70B", context: "4K tokens", tags: ["LOCAL", "TEXT"], vision: false },
-  { id: "llama3", name: "Llama 3 8B", context: "8K tokens", tags: ["LOCAL", "TEXT"], vision: false },
-  { id: "llama3:70b", name: "Llama 3 70B", context: "8K tokens", tags: ["LOCAL", "TEXT"], vision: false },
-  { id: "mistral", name: "Mistral 7B", context: "8K tokens", tags: ["LOCAL", "TEXT"], vision: false },
-  { id: "neural-chat", name: "Neural Chat 7B", context: "8K tokens", tags: ["LOCAL", "TEXT"], vision: false },
-  { id: "starling-lm", name: "Starling LM 7B", context: "4K tokens", tags: ["LOCAL", "TEXT"], vision: false },
-  { id: "dolphin-mixtral", name: "Dolphin Mixtral 8x7B", context: "32K tokens", tags: ["LOCAL", "TEXT"], vision: false },
-  { id: "openchat", name: "OpenChat 3.5", context: "8K tokens", tags: ["LOCAL", "TEXT"], vision: false },
-  { id: "zephyr", name: "Zephyr 7B", context: "4K tokens", tags: ["LOCAL", "TEXT"], vision: false },
-  { id: "orca-mini", name: "Orca Mini 3B", context: "4K tokens", tags: ["LOCAL", "COMPACT"], vision: false },
-  { id: "phi", name: "Phi 2.7B", context: "2K tokens", tags: ["LOCAL", "COMPACT"], vision: false },
-  { id: "tinyllama", name: "TinyLlama 1.1B", context: "2K tokens", tags: ["LOCAL", "COMPACT"], vision: false },
+  { id: "llama3.1:8b", name: "Llama 3.1 8B", context: "8K tokens", tags: ["LOCAL", "TEXT"], vision: false },
+  { id: "llama3.1:70b", name: "Llama 3.1 70B", context: "8K tokens", tags: ["LOCAL", "TEXT"], vision: false },
+  { id: "llama3.1:405b", name: "Llama 3.1 405B", context: "128K tokens", tags: ["LOCAL", "TEXT"], vision: false },
+  { id: "deepseek-r1:7b", name: "DeepSeek-R1 7B", context: "64K tokens", tags: ["LOCAL", "REASONING"], vision: false },
+  { id: "deepseek-r1:32b", name: "DeepSeek-R1 32B", context: "64K tokens", tags: ["LOCAL", "REASONING"], vision: false },
+  { id: "deepseek-r1:70b", name: "DeepSeek-R1 70B", context: "64K tokens", tags: ["LOCAL", "REASONING"], vision: false },
+  { id: "llama3.2:1b", name: "Llama 3.2 1B", context: "8K tokens", tags: ["LOCAL", "COMPACT"], vision: false },
+  { id: "llama3.2:3b", name: "Llama 3.2 3B", context: "8K tokens", tags: ["LOCAL", "COMPACT"], vision: false },
+  { id: "gemma3:9b", name: "Gemma 3 9B", context: "8K tokens", tags: ["LOCAL", "TEXT"], vision: false },
+  { id: "mistral:7b", name: "Mistral 7B", context: "32K tokens", tags: ["LOCAL", "TEXT"], vision: false },
+  { id: "mixtral:8x7b", name: "Mixtral 8x7B", context: "32K tokens", tags: ["LOCAL", "TEXT"], vision: false },
+  { id: "qwen2:7b", name: "Qwen 2 7B", context: "32K tokens", tags: ["LOCAL", "TEXT"], vision: false },
+  { id: "nomic-embed-text", name: "Nomic Embed Text", context: "8K tokens", tags: ["LOCAL", "EMBEDDING"], vision: false },
 ];
 
-// Cloud Ollama models (via Ollama Cloud API)
+// Cloud Ollama models (via Ollama Cloud API - 2026)
 export const OLLAMA_CLOUD_MODELS = [
-  { id: "llama2", name: "Llama 2 7B", context: "4K tokens", tags: ["CLOUD", "TEXT"], vision: false },
-  { id: "llama2:13b", name: "Llama 2 13B", context: "4K tokens", tags: ["CLOUD", "TEXT"], vision: false },
-  { id: "llama3", name: "Llama 3 8B", context: "8K tokens", tags: ["CLOUD", "TEXT"], vision: false },
-  { id: "llama3:70b", name: "Llama 3 70B", context: "8K tokens", tags: ["CLOUD", "TEXT"], vision: false },
-  { id: "mistral", name: "Mistral 7B", context: "8K tokens", tags: ["CLOUD", "TEXT"], vision: false },
-  { id: "mixtral", name: "Mixtral 8x7B", context: "32K tokens", tags: ["CLOUD", "TEXT"], vision: false },
-  { id: "neural-chat", name: "Neural Chat 7B", context: "8K tokens", tags: ["CLOUD", "TEXT"], vision: false },
-  { id: "starling-lm", name: "Starling LM 7B", context: "4K tokens", tags: ["CLOUD", "TEXT"], vision: false },
+  { id: "gpt-oss:120b-cloud", name: "GPT-OSS 120B Cloud", context: "32K tokens", tags: ["CLOUD", "TEXT"], vision: false },
+  { id: "gpt-oss:20b-cloud", name: "GPT-OSS 20B Cloud", context: "32K tokens", tags: ["CLOUD", "TEXT"], vision: false },
+  { id: "deepseek-v3.1:671b-cloud", name: "DeepSeek V3.1 671B Cloud", context: "128K tokens", tags: ["CLOUD", "REASONING"], vision: false },
+  { id: "qwen3-coder:480b-cloud", name: "Qwen3 Coder 480B Cloud", context: "32K tokens", tags: ["CLOUD", "CODING"], vision: false },
+  { id: "qwen3-vl:235b-cloud", name: "Qwen3 VL 235B Cloud", context: "32K tokens", tags: ["CLOUD", "VISION"], vision: true },
+  { id: "minimax-m2:cloud", name: "MiniMax M2 Cloud", context: "32K tokens", tags: ["CLOUD", "TEXT"], vision: false },
+  { id: "glm-4.6:cloud", name: "GLM 4.6 Cloud", context: "128K tokens", tags: ["CLOUD", "REASONING"], vision: false },
 ];
 
 export const streamChatResponse = async (
@@ -145,34 +143,98 @@ ${contextString}`;
   ];
 
   // Determine API endpoint
-  const apiUrl = isCloud 
-    ? "https://api.ollama.ai/v1/chat/completions"
-    : `${ollamaBaseUrl}/api/chat`;
+  if (isCloud) {
+    // Use backend proxy to bypass CORS
+    const apiUrl = "http://localhost:3001/api/ollama-proxy";
+
+    const requestBody = {
+      model: model,
+      messages,
+      stream: true,
+      temperature: 0.7,
+      apiKey: apiKey
+    };
+
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Ollama proxy error details:', errorText);
+      throw new Error(`Ollama proxy error (${response.status}): ${response.statusText} - ${errorText}`);
+    }
+
+    const reader = response.body?.getReader();
+    const decoder = new TextDecoder();
+
+    if (!reader) {
+      throw new Error("No response body");
+    }
+
+    let buffer = "";
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+
+          try {
+            const data = JSON.parse(line);
+            const chunk = data.message?.content || "";
+            if (chunk) {
+              onChunk(chunk);
+            }
+          } catch (e) {
+            console.error("Error parsing stream line:", line, e);
+          }
+        }
+      }
+
+      if (buffer.trim()) {
+        try {
+          const data = JSON.parse(buffer);
+          const chunk = data.message?.content || "";
+          if (chunk) {
+            onChunk(chunk);
+          }
+        } catch (e) {
+          console.error("Error parsing final buffer:", buffer, e);
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
+
+    return;
+  }
+
+  // Local Ollama endpoint
+  const apiUrl = `${ollamaBaseUrl}/api/chat`;
 
   // Prepare request headers
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
 
-  if (isCloud && apiKey) {
-    headers["Authorization"] = `Bearer ${apiKey}`;
-  }
-
   // Prepare request body
-  const requestBody = isCloud
-    ? {
-        model: model,
-        messages,
-        stream: true,
-        temperature: 0.7,
-        max_tokens: 8000,
-      }
-    : {
-        model: model,
-        messages,
-        stream: true,
-        temperature: 0.7,
-      };
+  const requestBody = {
+    model: model,
+    messages,
+    stream: true,
+    temperature: 0.7,
+  };
 
   const response = await fetch(apiUrl, {
     method: "POST",
@@ -208,26 +270,11 @@ ${contextString}`;
         if (!line.trim()) continue;
 
         try {
-          // Handle both streaming formats
-          let data;
-          if (isCloud) {
-            // OpenAI-compatible format
-            if (line.startsWith("data: ")) {
-              const jsonStr = line.slice(6);
-              if (jsonStr === "[DONE]") continue;
-              data = JSON.parse(jsonStr);
-              const chunk = data.choices?.[0]?.delta?.content || "";
-              if (chunk) {
-                onChunk(chunk);
-              }
-            }
-          } else {
-            // Ollama native format
-            data = JSON.parse(line);
-            const chunk = data.message?.content || "";
-            if (chunk) {
-              onChunk(chunk);
-            }
+          // Ollama uses native format for both local and cloud
+          const data = JSON.parse(line);
+          const chunk = data.message?.content || "";
+          if (chunk) {
+            onChunk(chunk);
           }
         } catch (e) {
           console.error("Error parsing stream line:", line, e);
@@ -238,23 +285,10 @@ ${contextString}`;
     // Process any remaining buffer
     if (buffer.trim()) {
       try {
-        if (isCloud) {
-          if (buffer.startsWith("data: ")) {
-            const jsonStr = buffer.slice(6);
-            if (jsonStr !== "[DONE]") {
-              const data = JSON.parse(jsonStr);
-              const chunk = data.choices?.[0]?.delta?.content || "";
-              if (chunk) {
-                onChunk(chunk);
-              }
-            }
-          }
-        } else {
-          const data = JSON.parse(buffer);
-          const chunk = data.message?.content || "";
-          if (chunk) {
-            onChunk(chunk);
-          }
+        const data = JSON.parse(buffer);
+        const chunk = data.message?.content || "";
+        if (chunk) {
+          onChunk(chunk);
         }
       } catch (e) {
         console.error("Error parsing final buffer:", buffer, e);
@@ -285,7 +319,7 @@ export const testConnection = async (
 ): Promise<{ success: boolean; message: string; models?: string[] }> => {
   try {
     const url = isCloud 
-      ? "https://api.ollama.ai/v1/models"
+      ? "https://ollama.com/api/tags"
       : `${baseUrl}/api/tags`;
 
     const headers: Record<string, string> = {};

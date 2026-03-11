@@ -768,6 +768,85 @@ app.get("/health", (req, res) => {
 })
 
 // ============================================================================
+// OLLAMA CLOUD PROXY - Bypass CORS restrictions
+// ============================================================================
+
+/**
+ * Proxy endpoint for Ollama Cloud API
+ * Forwards requests from browser to Ollama Cloud, bypassing CORS
+ * POST /api/ollama-proxy
+ * Body: { model, messages, stream, temperature, apiKey }
+ */
+app.post("/api/ollama-proxy", async (req, res) => {
+  try {
+    const { model, messages, stream, temperature, apiKey } = req.body;
+
+    if (!apiKey) {
+      return res.status(400).json({ error: "Missing Ollama Cloud API key" });
+    }
+
+    if (!model || !messages) {
+      return res.status(400).json({ error: "Missing model or messages" });
+    }
+
+    console.log(`[OLLAMA-PROXY] Forwarding request to Ollama Cloud for model: ${model}`);
+
+    const response = await fetch("https://ollama.com/api/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        stream: stream !== false,
+        temperature: temperature || 0.7
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[OLLAMA-PROXY] Error from Ollama Cloud:`, response.status, errorText);
+      return res.status(response.status).json({
+        error: `Ollama Cloud API error: ${response.statusText}`,
+        details: errorText
+      });
+    }
+
+    // Handle streaming response
+    if (stream !== false) {
+      res.setHeader("Content-Type", "application/x-ndjson");
+      res.setHeader("Transfer-Encoding", "chunked");
+
+      const reader = response.body;
+      reader.on("data", (chunk) => {
+        res.write(chunk);
+      });
+
+      reader.on("end", () => {
+        res.end();
+      });
+
+      reader.on("error", (error) => {
+        console.error(`[OLLAMA-PROXY] Stream error:`, error);
+        res.status(500).json({ error: "Stream error" });
+      });
+    } else {
+      // Non-streaming response
+      const data = await response.json();
+      res.json(data);
+    }
+  } catch (error) {
+    console.error(`[OLLAMA-PROXY] Proxy error:`, error.message);
+    res.status(500).json({
+      error: "Proxy error",
+      details: error.message
+    });
+  }
+});
+
+// ============================================================================
 // ENHANCED RUNTIME BUNDLER - Multi-file component support
 // ============================================================================
 

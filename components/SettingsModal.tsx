@@ -10,7 +10,8 @@ interface SettingsModalProps {
   openrouterKey: string;
   ollamaKey: string;
   ollamaBaseUrl: string;
-  onSaveKeys: (gemini: string, cerebras: string, groq: string, openrouter: string, ollama: string, ollamaUrl: string) => void;
+  ollamaMode: 'local' | 'cloud';
+  onSaveKeys: (gemini: string, cerebras: string, groq: string, openrouter: string, ollama: string, ollamaUrl: string, ollamaMode: 'local' | 'cloud') => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -22,6 +23,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   openrouterKey,
   ollamaKey,
   ollamaBaseUrl,
+  ollamaMode: initialOllamaMode,
   onSaveKeys
 }) => {
   const [localGeminiKey, setLocalGeminiKey] = useState(geminiKey);
@@ -30,6 +32,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [localOpenRouterKey, setLocalOpenRouterKey] = useState(openrouterKey);
   const [localOllamaKey, setLocalOllamaKey] = useState(ollamaKey);
   const [localOllamaBaseUrl, setLocalOllamaBaseUrl] = useState(ollamaBaseUrl);
+  const [localOllamaMode, setLocalOllamaMode] = useState<'local' | 'cloud'>(initialOllamaMode);
   const [showGeminiKey, setShowGeminiKey] = useState(false);
   const [showCerebrasKey, setShowCerebrasKey] = useState(false);
   const [showGroqKey, setShowGroqKey] = useState(false);
@@ -50,7 +53,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [groqError, setGroqError] = useState('');
   const [openrouterError, setOpenrouterError] = useState('');
   const [ollamaError, setOllamaError] = useState('');
-  const [ollamaMode, setOllamaMode] = useState<'local' | 'cloud'>('local');
 
   React.useEffect(() => {
     setLocalGeminiKey(geminiKey);
@@ -189,35 +191,35 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     setOllamaStatus('idle');
     setOllamaError('');
     try {
-      const url = ollamaMode === 'local'
-        ? `${localOllamaBaseUrl}/api/tags`
-        : 'https://api.ollama.ai/v1/models';
-
-      const headers: Record<string, string> = {};
-      if (ollamaMode === 'cloud' && localOllamaKey) {
-        headers['Authorization'] = `Bearer ${localOllamaKey}`;
-      }
-
-      const response = await fetch(url, { headers });
-      if (response.ok) {
-        setOllamaStatus('success');
-      } else if (response.status === 401 || response.status === 403) {
-        setOllamaStatus('error');
-        setOllamaError('Invalid credentials');
+      // Only test local connections from browser (cloud has CORS restrictions)
+      if (localOllamaMode === 'local') {
+        const url = `${localOllamaBaseUrl}/api/tags`;
+        const response = await fetch(url);
+        if (response.ok) {
+          setOllamaStatus('success');
+        } else {
+          setOllamaStatus('error');
+          setOllamaError('Connection failed');
+        }
       } else {
-        setOllamaStatus('error');
-        setOllamaError('Connection failed');
+        // For cloud, just validate that API key is provided
+        if (localOllamaKey.trim()) {
+          setOllamaStatus('success');
+        } else {
+          setOllamaStatus('error');
+          setOllamaError('API key required');
+        }
       }
     } catch (error) {
       setOllamaStatus('error');
-      setOllamaError(ollamaMode === 'local' ? 'Cannot reach local Ollama' : 'Network error');
+      setOllamaError(localOllamaMode === 'local' ? 'Cannot reach local Ollama' : 'Network error');
     } finally {
       setTestingOllama(false);
     }
   };
 
   const handleSave = () => {
-    onSaveKeys(localGeminiKey, localCerebrasKey, localGroqKey, localOpenRouterKey, localOllamaKey, localOllamaBaseUrl);
+    onSaveKeys(localGeminiKey, localCerebrasKey, localGroqKey, localOpenRouterKey, localOllamaKey, localOllamaBaseUrl, localOllamaMode);
     onClose();
   };
 
@@ -429,11 +431,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             <div className="flex gap-2 mb-3">
               <button
                 onClick={() => {
-                  setOllamaMode('local');
+                  setLocalOllamaMode('local');
                   setOllamaStatus('idle');
                 }}
                 className={`flex-1 px-2 py-1.5 text-xs font-semibold rounded transition-colors ${
-                  ollamaMode === 'local'
+                  localOllamaMode === 'local'
                     ? 'bg-brand-blue text-white'
                     : 'border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-[#1b1b1d]'
                 }`}
@@ -442,11 +444,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
               </button>
               <button
                 onClick={() => {
-                  setOllamaMode('cloud');
+                  setLocalOllamaMode('cloud');
                   setOllamaStatus('idle');
                 }}
                 className={`flex-1 px-2 py-1.5 text-xs font-semibold rounded transition-colors ${
-                  ollamaMode === 'cloud'
+                  localOllamaMode === 'cloud'
                     ? 'bg-brand-blue text-white'
                     : 'border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-[#1b1b1d]'
                 }`}
@@ -456,7 +458,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
 
             {/* Local Configuration */}
-            {ollamaMode === 'local' && (
+            {localOllamaMode === 'local' && (
               <div className="space-y-2 mb-2">
                 <div className="flex items-center gap-2">
                   <input
@@ -484,7 +486,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             )}
 
             {/* Cloud Configuration */}
-            {ollamaMode === 'cloud' && (
+            {localOllamaMode === 'cloud' && (
               <div className="space-y-2 mb-2">
                 <div className="flex items-center gap-2">
                   <div className="flex-1 relative flex items-center">
@@ -514,8 +516,11 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                     {testingOllama ? '...' : 'TEST'}
                   </button>
                 </div>
+                <div className="text-[9px] text-slate-500 dark:text-slate-400 mb-2">
+                  Connection will be tested when you send your first message.
+                </div>
                 <a 
-                  href="https://ollama.ai/api" 
+                  href="https://ollama.com/blog/ollama-cloud" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-[9px] text-brand-blue hover:underline"

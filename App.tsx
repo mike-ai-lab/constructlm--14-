@@ -10,16 +10,104 @@ import * as GroqService from './services/groqService';
 import * as OpenRouterService from './services/openrouterService';
 import * as OllamaService from './services/ollamaService';
 import * as ChatStorage from './services/chatStorage';
-import { Settings, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
+import { Settings, ChevronLeft, ChevronRight, BookOpen, ChevronDown } from 'lucide-react';
+
+// Expandable Model Provider Section Component
+interface ModelProviderSectionProps {
+  title: string;
+  models: Array<{ id: string; name: string; context: string; tags: string[] }>;
+  selectedModel: string;
+  onSelectModel: (modelId: string) => void;
+}
+
+const ModelProviderSection: React.FC<ModelProviderSectionProps> = ({
+  title,
+  models,
+  selectedModel,
+  onSelectModel
+}) => {
+  const storageKey = `model-section-expanded-${title}`;
+  const [isExpanded, setIsExpanded] = React.useState(() => {
+    // Load from localStorage, default to false (collapsed)
+    const saved = localStorage.getItem(storageKey);
+    return saved ? JSON.parse(saved) : false;
+  });
+
+  const handleToggle = () => {
+    const newState = !isExpanded;
+    setIsExpanded(newState);
+    localStorage.setItem(storageKey, JSON.stringify(newState));
+  };
+
+  return (
+    <div className="border-b border-slate-100 dark:border-white/5">
+      <button
+        onClick={handleToggle}
+        className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-[#0f0f11] transition-colors"
+      >
+        <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+          {title}
+        </span>
+        <ChevronDown
+          size={14}
+          className={`text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+        />
+      </button>
+
+      {isExpanded && (
+        <div className="space-y-1 px-2 pb-2">
+          {models.map(model => (
+            <button
+              key={model.id}
+              onClick={() => {
+                console.log('[ModelProviderSection] Model clicked:', model.id, 'in section:', title);
+                onSelectModel(model.id);
+              }}
+              className={`w-full text-left px-3 py-2.5 rounded transition-colors ${
+                selectedModel === model.id
+                  ? 'bg-brand-blue text-white'
+                  : 'hover:bg-slate-100 dark:hover:bg-[#0f0f11] text-slate-900 dark:text-slate-100'
+              }`}
+            >
+              <div className="flex justify-between items-start gap-2">
+                <span className="text-[12px] font-semibold">{model.id}</span>
+                <span className={`text-[10px] whitespace-nowrap ${
+                  selectedModel === model.id ? 'text-white/70' : 'text-slate-500 dark:text-slate-400'
+                }`}>
+                  {model.context}
+                </span>
+              </div>
+              <div className="flex gap-1 mt-1.5 flex-wrap">
+                {model.tags.map(tag => (
+                  <span
+                    key={tag}
+                    className={`text-[9px] px-1.5 py-0.5 rounded ${
+                      selectedModel === model.id
+                        ? 'bg-white/20 text-white'
+                        : 'bg-slate-200 dark:bg-[#0a0a0b] text-slate-600 dark:text-slate-300'
+                    }`}
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const App: React.FC = () => {
+  console.log('🚀 [App] Component rendering');
   const [files, setFiles] = useState<FileDocument[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
   const [aiModel, setAiModel] = useState<'gemini' | 'cerebras' | 'groq' | 'openrouter' | 'ollama'>('cerebras');
-  const [selectedModel, setSelectedModel] = useState('llama3.1-8b');
+  const [selectedModel, setSelectedModel] = useState('llama3.1:8b');
   const [selectedOpenRouterModel, setSelectedOpenRouterModel] = useState('openai/gpt-oss-20b:free');
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(300);
@@ -156,9 +244,11 @@ const App: React.FC = () => {
            setUploadStatus(`${file.name}: ${status}`);
         });
         setFiles(prev => [...prev, doc]);
+        console.log(`✅ Successfully processed: ${file.name}`);
       } catch (error) {
-        console.error(`Error processing ${file.name}`, error);
-        alert(`Failed to process ${file.name}. Ensure it is a valid text-based file.`);
+        console.error(`❌ Error processing ${file.name}:`, error);
+        const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+        alert(`Failed to process ${file.name}.\n\nError: ${errorMsg}\n\nPlease ensure it is a valid text-based file and try again.`);
       }
     }
     
@@ -179,22 +269,27 @@ const App: React.FC = () => {
     ));
   };
 
-  const handleSaveKeys = (gemini: string, cerebras: string, groq: string, openrouter: string, ollama: string, ollamaUrl: string) => {
+  const handleSaveKeys = (gemini: string, cerebras: string, groq: string, openrouter: string, ollama: string, ollamaUrl: string, ollamaMode: 'local' | 'cloud') => {
     localStorage.setItem('gemini_api_key', gemini);
     localStorage.setItem('cerebras_api_key', cerebras);
     localStorage.setItem('groq_api_key', groq);
     localStorage.setItem('openrouter_api_key', openrouter);
     localStorage.setItem('ollama_api_key', ollama);
     localStorage.setItem('ollama_base_url', ollamaUrl);
+    localStorage.setItem('ollama_mode', ollamaMode);
     setGeminiApiKey(gemini);
     setCerebrasApiKey(cerebras);
     setGroqApiKey(groq);
     setOpenrouterApiKey(openrouter);
     setOllamaApiKey(ollama);
     setOllamaBaseUrl(ollamaUrl);
+    setOllamaMode(ollamaMode);
   };
 
   const saveCurrentChat = () => {
+    console.log('[saveCurrentChat] Saving chat:', currentChatId);
+    console.log('[saveCurrentChat] Current aiModel:', aiModel);
+    console.log('[saveCurrentChat] Current selectedModel:', selectedModel);
     if (!currentChatId || messages.length === 0) return;
     
     const session: ChatSession = {
@@ -206,11 +301,13 @@ const App: React.FC = () => {
       aiModel: aiModel
     };
     
+    console.log('[saveCurrentChat] Saving session with aiModel:', session.aiModel);
     ChatStorage.saveChatSession(session);
     
     // Update the sessions list in state
     const updatedSessions = ChatStorage.getAllChatSessions();
     setChatSessions(updatedSessions);
+    console.log('[saveCurrentChat] Chat saved successfully');
   };
 
   const handleNewChat = () => {
@@ -229,16 +326,23 @@ const App: React.FC = () => {
   };
 
   const handleSelectChat = (id: string) => {
+    console.log('[handleSelectChat] Loading chat:', id);
     // Save current chat if it has messages
     if (currentChatId && messages.length > 0) {
+      console.log('[handleSelectChat] Saving current chat before switching');
       saveCurrentChat();
     }
     
     const session = ChatStorage.getChatSession(id);
     if (session) {
+      console.log('[handleSelectChat] Session found, aiModel in session:', session.aiModel);
+      console.log('[handleSelectChat] Current aiModel before load:', aiModel);
+      console.log('[handleSelectChat] Current selectedModel before load:', selectedModel);
       setCurrentChatId(id);
       setMessages(session.messages);
-      setAiModel(session.aiModel);
+      // Don't override user's current model selection when loading chat
+      // setAiModel(session.aiModel);
+      console.log('[handleSelectChat] Chat loaded, keeping current model selection');
     }
   };
 
@@ -736,155 +840,100 @@ const App: React.FC = () => {
               <Settings size={16} />
             </div>
             
-            {/* Model Dropdown */}
+            {/* Model Dropdown with Expandable Sections */}
             <div className="relative">
               <button
                 onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
                 className="h-9 px-4 text-[10px] font-bold uppercase border border-slate-200 dark:border-white/10 bg-white dark:bg-[#1b1b1d] hover:bg-slate-50 dark:hover:bg-[#0f0f11] transition-all flex items-center gap-2 rounded"
               >
                 <div className="flex flex-col items-start leading-tight">
-                  <span className="text-[8px] opacity-60">{aiModel}</span>
-                  <span className="text-[9px]">{selectedModel}</span>
+                  <span className="text-[8px] opacity-60">
+                    {aiModel === 'ollama' ? `Ollama ${ollamaMode === 'cloud' ? '(Cloud)' : '(Local)'}` : aiModel}
+                  </span>
+                  <span className="text-[9px]">
+                    {(() => {
+                      console.log('[Header] Rendering model name:', selectedModel, 'aiModel:', aiModel);
+                      return selectedModel;
+                    })()}
+                  </span>
                 </div>
                 <span className="text-[8px]">▼</span>
               </button>
               
               {isModelDropdownOpen && (
-                <div className="absolute top-full left-0 mt-1 bg-white dark:bg-[#1b1b1d] border border-slate-200 dark:border-white/10 shadow-xl rounded-lg z-50 min-w-[280px] max-h-[500px] overflow-y-auto">
-                  <div className="p-2 border-b border-slate-100 dark:border-white/5 text-[8px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Cerebras</div>
-                  {GeminiService.CEREBRAS_MODELS.map(model => (
-                    <button
-                      key={model.id}
-                      onClick={() => {
-                        setSelectedModel(model.id);
-                        setAiModel('cerebras');
-                        setIsModelDropdownOpen(false);
-                        localStorage.setItem('selected_model', model.id);
-                        localStorage.setItem('ai_model', 'cerebras');
-                      }}
-                      className={`w-full text-left px-4 py-2 text-[10px] font-sans hover:bg-slate-50 dark:hover:bg-[#0f0f11] transition-colors ${
-                        selectedModel === model.id ? 'bg-slate-50 dark:bg-[#0f0f11] font-bold' : ''
-                      }`}
-                    >
-                      <div className="flex justify-between items-start">
-                        <span>{model.id}</span>
-                        <span className="text-[8px] text-slate-500 dark:text-slate-400">{model.context}</span>
-                      </div>
-                      <div className="flex gap-1 mt-1">
-                        {model.tags.map(tag => (
-                          <span key={tag} className="text-[7px] px-1 py-0.5 bg-slate-100 dark:bg-[#0a0a0b] text-slate-600 dark:text-slate-300 rounded">{tag}</span>
-                        ))}
-                      </div>
-                    </button>
-                  ))}
+                <div className="absolute top-full left-0 mt-1 bg-white dark:bg-[#1b1b1d] border border-slate-200 dark:border-white/10 shadow-xl rounded-lg z-50 min-w-[350px] max-h-[600px] overflow-y-auto">
+                  {/* Cerebras Section */}
+                  <ModelProviderSection
+                    title="Cerebras"
+                    models={GeminiService.CEREBRAS_MODELS}
+                    selectedModel={selectedModel}
+                    onSelectModel={(modelId) => {
+                      setSelectedModel(modelId);
+                      setAiModel('cerebras');
+                      setIsModelDropdownOpen(false);
+                      localStorage.setItem('selected_model', modelId);
+                      localStorage.setItem('ai_model', 'cerebras');
+                    }}
+                  />
                   
-                  <div className="p-2 border-b border-t border-slate-100 dark:border-white/5 text-[8px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Gemini</div>
-                  {GeminiService.GEMINI_MODELS.map(model => (
-                    <button
-                      key={model.id}
-                      onClick={() => {
-                        setSelectedModel(model.id);
-                        setAiModel('gemini');
-                        setIsModelDropdownOpen(false);
-                        localStorage.setItem('selected_model', model.id);
-                        localStorage.setItem('ai_model', 'gemini');
-                      }}
-                      className={`w-full text-left px-4 py-2 text-[10px] font-sans hover:bg-slate-50 dark:hover:bg-[#0f0f11] transition-colors ${
-                        selectedModel === model.id ? 'bg-slate-50 dark:bg-[#0f0f11] font-bold' : ''
-                      }`}
-                    >
-                      <div className="flex justify-between items-start">
-                        <span>{model.id}</span>
-                        <span className="text-[8px] text-slate-500 dark:text-slate-400">{model.context}</span>
-                      </div>
-                      <div className="flex gap-1 mt-1">
-                        {model.tags.map(tag => (
-                          <span key={tag} className="text-[7px] px-1 py-0.5 bg-slate-100 dark:bg-[#0a0a0b] text-slate-600 dark:text-slate-300 rounded">{tag}</span>
-                        ))}
-                      </div>
-                    </button>
-                  ))}
+                  {/* Gemini Section */}
+                  <ModelProviderSection
+                    title="Gemini"
+                    models={GeminiService.GEMINI_MODELS}
+                    selectedModel={selectedModel}
+                    onSelectModel={(modelId) => {
+                      setSelectedModel(modelId);
+                      setAiModel('gemini');
+                      setIsModelDropdownOpen(false);
+                      localStorage.setItem('selected_model', modelId);
+                      localStorage.setItem('ai_model', 'gemini');
+                    }}
+                  />
                   
-                  <div className="p-2 border-b border-t border-slate-100 dark:border-white/5 text-[8px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Groq</div>
-                  {GeminiService.GROQ_MODELS.map(model => (
-                    <button
-                      key={model.id}
-                      onClick={() => {
-                        setSelectedModel(model.id);
-                        setAiModel('groq');
-                        setIsModelDropdownOpen(false);
-                        localStorage.setItem('selected_model', model.id);
-                        localStorage.setItem('ai_model', 'groq');
-                      }}
-                      className={`w-full text-left px-4 py-2 text-[10px] font-sans hover:bg-slate-50 dark:hover:bg-[#0f0f11] transition-colors ${
-                        selectedModel === model.id ? 'bg-slate-50 dark:bg-[#0f0f11] font-bold' : ''
-                      }`}
-                    >
-                      <div className="flex justify-between items-start">
-                        <span>{model.id}</span>
-                        <span className="text-[8px] text-slate-500 dark:text-slate-400">{model.context}</span>
-                      </div>
-                      <div className="flex gap-1 mt-1">
-                        {model.tags.map(tag => (
-                          <span key={tag} className="text-[7px] px-1 py-0.5 bg-slate-100 dark:bg-[#0a0a0b] text-slate-600 dark:text-slate-300 rounded">{tag}</span>
-                        ))}
-                      </div>
-                    </button>
-                  ))}
+                  {/* Groq Section */}
+                  <ModelProviderSection
+                    title="Groq"
+                    models={GeminiService.GROQ_MODELS}
+                    selectedModel={selectedModel}
+                    onSelectModel={(modelId) => {
+                      setSelectedModel(modelId);
+                      setAiModel('groq');
+                      setIsModelDropdownOpen(false);
+                      localStorage.setItem('selected_model', modelId);
+                      localStorage.setItem('ai_model', 'groq');
+                    }}
+                  />
                   
-                  <div className="p-2 border-b border-t border-slate-100 dark:border-white/5 text-[8px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">OpenRouter</div>
-                  {GeminiService.OPENROUTER_MODELS.map(model => (
-                    <button
-                      key={model.id}
-                      onClick={() => {
-                        setSelectedModel(model.id);
-                        setAiModel('openrouter');
-                        setIsModelDropdownOpen(false);
-                        localStorage.setItem('selected_model', model.id);
-                        localStorage.setItem('ai_model', 'openrouter');
-                      }}
-                      className={`w-full text-left px-4 py-2 text-[10px] font-sans hover:bg-slate-50 dark:hover:bg-[#0f0f11] transition-colors ${
-                        selectedModel === model.id ? 'bg-slate-50 dark:bg-[#0f0f11] font-bold' : ''
-                      }`}
-                    >
-                      <div className="flex justify-between items-start">
-                        <span>{model.id}</span>
-                        <span className="text-[8px] text-slate-500 dark:text-slate-400">{model.context}</span>
-                      </div>
-                      <div className="flex gap-1 mt-1">
-                        {model.tags.map(tag => (
-                          <span key={tag} className="text-[7px] px-1 py-0.5 bg-slate-100 dark:bg-[#0a0a0b] text-slate-600 dark:text-slate-300 rounded">{tag}</span>
-                        ))}
-                      </div>
-                    </button>
-                  ))}
+                  {/* OpenRouter Section */}
+                  <ModelProviderSection
+                    title="OpenRouter"
+                    models={GeminiService.OPENROUTER_MODELS}
+                    selectedModel={selectedModel}
+                    onSelectModel={(modelId) => {
+                      setSelectedModel(modelId);
+                      setAiModel('openrouter');
+                      setIsModelDropdownOpen(false);
+                      localStorage.setItem('selected_model', modelId);
+                      localStorage.setItem('ai_model', 'openrouter');
+                    }}
+                  />
 
-                  <div className="p-2 border-b border-t border-slate-100 dark:border-white/5 text-[8px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Ollama {ollamaMode === 'cloud' ? '(Cloud)' : '(Local)'}</div>
-                  {(ollamaMode === 'cloud' ? OllamaService.OLLAMA_CLOUD_MODELS : OllamaService.OLLAMA_LOCAL_MODELS).map(model => (
-                    <button
-                      key={model.id}
-                      onClick={() => {
-                        setSelectedModel(model.id);
-                        setAiModel('ollama');
-                        setIsModelDropdownOpen(false);
-                        localStorage.setItem('selected_model', model.id);
-                        localStorage.setItem('ai_model', 'ollama');
-                      }}
-                      className={`w-full text-left px-4 py-2 text-[10px] font-sans hover:bg-slate-50 dark:hover:bg-[#0f0f11] transition-colors ${
-                        selectedModel === model.id ? 'bg-slate-50 dark:bg-[#0f0f11] font-bold' : ''
-                      }`}
-                    >
-                      <div className="flex justify-between items-start">
-                        <span>{model.id}</span>
-                        <span className="text-[8px] text-slate-500 dark:text-slate-400">{model.context}</span>
-                      </div>
-                      <div className="flex gap-1 mt-1">
-                        {model.tags.map(tag => (
-                          <span key={tag} className="text-[7px] px-1 py-0.5 bg-slate-100 dark:bg-[#0a0a0b] text-slate-600 dark:text-slate-300 rounded">{tag}</span>
-                        ))}
-                      </div>
-                    </button>
-                  ))}
+                  {/* Ollama Section */}
+                  <ModelProviderSection
+                    title={`Ollama ${ollamaMode === 'cloud' ? '(Cloud)' : '(Local)'}`}
+                    models={ollamaMode === 'cloud' ? OllamaService.OLLAMA_CLOUD_MODELS : OllamaService.OLLAMA_LOCAL_MODELS}
+                    selectedModel={selectedModel}
+                    onSelectModel={(modelId) => {
+                      console.log('[App] Ollama model selected:', modelId);
+                      console.log('[App] Current selectedModel before:', selectedModel);
+                      setSelectedModel(modelId);
+                      setAiModel('ollama');
+                      setIsModelDropdownOpen(false);
+                      localStorage.setItem('selected_model', modelId);
+                      localStorage.setItem('ai_model', 'ollama');
+                      console.log('[App] State updated, selectedModel should be:', modelId);
+                    }}
+                  />
                 </div>
               )}
             </div>
@@ -909,6 +958,7 @@ const App: React.FC = () => {
         openrouterKey={openrouterApiKey}
         ollamaKey={ollamaApiKey}
         ollamaBaseUrl={ollamaBaseUrl}
+        ollamaMode={ollamaMode}
         onSaveKeys={handleSaveKeys}
       />
       </div>
