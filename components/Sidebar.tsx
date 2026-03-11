@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { Plus, Download } from 'lucide-react';
+import { Plus, Download, X } from 'lucide-react';
 import { FileDocument, ChatSession } from '../types';
 import { Button } from './ui/Button';
 
@@ -145,9 +145,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {onClose && (
           <button 
             onClick={onClose}
-            className="md:hidden absolute right-3 px-3 text-xl font-bold hover:bg-slate-100 dark:hover:bg-surface-700 rounded"
+            className="md:hidden absolute right-3 p-2 hover:bg-slate-100 dark:hover:bg-surface-700 rounded"
           >
-            ×
+            <X size={20} />
           </button>
         )}
       </div>

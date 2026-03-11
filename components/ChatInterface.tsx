@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Send, Image as ImageIcon, X, FileText, Play, Code, Download, Copy, Check, Maximize2, Undo, Redo, Brain } from 'lucide-react';
+import { Send, Image as ImageIcon, X, FileText, Play, Code, Download, Copy, Check, Maximize2, Undo, Redo, Brain, AlertCircle } from 'lucide-react';
 import { ChatMessage, Citation } from '../types';
 import * as GeminiService from '../services/geminiService';
 import { generateBundledPreview } from '../services/runtimeBundler';
@@ -20,12 +20,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   aiModel
 }) => {
   const [input, setInput] = useState('');
-  const [isInputFocused, setIsInputFocused] = useState(false);
-  const [pinnedCitation, setPinnedCitation] = useState<string | null>(null);
   const [selectedImages, setSelectedImages] = useState<Array<{base64: string, preview: string, name: string, size: number, tokens: number}>>([]);
   const [estimatedTokens, setEstimatedTokens] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
-  const [isImagesExpanded, setIsImagesExpanded] = useState(true);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [codeBlockStates, setCodeBlockStates] = useState<{[key: string]: {showRendered: boolean}}>({});
   const [copiedBlocks, setCopiedBlocks] = useState<{[key: string]: boolean}>({});
@@ -54,7 +51,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     return extensions[lang.toLowerCase()] || 'txt';
   };
 
-  // Use the new runtime bundler for React preview
   const generateReactPreviewHtml = (code: string, language: string = 'tsx') => {
     const result = generateBundledPreview(code, language);
     return result.html || `<!DOCTYPE html>
@@ -62,11 +58,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 <head>
   <meta charset="UTF-8">
   <style>
-    body { margin: 20px; font-family: monospace; }
+    body { margin: 20px; font-family: monospace; background: #0A0A0B; color: #fff; }
   </style>
 </head>
 <body>
-  <div style="padding:20px;color:red;border:2px solid red;">
+  <div style="padding:20px;color:#ff6b6b;border:1px solid #ff6b6b;border-radius:8px;">
     <strong>Bundling Error</strong><br/>
     ${result.error || 'Unknown error occurred'}
   </div>
@@ -177,6 +173,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     e.stopPropagation();
   };
 
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+ 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -600,10 +600,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                             href="https://aistudio.google.com/app/apikey"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-[9px] px-2 py-1 bg-yellow-100 border border-yellow-400 text-yellow-800 hover:bg-yellow-200 transition-colors"
+                            className="text-[9px] px-2 py-1 bg-yellow-900/20 border border-yellow-600/50 text-yellow-400 hover:bg-yellow-900/30 transition-colors flex items-center gap-1"
                             title="High token usage - check your quota"
                           >
-                            ⚠️ Check Quota
+                            <AlertCircle size={12} />
+                            Check Quota
                           </a>
                         )}
                       </div>
@@ -746,7 +747,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                       className="text-[10px] font-mono hover:bg-[#2d2d30] px-2 py-1"
                       type="button"
                     >
-                      {isImagesExpanded ? 'Ôû╝ COLLAPSE' : 'Ôû▓ EXPAND'}
+                      {isImagesExpanded ? '▼ COLLAPSE' : '▶ EXPAND'}
                     </button>
                   )}
                   <button
