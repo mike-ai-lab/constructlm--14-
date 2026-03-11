@@ -8,7 +8,9 @@ interface SettingsModalProps {
   cerebrasKey: string;
   groqKey: string;
   openrouterKey: string;
-  onSaveKeys: (gemini: string, cerebras: string, groq: string, openrouter: string) => void;
+  ollamaKey: string;
+  ollamaBaseUrl: string;
+  onSaveKeys: (gemini: string, cerebras: string, groq: string, openrouter: string, ollama: string, ollamaUrl: string) => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -18,28 +20,46 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   cerebrasKey,
   groqKey,
   openrouterKey,
+  ollamaKey,
+  ollamaBaseUrl,
   onSaveKeys
 }) => {
   const [localGeminiKey, setLocalGeminiKey] = useState(geminiKey);
   const [localCerebrasKey, setLocalCerebrasKey] = useState(cerebrasKey);
   const [localGroqKey, setLocalGroqKey] = useState(groqKey);
   const [localOpenRouterKey, setLocalOpenRouterKey] = useState(openrouterKey);
+  const [localOllamaKey, setLocalOllamaKey] = useState(ollamaKey);
+  const [localOllamaBaseUrl, setLocalOllamaBaseUrl] = useState(ollamaBaseUrl);
   const [showGeminiKey, setShowGeminiKey] = useState(false);
   const [showCerebrasKey, setShowCerebrasKey] = useState(false);
   const [showGroqKey, setShowGroqKey] = useState(false);
   const [showOpenRouterKey, setShowOpenRouterKey] = useState(false);
+  const [showOllamaKey, setShowOllamaKey] = useState(false);
   const [testingGemini, setTestingGemini] = useState(false);
   const [testingCerebras, setTestingCerebras] = useState(false);
   const [testingGroq, setTestingGroq] = useState(false);
   const [testingOpenRouter, setTestingOpenRouter] = useState(false);
+  const [testingOllama, setTestingOllama] = useState(false);
   const [geminiStatus, setGeminiStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [cerebrasStatus, setCerebrasStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [groqStatus, setGroqStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [openrouterStatus, setOpenrouterStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [ollamaStatus, setOllamaStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [geminiError, setGeminiError] = useState('');
   const [cerebrasError, setCerebrasError] = useState('');
   const [groqError, setGroqError] = useState('');
   const [openrouterError, setOpenrouterError] = useState('');
+  const [ollamaError, setOllamaError] = useState('');
+  const [ollamaMode, setOllamaMode] = useState<'local' | 'cloud'>('local');
+
+  React.useEffect(() => {
+    setLocalGeminiKey(geminiKey);
+    setLocalCerebrasKey(cerebrasKey);
+    setLocalGroqKey(groqKey);
+    setLocalOpenRouterKey(openrouterKey);
+    setLocalOllamaKey(ollamaKey);
+    setLocalOllamaBaseUrl(ollamaBaseUrl);
+  }, [geminiKey, cerebrasKey, groqKey, openrouterKey, ollamaKey, ollamaBaseUrl]);
 
   React.useEffect(() => {
     setLocalGeminiKey(geminiKey);
@@ -164,8 +184,40 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   };
 
+  const testOllamaConnection = async () => {
+    setTestingOllama(true);
+    setOllamaStatus('idle');
+    setOllamaError('');
+    try {
+      const url = ollamaMode === 'local'
+        ? `${localOllamaBaseUrl}/api/tags`
+        : 'https://api.ollama.ai/v1/models';
+
+      const headers: Record<string, string> = {};
+      if (ollamaMode === 'cloud' && localOllamaKey) {
+        headers['Authorization'] = `Bearer ${localOllamaKey}`;
+      }
+
+      const response = await fetch(url, { headers });
+      if (response.ok) {
+        setOllamaStatus('success');
+      } else if (response.status === 401 || response.status === 403) {
+        setOllamaStatus('error');
+        setOllamaError('Invalid credentials');
+      } else {
+        setOllamaStatus('error');
+        setOllamaError('Connection failed');
+      }
+    } catch (error) {
+      setOllamaStatus('error');
+      setOllamaError(ollamaMode === 'local' ? 'Cannot reach local Ollama' : 'Network error');
+    } finally {
+      setTestingOllama(false);
+    }
+  };
+
   const handleSave = () => {
-    onSaveKeys(localGeminiKey, localCerebrasKey, localGroqKey, localOpenRouterKey);
+    onSaveKeys(localGeminiKey, localCerebrasKey, localGroqKey, localOpenRouterKey, localOllamaKey, localOllamaBaseUrl);
     onClose();
   };
 
@@ -356,6 +408,133 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             link="https://openrouter.ai/keys"
             placeholder="sk-or-..."
           />
+
+          {/* Ollama Configuration */}
+          <div className="border border-slate-200 dark:border-white/10 rounded-lg p-3 bg-white dark:bg-[#0f0f11]">
+            <div className="flex items-center justify-between mb-3">
+              <label className="font-sans text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
+                Ollama Configuration
+              </label>
+              <a 
+                href="https://ollama.ai" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-[10px] font-sans text-brand-blue hover:underline"
+              >
+                INSTALL →
+              </a>
+            </div>
+
+            {/* Mode Toggle */}
+            <div className="flex gap-2 mb-3">
+              <button
+                onClick={() => {
+                  setOllamaMode('local');
+                  setOllamaStatus('idle');
+                }}
+                className={`flex-1 px-2 py-1.5 text-xs font-semibold rounded transition-colors ${
+                  ollamaMode === 'local'
+                    ? 'bg-brand-blue text-white'
+                    : 'border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-[#1b1b1d]'
+                }`}
+              >
+                LOCAL
+              </button>
+              <button
+                onClick={() => {
+                  setOllamaMode('cloud');
+                  setOllamaStatus('idle');
+                }}
+                className={`flex-1 px-2 py-1.5 text-xs font-semibold rounded transition-colors ${
+                  ollamaMode === 'cloud'
+                    ? 'bg-brand-blue text-white'
+                    : 'border border-slate-200 dark:border-white/10 hover:bg-slate-50 dark:hover:bg-[#1b1b1d]'
+                }`}
+              >
+                CLOUD
+              </button>
+            </div>
+
+            {/* Local Configuration */}
+            {ollamaMode === 'local' && (
+              <div className="space-y-2 mb-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={localOllamaBaseUrl}
+                    onChange={(e) => {
+                      setLocalOllamaBaseUrl(e.target.value);
+                      setOllamaStatus('idle');
+                    }}
+                    placeholder="http://localhost:11434"
+                    className="flex-1 px-3 py-1.5 border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0f0f11] focus:border-brand-blue focus:ring-1 focus:ring-brand-blue/20 outline-none font-sans text-xs rounded transition-all"
+                  />
+                  <button
+                    onClick={testOllamaConnection}
+                    disabled={testingOllama}
+                    className="px-2.5 py-1.5 bg-brand-blue text-white font-sans text-xs font-semibold hover:bg-brand-blue/90 disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:cursor-not-allowed rounded transition-colors whitespace-nowrap"
+                  >
+                    {testingOllama ? '...' : 'TEST'}
+                  </button>
+                </div>
+                <div className="text-[9px] text-slate-500 dark:text-slate-400">
+                  Default: http://localhost:11434
+                </div>
+              </div>
+            )}
+
+            {/* Cloud Configuration */}
+            {ollamaMode === 'cloud' && (
+              <div className="space-y-2 mb-2">
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 relative flex items-center">
+                    <input
+                      type={showOllamaKey ? 'text' : 'password'}
+                      value={localOllamaKey}
+                      onChange={(e) => {
+                        setLocalOllamaKey(e.target.value);
+                        setOllamaStatus('idle');
+                      }}
+                      placeholder="API Key"
+                      className="w-full px-3 py-1.5 pr-8 border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0f0f11] focus:border-brand-blue focus:ring-1 focus:ring-brand-blue/20 outline-none font-sans text-xs rounded transition-all"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowOllamaKey(!showOllamaKey)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-brand-blue transition-colors"
+                    >
+                      {showOllamaKey ? <EyeOff size={14} /> : <Eye size={14} />}
+                    </button>
+                  </div>
+                  <button
+                    onClick={testOllamaConnection}
+                    disabled={testingOllama}
+                    className="px-2.5 py-1.5 bg-brand-blue text-white font-sans text-xs font-semibold hover:bg-brand-blue/90 disabled:bg-slate-300 dark:disabled:bg-slate-700 disabled:cursor-not-allowed rounded transition-colors whitespace-nowrap"
+                  >
+                    {testingOllama ? '...' : 'TEST'}
+                  </button>
+                </div>
+                <a 
+                  href="https://ollama.ai/api" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-[9px] text-brand-blue hover:underline"
+                >
+                  Get Ollama Cloud API Key →
+                </a>
+              </div>
+            )}
+
+            {/* Status */}
+            <div className="h-4">
+              {ollamaStatus === 'success' && (
+                <div className="text-green-600 dark:text-green-500 text-xs font-sans">✓ Connected</div>
+              )}
+              {ollamaStatus === 'error' && (
+                <div className="text-red-600 dark:text-red-500 text-xs font-sans">✗ {ollamaError}</div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Footer */}

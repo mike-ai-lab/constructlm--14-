@@ -40,7 +40,7 @@ export interface ChatSession {
   messages: ChatMessage[];
   createdAt: number;
   updatedAt: number;
-  aiModel: 'gemini' | 'cerebras' | 'groq' | 'openrouter';
+  aiModel: 'gemini' | 'cerebras' | 'groq' | 'openrouter' | 'ollama';
   canvasState?: {
     isOpen: boolean;
     content: {

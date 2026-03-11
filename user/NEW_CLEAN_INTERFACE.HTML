@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ConstructLM | Architectural AI Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #000000;
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        .sidebar-item {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .ai-pill {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            box-shadow: 0 0 12px rgba(37, 99, 235, 0.3);
+        }
+
+        /* Floating Canvas Styling */
+        .canvas-area {
+            background: #0a0a0a;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        #left-sidebar, #right-canvas {
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .collapsed-sidebar {
+            width: 0 !important;
+            padding: 0 !important;
+            opacity: 0;
+            pointer-events: none;
+            border-right: none !important;
+        }
+
+        .canvas-active {
+            width: 60% !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+        }
+
+        .collapsed-canvas {
+            width: 0 !important;
+            padding: 0 !important;
+            opacity: 0;
+            pointer-events: none;
+            border-left: none !important;
+        }
+
+        .artifact-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.2s ease;
+        }
+        .artifact-card:hover {
+            border-color: rgba(37, 99, 235, 0.4);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 3px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+    </style>
+</head>
+<body class="h-screen flex flex-col text-sm">
+
+    <!-- Top Navigation -->
+    <header class="h-14 border-b border-white/5 flex items-center justify-between px-5 z-10 bg-black">
+        <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-2">
+                <div class="w-6 h-6 bg-blue-600 rounded flex items-center justify-center font-bold text-sm">C</div>
+                <span class="font-bold tracking-tight text-lg uppercase">ConstructLM</span>
+            </div>
+            <div class="flex space-x-1 ml-4">
+                <button onclick="toggleSidebar()" class="p-1.5 hover:bg-white/5 rounded transition-colors" title="Toggle Sidebar">
+                    <i class="fa-solid fa-bars-staggered text-xs text-gray-400"></i>
+                </button>
+                <button onclick="toggleCanvas()" class="p-1.5 hover:bg-white/5 rounded transition-colors" title="Toggle Canvas">
+                    <i class="fa-solid fa-grip-lines text-xs text-gray-400"></i>
+                </button>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-4">
+            <div class="flex items-center space-x-2 px-2.5 py-0.5 bg-white/5 rounded-full border border-white/10">
+                <div class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                <span class="text-[9px] font-medium text-gray-400 uppercase tracking-widest">Riyadh Node Online</span>
+            </div>
+            <button class="text-gray-400 hover:text-white transition-colors">
+                <i class="fa-solid fa-moon text-base"></i>
+            </button>
+        </div>
+    </header>
+
+    <div class="flex flex-1 overflow-hidden">
+        
+        <!-- Left Sidebar -->
+        <aside id="left-sidebar" class="w-56 border-r border-white/5 flex flex-col p-4 space-y-5 overflow-hidden">
+            <div class="min-w-[190px]">
+                <h3 class="text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em] mb-4">Knowledge Base</h3>
+                <div class="space-y-3">
+                    <div class="sidebar-item p-3 rounded-lg cursor-pointer">
+                        <span class="text-[8px] font-bold text-blue-500 uppercase tracking-wider mb-1 block">Regulation</span>
+                        <p class="text-xs font-medium italic text-gray-300">Riyadh_Urban_Code_2025.pdf</p>
+                    </div>
+                    <div class="sidebar-item p-3 rounded-lg cursor-pointer">
+                        <span class="text-[8px] font-bold text-blue-500 uppercase tracking-wider mb-1 block">Architecture</span>
+                        <p class="text-xs font-medium italic text-gray-300">Salmani_Style_Guidelines.pdf</p>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-auto min-w-[190px]">
+                <button class="w-full py-2.5 rounded-full border border-white/10 text-[9px] font-bold uppercase tracking-widest hover:bg-white/5 transition-all">
+                    + Import Docs
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Chat Area -->
+        <main class="flex-1 flex flex-col relative px-10 py-6 bg-[#020202]">
+            <div class="flex-1 overflow-y-auto">
+                <div class="max-w-2xl mx-auto w-full pt-8">
+                    <div class="flex items-center space-x-3 mb-6">
+                        <div class="h-[1px] w-6 bg-gray-700"></div>
+                        <span class="text-[9px] font-medium text-gray-600 uppercase tracking-widest">Session Start: 12:46 PM</span>
+                    </div>
+
+                    <h1 class="text-3xl font-light text-white leading-snug mb-12">
+                        Welcome, <span class="text-blue-500 font-semibold">Muhamad</span>. How can we<br/>
+                        optimize your design intelligence today?
+                    </h1>
+
+                    <div class="flex space-x-4 mb-10">
+                        <div class="w-8 h-8 rounded bg-blue-600 flex-shrink-0 flex items-center justify-center font-bold text-[10px]">AI</div>
+                        <div class="space-y-5 flex-1">
+                            <p class="text-gray-300 leading-relaxed text-base">
+                                I have generated a structural component for the facade. You can view the output in the floating canvas.
+                            </p>
+                            
+                            <div onclick="openArtifact()" class="artifact-card p-3 rounded-lg cursor-pointer flex items-center justify-between group">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-8 h-8 bg-white/5 rounded flex items-center justify-center border border-white/5 group-hover:bg-blue-500/10">
+                                        <i class="fa-solid fa-code text-blue-400 text-xs"></i>
+                                    </div>
+                                    <div>
+                                        <div class="text-[11px] font-semibold text-white">facade-render.jsx</div>
+                                        <div class="text-[9px] text-gray-500 uppercase tracking-tight">React Component</div>
+                                    </div>
+                                </div>
+                                <div class="text-[9px] text-blue-500 font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                                    Render in Canvas <i class="fa-solid fa-chevron-right ml-1"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="max-w-2xl mx-auto w-full pt-6 flex-shrink-0">
+                <div class="relative">
+                    <input type="text" placeholder="Inquire about building codes or design specs..." 
+                           class="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-base focus:outline-none focus:border-blue-500/30 transition-all placeholder:text-gray-600">
+                    <button class="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center hover:bg-blue-500 transition-colors">
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Right Side: Floating Canvas -->
+        <aside id="right-canvas" class="canvas-active flex flex-col p-4 space-y-3 overflow-hidden bg-black border-l border-white/5">
+            <div class="min-w-[400px] flex flex-col h-full">
+                <!-- Canvas Header -->
+                <div class="flex justify-between items-center px-2 mb-3">
+                    <div class="flex items-center space-x-3">
+                        <h3 class="text-[9px] font-bold text-gray-500 uppercase tracking-[0.2em]">Visual Canvas</h3>
+                        <span class="px-1.5 py-0.5 rounded-full bg-blue-500/10 text-blue-500 text-[8px] font-bold uppercase border border-blue-500/20 tracking-tighter">Rendering Active</span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button class="text-gray-500 hover:text-white text-[10px] flex items-center px-2 py-1 rounded hover:bg-white/5"><i class="fa-solid fa-code mr-1.5"></i> Source</button>
+                        <button class="text-gray-500 hover:text-white p-1 rounded hover:bg-white/5"><i class="fa-solid fa-download text-xs"></i></button>
+                        <div class="w-[1px] h-3 bg-white/10 mx-1"></div>
+                        <button onclick="toggleCanvas()" class="w-6 h-6 flex items-center justify-center rounded-full hover:bg-red-500/20 text-gray-500 hover:text-red-400 transition-all">
+                            <i class="fa-solid fa-xmark text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Floating Render Container -->
+                <div class="flex-1 canvas-area rounded-[2rem] relative flex items-center justify-center overflow-hidden border border-white/10 m-1 shadow-[0_0_40px_rgba(0,0,0,0.8)]">
+                    <!-- Component Render View (Placeholder for code rendering) -->
+                    <div class="w-full h-full flex items-center justify-center bg-transparent">
+                         <!-- Empty for full code rendering -->
+                         <div class="flex flex-col items-center opacity-20">
+                             <div class="w-16 h-16 border-2 border-dashed border-blue-500 rounded-full animate-[spin_10s_linear_infinite] mb-4"></div>
+                             <span class="text-[9px] font-bold text-blue-500 uppercase tracking-[0.4em]">Rendering Facade Component</span>
+                         </div>
+
+                        <!-- Float Controls -->
+                        <div class="absolute bottom-6 flex items-center space-x-0 bg-black/60 backdrop-blur-xl rounded-full border border-white/10 p-1">
+                            <button class="px-4 py-1.5 text-[8px] font-bold uppercase tracking-widest text-gray-400 hover:text-white">Perspective</button>
+                            <div class="w-[1px] h-3 bg-white/10"></div>
+                            <button class="px-4 py-1.5 text-[8px] font-bold uppercase tracking-widest text-gray-400 hover:text-white">Inspect</button>
+                            <div class="w-[1px] h-3 bg-white/10"></div>
+                            <button class="px-4 py-1.5 text-[8px] font-bold uppercase tracking-widest text-gray-400 hover:text-white">Sync</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('left-sidebar');
+            sidebar.classList.toggle('collapsed-sidebar');
+        }
+
+        function toggleCanvas() {
+            const canvas = document.getElementById('right-canvas');
+            const sidebar = document.getElementById('left-sidebar');
+            const chatArea = document.querySelector('main .flex-1');
+            
+            if (canvas.classList.contains('canvas-active')) {
+                // Closing canvas
+                canvas.classList.remove('canvas-active');
+                canvas.classList.add('collapsed-canvas');
+            } else {
+                // Opening canvas
+                canvas.classList.add('canvas-active');
+                canvas.classList.remove('collapsed-canvas');
+                
+                // Auto-close sidebar
+                sidebar.classList.add('collapsed-sidebar');
+                
+                // Auto-scroll chat to bottom
+                setTimeout(() => {
+                    chatArea.scrollTop = chatArea.scrollHeight;
+                }, 50);
+            }
+        }
+
+        function openArtifact() {
+            const canvas = document.getElementById('right-canvas');
+            const sidebar = document.getElementById('left-sidebar');
+            const chatArea = document.querySelector('main .flex-1');
+            
+            if (!canvas.classList.contains('canvas-active')) {
+                canvas.classList.add('canvas-active');
+                canvas.classList.remove('collapsed-canvas');
+                
+                // Auto-close sidebar when canvas opens
+                sidebar.classList.add('collapsed-sidebar');
+                
+                // Auto-scroll chat to bottom
+                setTimeout(() => {
+                    chatArea.scrollTop = chatArea.scrollHeight;
+                }, 50);
+            }
+        }
+    </script>
+</body>
+</html>

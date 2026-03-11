@@ -8,6 +8,7 @@ import * as GeminiService from './services/geminiService';
 import * as CerebrasService from './services/cerebrasService';
 import * as GroqService from './services/groqService';
 import * as OpenRouterService from './services/openrouterService';
+import * as OllamaService from './services/ollamaService';
 import * as ChatStorage from './services/chatStorage';
 import { Settings, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react';
 
@@ -17,7 +18,7 @@ const App: React.FC = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState('');
   const [isStreaming, setIsStreaming] = useState(false);
-  const [aiModel, setAiModel] = useState<'gemini' | 'cerebras' | 'groq' | 'openrouter'>('cerebras');
+  const [aiModel, setAiModel] = useState<'gemini' | 'cerebras' | 'groq' | 'openrouter' | 'ollama'>('cerebras');
   const [selectedModel, setSelectedModel] = useState('llama3.1-8b');
   const [selectedOpenRouterModel, setSelectedOpenRouterModel] = useState('openai/gpt-oss-20b:free');
   const [isModelDropdownOpen, setIsModelDropdownOpen] = useState(false);
@@ -28,6 +29,9 @@ const App: React.FC = () => {
   const [cerebrasApiKey, setCerebrasApiKey] = useState('');
   const [groqApiKey, setGroqApiKey] = useState('');
   const [openrouterApiKey, setOpenrouterApiKey] = useState('');
+  const [ollamaApiKey, setOllamaApiKey] = useState('');
+  const [ollamaBaseUrl, setOllamaBaseUrl] = useState('http://localhost:11434');
+  const [ollamaMode, setOllamaMode] = useState<'local' | 'cloud'>('local');
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
@@ -66,10 +70,17 @@ const App: React.FC = () => {
     const storedCerebrasKey = localStorage.getItem('cerebras_api_key') || '';
     const storedGroqKey = localStorage.getItem('groq_api_key') || '';
     const storedOpenRouterKey = localStorage.getItem('openrouter_api_key') || '';
+    const storedOllamaKey = localStorage.getItem('ollama_api_key') || '';
+    const storedOllamaUrl = localStorage.getItem('ollama_base_url') || 'http://localhost:11434';
+    const storedOllamaMode = (localStorage.getItem('ollama_mode') || 'local') as 'local' | 'cloud';
+    
     setGeminiApiKey(storedGeminiKey);
     setCerebrasApiKey(storedCerebrasKey);
     setGroqApiKey(storedGroqKey);
     setOpenrouterApiKey(storedOpenRouterKey);
+    setOllamaApiKey(storedOllamaKey);
+    setOllamaBaseUrl(storedOllamaUrl);
+    setOllamaMode(storedOllamaMode);
 
     // Load saved AI provider and model preferences
     const savedAiModel = localStorage.getItem('ai_model') as 'gemini' | 'cerebras' | 'groq' | 'openrouter' | null;
@@ -101,7 +112,7 @@ const App: React.FC = () => {
     }
 
     // Show settings if no keys are configured
-    if (!storedGeminiKey && !storedCerebrasKey && !storedGroqKey && !storedOpenRouterKey) {
+    if (!storedGeminiKey && !storedCerebrasKey && !storedGroqKey && !storedOpenRouterKey && !storedOllamaKey) {
       setIsSettingsOpen(true);
     }
   }, []);
@@ -168,15 +179,19 @@ const App: React.FC = () => {
     ));
   };
 
-  const handleSaveKeys = (gemini: string, cerebras: string, groq: string, openrouter: string) => {
+  const handleSaveKeys = (gemini: string, cerebras: string, groq: string, openrouter: string, ollama: string, ollamaUrl: string) => {
     localStorage.setItem('gemini_api_key', gemini);
     localStorage.setItem('cerebras_api_key', cerebras);
     localStorage.setItem('groq_api_key', groq);
     localStorage.setItem('openrouter_api_key', openrouter);
+    localStorage.setItem('ollama_api_key', ollama);
+    localStorage.setItem('ollama_base_url', ollamaUrl);
     setGeminiApiKey(gemini);
     setCerebrasApiKey(cerebras);
     setGroqApiKey(groq);
     setOpenrouterApiKey(openrouter);
+    setOllamaApiKey(ollama);
+    setOllamaBaseUrl(ollamaUrl);
   };
 
   const saveCurrentChat = () => {
@@ -347,6 +362,11 @@ const App: React.FC = () => {
       setIsSettingsOpen(true);
       return;
     }
+    if (aiModel === 'ollama' && ollamaMode === 'cloud' && !ollamaApiKey) {
+      alert('Please configure your Ollama Cloud API key in Settings');
+      setIsSettingsOpen(true);
+      return;
+    }
     
     // Get active sources
     const activeSources = files.filter(f => f.isEnabled !== false).map(f => f.name);
@@ -397,39 +417,72 @@ const App: React.FC = () => {
         aiModel === 'gemini' ? GeminiService :
         aiModel === 'cerebras' ? CerebrasService :
         aiModel === 'groq' ? GroqService :
-        OpenRouterService;
+        aiModel === 'openrouter' ? OpenRouterService :
+        (await import('./services/ollamaService')).default;
       
       const apiKey = 
         aiModel === 'gemini' ? geminiApiKey :
         aiModel === 'cerebras' ? cerebrasApiKey :
         aiModel === 'groq' ? groqApiKey :
-        openrouterApiKey;
+        aiModel === 'openrouter' ? openrouterApiKey :
+        ollamaApiKey;
       
-      await streamService.streamChatResponse(
-        text, 
-        messages, 
-        citations, 
-        (chunk, isReasoning = false) => {
-          if (isReasoning) {
-            accumulatedReasoning += chunk;
-            setMessages(prev => prev.map(msg => 
-              msg.id === modelMsgId 
-                ? { ...msg, reasoning: accumulatedReasoning }
-                : msg
-            ));
-          } else {
-            accumulatedText += chunk;
-            setMessages(prev => prev.map(msg => 
-              msg.id === modelMsgId 
-                ? { ...msg, content: accumulatedText }
-                : msg
-            ));
-          }
-        },
-        apiKey,
-        selectedModel,
-        imageBase64
-      );
+      if (aiModel === 'ollama') {
+        const OllamaService = await import('./services/ollamaService');
+        await OllamaService.streamChatResponse(
+          text, 
+          messages, 
+          citations, 
+          (chunk, isReasoning = false) => {
+            if (isReasoning) {
+              accumulatedReasoning += chunk;
+              setMessages(prev => prev.map(msg => 
+                msg.id === modelMsgId 
+                  ? { ...msg, reasoning: accumulatedReasoning }
+                  : msg
+              ));
+            } else {
+              accumulatedText += chunk;
+              setMessages(prev => prev.map(msg => 
+                msg.id === modelMsgId 
+                  ? { ...msg, content: accumulatedText }
+                  : msg
+              ));
+            }
+          },
+          apiKey,
+          selectedModel,
+          imageBase64,
+          ollamaBaseUrl,
+          ollamaMode === 'cloud'
+        );
+      } else {
+        await streamService.streamChatResponse(
+          text, 
+          messages, 
+          citations, 
+          (chunk, isReasoning = false) => {
+            if (isReasoning) {
+              accumulatedReasoning += chunk;
+              setMessages(prev => prev.map(msg => 
+                msg.id === modelMsgId 
+                  ? { ...msg, reasoning: accumulatedReasoning }
+                  : msg
+              ));
+            } else {
+              accumulatedText += chunk;
+              setMessages(prev => prev.map(msg => 
+                msg.id === modelMsgId 
+                  ? { ...msg, content: accumulatedText }
+                  : msg
+              ));
+            }
+          },
+          apiKey,
+          selectedModel,
+          imageBase64
+        );
+      }
 
       // 4. Finalize with token count
       const outputTokens = GeminiService.estimateTokens(accumulatedText);
@@ -546,7 +599,8 @@ const App: React.FC = () => {
                 gemini: GeminiService.GEMINI_MODELS,
                 cerebras: GeminiService.CEREBRAS_MODELS,
                 groq: GeminiService.GROQ_MODELS,
-                openrouter: GeminiService.OPENROUTER_MODELS
+                openrouter: GeminiService.OPENROUTER_MODELS,
+                ollama: ollamaMode === 'cloud' ? OllamaService.OLLAMA_CLOUD_MODELS : OllamaService.OLLAMA_LOCAL_MODELS
               };
               
               const isCompatible = modelLists[provider].some(model => model.id === selectedModel);
@@ -562,6 +616,7 @@ const App: React.FC = () => {
             <option value="cerebras">CEREBRAS</option>
             <option value="groq">GROQ</option>
             <option value="openrouter">OPENROUTER</option>
+            <option value="ollama">OLLAMA</option>
           </select>
         </div>
       </header>
@@ -803,6 +858,33 @@ const App: React.FC = () => {
                       </div>
                     </button>
                   ))}
+
+                  <div className="p-2 border-b border-t border-slate-100 dark:border-white/5 text-[8px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Ollama {ollamaMode === 'cloud' ? '(Cloud)' : '(Local)'}</div>
+                  {(ollamaMode === 'cloud' ? OllamaService.OLLAMA_CLOUD_MODELS : OllamaService.OLLAMA_LOCAL_MODELS).map(model => (
+                    <button
+                      key={model.id}
+                      onClick={() => {
+                        setSelectedModel(model.id);
+                        setAiModel('ollama');
+                        setIsModelDropdownOpen(false);
+                        localStorage.setItem('selected_model', model.id);
+                        localStorage.setItem('ai_model', 'ollama');
+                      }}
+                      className={`w-full text-left px-4 py-2 text-[10px] font-sans hover:bg-slate-50 dark:hover:bg-[#0f0f11] transition-colors ${
+                        selectedModel === model.id ? 'bg-slate-50 dark:bg-[#0f0f11] font-bold' : ''
+                      }`}
+                    >
+                      <div className="flex justify-between items-start">
+                        <span>{model.id}</span>
+                        <span className="text-[8px] text-slate-500 dark:text-slate-400">{model.context}</span>
+                      </div>
+                      <div className="flex gap-1 mt-1">
+                        {model.tags.map(tag => (
+                          <span key={tag} className="text-[7px] px-1 py-0.5 bg-slate-100 dark:bg-[#0a0a0b] text-slate-600 dark:text-slate-300 rounded">{tag}</span>
+                        ))}
+                      </div>
+                    </button>
+                  ))}
                 </div>
               )}
             </div>
@@ -825,6 +907,8 @@ const App: React.FC = () => {
         cerebrasKey={cerebrasApiKey}
         groqKey={groqApiKey}
         openrouterKey={openrouterApiKey}
+        ollamaKey={ollamaApiKey}
+        ollamaBaseUrl={ollamaBaseUrl}
         onSaveKeys={handleSaveKeys}
       />
       </div>
