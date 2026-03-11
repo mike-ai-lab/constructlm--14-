@@ -1137,3 +1137,34 @@
     max-height: 425px;
   }
 }
+
+
+/* Close Icon SVG Styling */
+.close-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-block;
+  vertical-align: middle;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.file-close .close-icon,
+.tab-close .close-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.preview-modal-close .close-icon {
+  width: 18px;
+  height: 18px;
+}
+
+.activity-icon-svg {
+  width: 12px;
+  height: 12px;
+  display: inline-block;
+  vertical-align: middle;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
