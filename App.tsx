@@ -411,26 +411,27 @@ const App: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  // Swipe gesture handling for mobile
-  const minSwipeDistance = 50;
+  // Swipe gesture handling for mobile - SIMPLIFIED
+  const minSwipeDistance = 80;
 
   const handleSidebarTouchStart = (e: React.TouchEvent) => {
-    // Only track swipes that start from the sidebar content area
-    const target = e.target as HTMLElement;
-    if (target.closest('.sidebar-content')) {
-      setTouchStartX(e.touches[0].clientX);
-    }
+    const touch = e.touches[0];
+    setTouchStartX(touch.clientX);
+    console.log('[Swipe] Touch started at X:', touch.clientX);
   };
 
   const handleSidebarTouchEnd = (e: React.TouchEvent) => {
     if (touchStartX === null) return;
     
-    const touchEndX = e.changedTouches[0].clientX;
+    const touch = e.changedTouches[0];
+    const touchEndX = touch.clientX;
     const distance = touchStartX - touchEndX;
     
-    // Swipe left to close
+    console.log('[Swipe] Touch ended at X:', touchEndX, 'Distance:', distance);
+    
+    // Swipe left to close (must swipe at least 80px)
     if (distance > minSwipeDistance) {
-      console.log('[Mobile] Swipe left detected - closing sidebar');
+      console.log('[Swipe] CLOSING SIDEBAR - swipe left detected');
       setIsMobileSidebarOpen(false);
     }
     
@@ -989,6 +990,20 @@ Respond: "Fixed [description]" + patches.`;
           >
             <Settings size={18} />
           </button>
+          
+          {/* CLOSE SIDEBAR BUTTON - Only shows when sidebar is open */}
+          {isMobileSidebarOpen && (
+            <button
+              onClick={() => {
+                console.log('[Mobile Header] CLOSE BUTTON CLICKED');
+                setIsMobileSidebarOpen(false);
+              }}
+              className="w-11 h-11 bg-red-600 hover:bg-red-700 rounded-lg flex items-center justify-center text-white transition-all touch-manipulation shadow-md"
+              title="Close Sidebar"
+            >
+              <X size={20} />
+            </button>
+          )}
         </div>
       </header>
       
@@ -1080,14 +1095,12 @@ Respond: "Fixed [description]" + patches.`;
       {isMobileSidebarOpen && (
         <div 
           className="md:hidden fixed inset-0 bg-black/70 z-[45] transition-opacity duration-300 backdrop-blur-sm"
-          onClick={(e) => {
-            e.stopPropagation();
-            console.log('[Mobile] Overlay clicked - closing sidebar');
+          onClick={() => {
+            console.log('[Overlay] CLICKED - CLOSING SIDEBAR');
             setIsMobileSidebarOpen(false);
           }}
-          onTouchEnd={(e) => {
-            e.stopPropagation();
-            console.log('[Mobile] Overlay touched - closing sidebar');
+          onTouchStart={() => {
+            console.log('[Overlay] TOUCHED - CLOSING SIDEBAR');
             setIsMobileSidebarOpen(false);
           }}
         />
@@ -1106,34 +1119,27 @@ Respond: "Fixed [description]" + patches.`;
         onTouchStart={handleSidebarTouchStart}
         onTouchEnd={handleSidebarTouchEnd}
       >
-        <div 
-          className="sidebar-content h-full flex flex-col overflow-hidden w-full md:w-auto"
-          style={{ 
-            width: Math.min(sidebarWidth, 300)
+        <Sidebar 
+          files={files} 
+          onUpload={handleUpload} 
+          onDelete={handleDelete}
+          onToggleFile={handleToggleFile}
+          isUploading={isUploading}
+          uploadStatus={uploadStatus}
+          width={Math.min(sidebarWidth, 300)}
+          onClose={() => {
+            console.log('[Sidebar] INTERNAL CLOSE BUTTON CLICKED');
+            setIsMobileSidebarOpen(false);
           }}
-        >
-          <Sidebar 
-            files={files} 
-            onUpload={handleUpload} 
-            onDelete={handleDelete}
-            onToggleFile={handleToggleFile}
-            isUploading={isUploading}
-            uploadStatus={uploadStatus}
-            width={sidebarWidth}
-            onClose={() => {
-              console.log('[Mobile] Close button clicked - closing sidebar');
-              setIsMobileSidebarOpen(false);
-            }}
-            onOpenSettings={() => setIsSettingsOpen(true)}
-            chatSessions={chatSessions}
-            currentChatId={currentChatId}
-            onSelectChat={handleSelectChat}
-            onNewChat={handleNewChat}
-            onDeleteChat={handleDeleteChat}
-            onExportChat={handleExportChat}
-            isCollapsed={isSidebarCollapsed}
-          />
-        </div>
+          onOpenSettings={() => setIsSettingsOpen(true)}
+          chatSessions={chatSessions}
+          currentChatId={currentChatId}
+          onSelectChat={handleSelectChat}
+          onNewChat={handleNewChat}
+          onDeleteChat={handleDeleteChat}
+          onExportChat={handleExportChat}
+          isCollapsed={isSidebarCollapsed}
+        />
 
         {!isSidebarCollapsed && !isMobileSidebarOpen && (
           <div 
