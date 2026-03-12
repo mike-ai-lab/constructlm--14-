@@ -933,43 +933,102 @@ Respond: "Fixed [description]" + patches.`;
             onClick={() => setIsMobileSidebarOpen(true)}
             className="font-sans font-bold text-xs hover:bg-slate-100 dark:hover:bg-white/5 px-2 py-1.5 flex items-center gap-1 uppercase tracking-tight transition-colors rounded min-h-[44px] touch-manipulation"
           >
-            ☰ Menu
+            ☰
           </button>
         </div>
         
-        {/* Model Selector */}
+        {/* Model Dropdown - Same as Desktop */}
         <div className="flex items-center gap-2">
-          <select 
-            value={aiModel}
-            onChange={(e) => {
-              const provider = e.target.value as 'gemini' | 'cerebras' | 'groq' | 'openrouter' | 'ollama';
-              setAiModel(provider);
-              localStorage.setItem('ai_model', provider);
-              
-              const modelLists = {
-                gemini: GeminiService.GEMINI_MODELS,
-                cerebras: CerebrasService.CEREBRAS_MODELS,
-                groq: GroqService.GROQ_MODELS,
-                openrouter: OpenRouterService.OPENROUTER_MODELS,
-                ollama: ollamaMode === 'cloud' ? OllamaService.OLLAMA_CLOUD_MODELS : OllamaService.OLLAMA_LOCAL_MODELS
-              };
-              
-              const isCompatible = modelLists[provider].some(model => model.id === selectedModel);
-              if (!isCompatible) {
-                const defaultModel = modelLists[provider][0].id;
-                setSelectedModel(defaultModel);
-                localStorage.setItem('selected_model', defaultModel);
-              }
-            }}
-            className="text-xs font-bold uppercase px-2 py-2 border border-slate-300 dark:border-white/10 bg-white dark:bg-[#0a0a0b] rounded min-h-[44px] touch-manipulation"
-            style={{ fontSize: '12px' }}
-          >
-            <option value="cerebras">CEREBRAS</option>
-            <option value="gemini">GEMINI</option>
-            <option value="groq">GROQ</option>
-            <option value="openrouter">OPENROUTER</option>
-            <option value="ollama">OLLAMA</option>
-          </select>
+          <div className="relative">
+            <button
+              onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
+              className="h-11 px-3 text-[10px] font-bold uppercase border border-slate-300 dark:border-white/10 bg-white dark:bg-[#1b1b1d] hover:bg-slate-50 dark:hover:bg-[#0f0f11] transition-all flex items-center gap-2 rounded touch-manipulation"
+            >
+              <div className="flex flex-col items-start leading-tight">
+                <span className="text-[8px] opacity-60">
+                  {aiModel === 'ollama' ? `Ollama ${ollamaMode === 'cloud' ? '(Cloud)' : '(Local)'}` : aiModel}
+                </span>
+                <span className="text-[9px]">
+                  {selectedModel}
+                </span>
+              </div>
+              <span className="text-[8px]">▼</span>
+            </button>
+            
+            {isModelDropdownOpen && (
+              <div className="absolute top-full right-0 mt-1 bg-white dark:bg-[#1b1b1d] border border-slate-200 dark:border-white/10 shadow-xl rounded-lg z-50 min-w-[320px] max-h-[70vh] overflow-y-auto">
+                {/* Cerebras Section */}
+                <ModelProviderSection
+                  title="Cerebras"
+                  models={CerebrasService.CEREBRAS_MODELS}
+                  selectedModel={selectedModel}
+                  onSelectModel={(modelId) => {
+                    setSelectedModel(modelId);
+                    setAiModel('cerebras');
+                    setIsModelDropdownOpen(false);
+                    localStorage.setItem('selected_model', modelId);
+                    localStorage.setItem('ai_model', 'cerebras');
+                  }}
+                />
+                
+                {/* Gemini Section */}
+                <ModelProviderSection
+                  title="Gemini"
+                  models={GeminiService.GEMINI_MODELS}
+                  selectedModel={selectedModel}
+                  onSelectModel={(modelId) => {
+                    setSelectedModel(modelId);
+                    setAiModel('gemini');
+                    setIsModelDropdownOpen(false);
+                    localStorage.setItem('selected_model', modelId);
+                    localStorage.setItem('ai_model', 'gemini');
+                  }}
+                />
+                
+                {/* Groq Section */}
+                <ModelProviderSection
+                  title="Groq"
+                  models={GroqService.GROQ_MODELS.filter(m => !(m as any).utilityOnly)}
+                  selectedModel={selectedModel}
+                  onSelectModel={(modelId) => {
+                    setSelectedModel(modelId);
+                    setAiModel('groq');
+                    setIsModelDropdownOpen(false);
+                    localStorage.setItem('selected_model', modelId);
+                    localStorage.setItem('ai_model', 'groq');
+                  }}
+                />
+                
+                {/* OpenRouter Section */}
+                <ModelProviderSection
+                  title="OpenRouter"
+                  models={OpenRouterService.OPENROUTER_MODELS}
+                  selectedModel={selectedModel}
+                  onSelectModel={(modelId) => {
+                    setSelectedModel(modelId);
+                    setAiModel('openrouter');
+                    setIsModelDropdownOpen(false);
+                    localStorage.setItem('selected_model', modelId);
+                    localStorage.setItem('ai_model', 'openrouter');
+                  }}
+                />
+
+                {/* Ollama Section */}
+                <ModelProviderSection
+                  title={`Ollama ${ollamaMode === 'cloud' ? '(Cloud)' : '(Local)'}`}
+                  models={ollamaMode === 'cloud' ? OllamaService.OLLAMA_CLOUD_MODELS : OllamaService.OLLAMA_LOCAL_MODELS}
+                  selectedModel={selectedModel}
+                  onSelectModel={(modelId) => {
+                    setSelectedModel(modelId);
+                    setAiModel('ollama');
+                    setIsModelDropdownOpen(false);
+                    localStorage.setItem('selected_model', modelId);
+                    localStorage.setItem('ai_model', 'ollama');
+                  }}
+                />
+              </div>
+            )}
+          </div>
           
           <button
             onClick={() => setIsSettingsOpen(true)}
