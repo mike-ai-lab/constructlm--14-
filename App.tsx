@@ -960,7 +960,7 @@ Respond: "Fixed [description]" + patches.`;
                 {/* Cerebras Section */}
                 <ModelProviderSection
                   title="Cerebras"
-                  models={CerebrasService.CEREBRAS_MODELS}
+                  models={GeminiService.CEREBRAS_MODELS}
                   selectedModel={selectedModel}
                   onSelectModel={(modelId) => {
                     setSelectedModel(modelId);
@@ -988,7 +988,7 @@ Respond: "Fixed [description]" + patches.`;
                 {/* Groq Section */}
                 <ModelProviderSection
                   title="Groq"
-                  models={GroqService.GROQ_MODELS.filter(m => !(m as any).utilityOnly)}
+                  models={GeminiService.GROQ_MODELS.filter(m => !(m as any).utilityOnly)}
                   selectedModel={selectedModel}
                   onSelectModel={(modelId) => {
                     setSelectedModel(modelId);
@@ -1002,7 +1002,7 @@ Respond: "Fixed [description]" + patches.`;
                 {/* OpenRouter Section */}
                 <ModelProviderSection
                   title="OpenRouter"
-                  models={OpenRouterService.OPENROUTER_MODELS}
+                  models={GeminiService.OPENROUTER_MODELS}
                   selectedModel={selectedModel}
                   onSelectModel={(modelId) => {
                     setSelectedModel(modelId);
