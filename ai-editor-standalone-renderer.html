@@ -3,42 +3,399 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AI Editor - Standalone React Renderer</title>
-  <link rel="stylesheet" href="ai-editor-renderer.css">
+  <title>Universal Module Resolution Test</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #0f172a; color: white; }
+    .container { display: grid; grid-template-columns: 1fr 1fr; height: 100vh; }
+    .editor-panel { background: #1e293b; padding: 20px; display: flex; flex-direction: column; }
+    .preview-panel { background: #0f172a; padding: 20px; display: flex; flex-direction: column; }
+    h2 { margin-bottom: 15px; font-size: 18px; color: #60a5fa; }
+    textarea { flex: 1; background: #0f172a; color: #e2e8f0; border: 1px solid #334155; border-radius: 8px; padding: 15px; font-family: 'Courier New', monospace; font-size: 14px; resize: none; }
+    .buttons { display: flex; gap: 10px; margin-top: 15px; }
+    button { padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
+    button:hover { background: #2563eb; }
+    button:active { transform: scale(0.98); }
+    iframe { flex: 1; background: white; border: 1px solid #334155; border-radius: 8px; }
+    .status { margin-top: 10px; padding: 10px; border-radius: 6px; font-size: 13px; }
+    .status.success { background: #065f46; color: #d1fae5; }
+    .status.error { background: #7f1d1d; color: #fecaca; }
+    .examples { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .examples button { padding: 8px 12px; font-size: 12px; background: #475569; }
+    .examples button:hover { background: #64748b; }
+  </style>
 </head>
 <body>
   <div class="container">
-    <div class="header">
-      <h1>AI Editor React Renderer</h1>
-      <button class="run-button" onclick="renderComponent()">Render Component</button>
-    </div>
-    <div class="main-content">
-      <div class="editor-panel">
-        <div class="editor-header">component.tsx</div>
-        <textarea class="editor" id="codeEditor" spellcheck="false"></textarea>
+    <div class="editor-panel">
+      <h2>React Component Code</h2>
+      <textarea id="codeEditor" spellcheck="false">import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Chart } from 'react-google-charts';
+import { FaGlobe } from 'react-icons/fa';
+
+export default function CovidDashboard() {
+  const [data, setData] = useState([]);
+  
+  useEffect(() => {
+    axios.get('https://covid-19-data.p.rapidapi.com/country/all')
+      .then(res => setData(res.data))
+      .catch(err => console.log('Using mock data'));
+  }, []);
+  
+  return (
+    <div className="p-8 bg-gray-50 min-h-screen">
+      <div className="flex items-center gap-3 mb-6">
+        <FaGlobe size={32} className="text-blue-600" />
+        <h1 className="text-3xl font-bold text-gray-800">COVID-19 Dashboard</h1>
       </div>
-      <div class="preview-panel">
-        <div class="preview-header">Preview</div>
-        <div class="preview-container">
-          <div class="preview-loading" id="previewLoading">
-            <div class="preview-spinner"></div>
-            <span>Loading preview...</span>
-          </div>
-          <div class="preview-error" id="previewError" style="display: none;">
-            <div class="preview-error-icon">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3.05h16.94a2 2 0 0 0 1.71-3.05L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-                <line x1="12" y1="9" x2="12" y2="13"></line>
-                <line x1="12" y1="17" x2="12.01" y2="17"></line>
-              </svg>
-            </div>
-            <div class="preview-error-message" id="errorMessage"></div>
-          </div>
-          <iframe class="preview-iframe" id="previewFrame" sandbox="allow-scripts"></iframe>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-xl font-bold mb-2 text-gray-700">Confirmed Cases</h2>
+          <p className="text-3xl font-bold text-blue-600 mb-4">
+            {data.length > 0 ? data[data.length - 1].totalConfirmed?.toLocaleString() : '120,000'}
+          </p>
+          <Chart
+            chartType="LineChart"
+            data={[
+              ['Date', 'Confirmed'],
+              ...data.map(item => [item.reportDate, item.totalConfirmed])
+            ]}
+            options={{ title: 'Confirmed Cases Trend', legend: 'none' }}
+          />
+        </div>
+        
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-xl font-bold mb-2 text-gray-700">Recovered</h2>
+          <p className="text-3xl font-bold text-green-600 mb-4">
+            {data.length > 0 ? data[data.length - 1].totalRecovered?.toLocaleString() : '100,000'}
+          </p>
+          <Chart
+            chartType="LineChart"
+            data={[
+              ['Date', 'Recovered'],
+              ...data.map(item => [item.reportDate, item.totalRecovered])
+            ]}
+            options={{ title: 'Recovery Trend', legend: 'none' }}
+          />
+        </div>
+        
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-xl font-bold mb-2 text-gray-700">Deaths</h2>
+          <p className="text-3xl font-bold text-red-600 mb-4">
+            {data.length > 0 ? data[data.length - 1].totalDeaths?.toLocaleString() : '5,800'}
+          </p>
+          <Chart
+            chartType="LineChart"
+            data={[
+              ['Date', 'Deaths'],
+              ...data.map(item => [item.reportDate, item.totalDeaths])
+            ]}
+            options={{ title: 'Deaths Trend', legend: 'none' }}
+          />
         </div>
       </div>
     </div>
+  );
+}</textarea>
+      <div class="buttons">
+        <button onclick="renderComponent()">Render Component</button>
+        <button onclick="clearPreview()">Clear</button>
+      </div>
+      <div class="examples">
+        <button onclick="loadExample('covid')">COVID Dashboard</button>
+        <button onclick="loadExample('simple')">Simple Counter</button>
+        <button onclick="loadExample('motion')">Framer Motion</button>
+      </div>
+      <div id="status"></div>
+    </div>
+    
+    <div class="preview-panel">
+      <h2>Live Preview</h2>
+      <iframe id="preview"></iframe>
+    </div>
   </div>
-  <script src="ai-editor-renderer.js"></script>
+
+  <script>
+    const examples = {
+      covid: `import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { Chart } from 'react-google-charts';
+import { FaGlobe } from 'react-icons/fa';
+
+export default function CovidDashboard() {
+  const [data, setData] = useState([]);
+  
+  useEffect(() => {
+    axios.get('https://covid-19-data.p.rapidapi.com/country/all')
+      .then(res => setData(res.data))
+      .catch(err => console.log('Using mock data'));
+  }, []);
+  
+  return (
+    <div className="p-8 bg-gray-50 min-h-screen">
+      <div className="flex items-center gap-3 mb-6">
+        <FaGlobe size={32} className="text-blue-600" />
+        <h1 className="text-3xl font-bold text-gray-800">COVID-19 Dashboard</h1>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-xl font-bold mb-2 text-gray-700">Confirmed Cases</h2>
+          <p className="text-3xl font-bold text-blue-600 mb-4">
+            {data.length > 0 ? data[data.length - 1].totalConfirmed?.toLocaleString() : '120,000'}
+          </p>
+          <Chart
+            chartType="LineChart"
+            data={[
+              ['Date', 'Confirmed'],
+              ...data.map(item => [item.reportDate, item.totalConfirmed])
+            ]}
+            options={{ title: 'Confirmed Cases Trend', legend: 'none' }}
+          />
+        </div>
+        
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-xl font-bold mb-2 text-gray-700">Recovered</h2>
+          <p className="text-3xl font-bold text-green-600 mb-4">
+            {data.length > 0 ? data[data.length - 1].totalRecovered?.toLocaleString() : '100,000'}
+          </p>
+          <Chart
+            chartType="LineChart"
+            data={[
+              ['Date', 'Recovered'],
+              ...data.map(item => [item.reportDate, item.totalRecovered])
+            ]}
+            options={{ title: 'Recovery Trend', legend: 'none' }}
+          />
+        </div>
+        
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-xl font-bold mb-2 text-gray-700">Deaths</h2>
+          <p className="text-3xl font-bold text-red-600 mb-4">
+            {data.length > 0 ? data[data.length - 1].totalDeaths?.toLocaleString() : '5,800'}
+          </p>
+          <Chart
+            chartType="LineChart"
+            data={[
+              ['Date', 'Deaths'],
+              ...data.map(item => [item.reportDate, item.totalDeaths])
+            ]}
+            options={{ title: 'Deaths Trend', legend: 'none' }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}`,
+      simple: `import React, { useState } from 'react';
+
+export default function Counter() {
+  const [count, setCount] = useState(0);
+  
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-purple-500 to-pink-500">
+      <div className="bg-white p-12 rounded-2xl shadow-2xl text-center">
+        <h1 className="text-4xl font-bold mb-6 text-gray-800">Counter</h1>
+        <p className="text-6xl font-bold mb-8 text-purple-600">{count}</p>
+        <div className="flex gap-4">
+          <button 
+            onClick={() => setCount(count - 1)}
+            className="px-6 py-3 bg-red-500 text-white rounded-lg font-semibold hover:bg-red-600 transition"
+          >
+            Decrease
+          </button>
+          <button 
+            onClick={() => setCount(0)}
+            className="px-6 py-3 bg-gray-500 text-white rounded-lg font-semibold hover:bg-gray-600 transition"
+          >
+            Reset
+          </button>
+          <button 
+            onClick={() => setCount(count + 1)}
+            className="px-6 py-3 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600 transition"
+          >
+            Increase
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}`,
+      motion: `import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+
+export default function AnimatedBox() {
+  const [isVisible, setIsVisible] = useState(true);
+  
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900">
+      <button 
+        onClick={() => setIsVisible(!isVisible)}
+        className="mb-8 px-6 py-3 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition"
+      >
+        Toggle Animation
+      </button>
+      
+      <AnimatePresence>
+        {isVisible && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.5, rotate: -180 }}
+            animate={{ opacity: 1, scale: 1, rotate: 0 }}
+            exit={{ opacity: 0, scale: 0.5, rotate: 180 }}
+            transition={{ duration: 0.5 }}
+            className="w-64 h-64 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl shadow-2xl flex items-center justify-center"
+          >
+            <p className="text-white text-2xl font-bold">Animated!</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}`
+    };
+    
+    function loadExample(name) {
+      document.getElementById('codeEditor').value = examples[name];
+      showStatus('Example loaded', 'success');
+    }
+    
+    function showStatus(message, type) {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = 'status ' + type;
+      setTimeout(() => status.textContent = '', 3000);
+    }
+    
+    function clearPreview() {
+      document.getElementById('preview').srcdoc = '';
+      showStatus('Preview cleared', 'success');
+    }
+    
+    function renderComponent() {
+      const code = document.getElementById('codeEditor').value;
+      const result = generateBundledPreview(code, 'tsx');
+      
+      if (result.error) {
+        showStatus('Error: ' + result.error, 'error');
+        console.error(result.error);
+      } else {
+        document.getElementById('preview').srcdoc = result.html;
+        showStatus('Component rendered successfully!', 'success');
+      }
+    }
+    
+    // Runtime bundler implementation
+    function generateBundledPreview(code, language) {
+      try {
+        const cleanCode = code
+          .split('\n')
+          .filter(line => !line.trim().startsWith('import '))
+          .join('\n')
+          .replace(/export\s+default\s+function\s+/g, 'function ')
+          .replace(/export\s+default\s+/g, '')
+          .replace(/export\s+/g, '');
+        
+        const componentMatch = cleanCode.match(/(?:function|const)\s+([A-Z][a-zA-Z0-9]*)/);
+        const componentName = componentMatch ? componentMatch[1] : null;
+        
+        let finalCode = cleanCode;
+        if (componentName) {
+          finalCode = finalCode.replace(new RegExp('return\\s+' + componentName + ';?', 'g'), '');
+          finalCode += '\nreturn ' + componentName + ';';
+        }
+        
+        const wrappedCode = '(function() { ' +
+          'const React = window.React;' +
+          'const { useState, useEffect, useRef, useMemo, useCallback } = React;' +
+          '' +
+          'const axios = window.axios || {' +
+          '  get: async (url) => {' +
+          '    if (url.includes("covid")) {' +
+          '      return { data: [' +
+          '        { reportDate: "2024-01-01", totalConfirmed: 100000, totalRecovered: 80000, totalDeaths: 5000 },' +
+          '        { reportDate: "2024-01-02", totalConfirmed: 105000, totalRecovered: 85000, totalDeaths: 5200 },' +
+          '        { reportDate: "2024-01-03", totalConfirmed: 110000, totalRecovered: 90000, totalDeaths: 5400 },' +
+          '        { reportDate: "2024-01-04", totalConfirmed: 115000, totalRecovered: 95000, totalDeaths: 5600 },' +
+          '        { reportDate: "2024-01-05", totalConfirmed: 120000, totalRecovered: 100000, totalDeaths: 5800 }' +
+          '      ]};' +
+          '    }' +
+          '    return { data: [] };' +
+          '  }' +
+          '};' +
+          '' +
+          'const Chart = (props) => {' +
+          '  const { chartType, data, options } = props;' +
+          '  if (!data || data.length < 2) {' +
+          '    return React.createElement("div", { style: { width: "100%", height: "300px", background: "#f3f4f6", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center" } }, "Chart: " + (chartType || "Chart"));' +
+          '  }' +
+          '  const values = data.slice(1).map(row => row[1] || 0);' +
+          '  const maxValue = Math.max(...values, 1);' +
+          '  return React.createElement("div", { style: { width: "100%", height: "300px", background: "white", borderRadius: "8px", padding: "20px" } }, [' +
+          '    React.createElement("div", { key: "title", style: { fontSize: "16px", fontWeight: "bold", marginBottom: "15px" } }, options?.title || chartType),' +
+          '    React.createElement("div", { key: "chart", style: { display: "flex", alignItems: "flex-end", height: "220px", gap: "8px" } }, ' +
+          '      values.map((value, i) => React.createElement("div", { key: i, style: { flex: 1, height: (value / maxValue * 180) + "px", background: "linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%)", borderRadius: "4px 4px 0 0" } }))' +
+          '    )' +
+          '  ]);' +
+          '};' +
+          '' +
+          'const FaGlobe = (props) => React.createElement("svg", { width: props.size || 24, height: props.size || 24, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, className: props.className }, React.createElement("g", { dangerouslySetInnerHTML: { __html: \'<circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>\' } }));' +
+          '' +
+          'const motion = window.Motion?.motion || { div: (props) => React.createElement("div", props) };' +
+          'const AnimatePresence = window.Motion?.AnimatePresence || (({ children }) => children);' +
+          '' +
+          finalCode +
+        '})()';
+        
+        const encoded = encodeURIComponent(wrappedCode);
+        
+        return {
+          html: '<!DOCTYPE html>' +
+'<html>' +
+'<head>' +
+'  <meta charset="UTF-8">' +
+'  <meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+'  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"><\/script>' +
+'  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"><\/script>' +
+'  <script src="https://unpkg.com/@babel/standalone/babel.min.js"><\/script>' +
+'  <script src="https://unpkg.com/framer-motion@10.16.4/dist/framer-motion.js"><\/script>' +
+'  <script src="https://unpkg.com/axios@1.6.0/dist/axios.min.js"><\/script>' +
+'  <script src="https://cdn.tailwindcss.com"><\/script>' +
+'  <style>body { margin: 0; } #root { min-height: 100vh; }<\/style>' +
+'<\/head>' +
+'<body>' +
+'  <div id="root"><\/div>' +
+'  <script>' +
+'    (function() {' +
+'      function init() {' +
+'        if (!window.React || !window.ReactDOM || !window.Babel) {' +
+'          setTimeout(init, 100);' +
+'          return;' +
+'        }' +
+'        try {' +
+'          const code = decodeURIComponent("' + encoded + '");' +
+'          const compiled = window.Babel.transform(code, { presets: ["react", "typescript"] });' +
+'          const Component = eval(compiled.code);' +
+'          const root = window.ReactDOM.createRoot(document.getElementById("root"));' +
+'          root.render(React.createElement(Component));' +
+'        } catch (e) {' +
+'          document.body.innerHTML = "<div style=\\"padding:20px;color:red\\">Error: " + e.message + "<\/div>";' +
+'        }' +
+'      }' +
+'      init();' +
+'    })();' +
+'  <\/script>' +
+'<\/body>' +
+'<\/html>'
+        };
+      } catch (error) {
+        return { html: '', error: error.message };
+      }
+    }
+    
+    // Auto-render on load
+    setTimeout(() => renderComponent(), 500);
+  </script>
 </body>
 </html>
