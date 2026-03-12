@@ -106,7 +106,7 @@ class SemanticPatchClient {
     }
 
     if (failed.length > 0) {
-      summary += `\n\n⚠️ Failed patches: ${failed.length}`
+      summary += `\n\n ! Failed patches: ${failed.length}`
       failed.forEach(patch => {
         summary += `\n  • ${patch.filePath}: ${patch.reason}`
       })

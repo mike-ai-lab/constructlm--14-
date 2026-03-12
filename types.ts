@@ -31,6 +31,8 @@ export interface ChatMessage {
   metadata?: {
     imageBase64?: string;
     activeSources?: string[];
+    isErrorFix?: boolean;
+    errorCode?: string;
   };
 }
 

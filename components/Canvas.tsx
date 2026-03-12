@@ -7,7 +7,7 @@ interface CanvasProps {
   isOpen: boolean;
   onClose: () => void;
   error?: {message: string; code: string} | null;
-  onError?: (errorMessage: string, code: string) => void;
+  onError?: (errorMessage: string | null, code: string) => void;
   onFixError?: (code: string) => void;
   aiModel?: 'gemini' | 'cerebras' | 'groq' | 'openrouter' | 'ollama';
   isFixingError?: boolean;
@@ -33,6 +33,13 @@ export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose,
   const [copyFeedback, setCopyFeedback] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const rendererRef = useRef<any>(null);
+  const hadErrorRef = useRef<boolean>(false);
+  const lastRenderedCodeRef = useRef<string>('');
+
+  // Track error state changes
+  useEffect(() => {
+    hadErrorRef.current = !!error;
+  }, [error]);
 
   // Initialize renderer on mount
   useEffect(() => {
@@ -42,8 +49,8 @@ export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose,
         script.src = '/user/standalone_tools/ReactComponentRenderer.enhanced.js';
         script.onload = () => {
           rendererRef.current = new window.ReactComponentRenderer();
-          console.log('[Canvas] Renderer initialized');
-          if (isOpen && code) {
+          if (isOpen && code && code !== lastRenderedCodeRef.current) {
+            lastRenderedCodeRef.current = code;
             handleRender(code);
           }
         };
@@ -53,8 +60,8 @@ export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose,
         document.head.appendChild(script);
       } else {
         rendererRef.current = new window.ReactComponentRenderer();
-        console.log('[Canvas] Renderer already available');
-        if (isOpen && code) {
+        if (isOpen && code && code !== lastRenderedCodeRef.current) {
+          lastRenderedCodeRef.current = code;
           handleRender(code);
         }
       }
@@ -62,7 +69,6 @@ export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose,
 
     // Listen for errors from iframe
     const handleIframeError = (event: any) => {
-      console.log('[Canvas] Iframe error event:', event.data);
       if (event.data?.type === 'renderer-error' && editCode) {
         onError?.(event.data.message, editCode);
       }
@@ -74,14 +80,12 @@ export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose,
     return () => {
       window.removeEventListener('message', handleIframeError);
     };
-  }, [editCode, onError]);
+  }, []);
 
   // Update initial state when code changes
   useEffect(() => {
-    if (isOpen && code && rendererRef.current) {
-      console.log('[Canvas] New code received, clearing error state and rendering');
-      // Always clear error when new code arrives
-      // (This handles both AI-fixed code and user edits)
+    if (isOpen && code && rendererRef.current && code !== lastRenderedCodeRef.current) {
+      lastRenderedCodeRef.current = code;
       setEditCode(code);
       setVersions([{ code, timestamp: Date.now() }]);
       setCurrentVersionIndex(0);
@@ -95,45 +99,51 @@ export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose,
       return;
     }
 
-    console.log('[Canvas] Starting render, code length:', codeToRender.length);
     setIsRendering(true);
 
     try {
       await rendererRef.current.renderToIframe(iframeRef.current, codeToRender);
-      console.log('[Canvas] Render complete');
+      // Only clear error if we had an error before (prevents infinite loop)
+      if (hadErrorRef.current) {
+        onError?.(null as any, '');
+        hadErrorRef.current = false;
+      }
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
       console.error('[Canvas] Render error:', errorMsg);
       onError?.(errorMsg, codeToRender);
+      hadErrorRef.current = true;
     } finally {
       setIsRendering(false);
     }
   };
 
   const handleSwitchToPreview = async () => {
-    console.log('[Canvas] Switching to preview, rendering edited code');
     // First render the code, THEN switch to preview
     if (rendererRef.current && iframeRef.current) {
       try {
         await rendererRef.current.renderToIframe(iframeRef.current, editCode);
-        console.log('[Canvas] Manual render complete');
+        // Only clear error if we had an error before
+        if (hadErrorRef.current) {
+          onError?.(null, '');
+          hadErrorRef.current = false;
+        }
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : String(error);
         console.error('[Canvas] Manual render error:', errorMsg);
         onError?.(errorMsg, editCode);
+        hadErrorRef.current = true;
       }
     }
     setShowCode(false);
   };
 
   const handleRefreshRender = () => {
-    console.log('[Canvas] User clicked refresh render button');
     handleRender(editCode);
   };
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(editCode).then(() => {
-      console.log('[Canvas] Code copied to clipboard');
       setCopyFeedback(true);
       setTimeout(() => setCopyFeedback(false), 2000);
     }).catch(err => {
@@ -142,8 +152,6 @@ export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose,
   };
 
   const handleDownloadCode = () => {
-    console.log('[Canvas] Downloading code, filename:', filename);
-    
     // Determine file extension
     const ext = filename.includes('.') ? filename.split('.').pop() : 'jsx';
     const finalFilename = filename.includes('.') ? filename : `${filename}.${ext}`;
@@ -162,7 +170,6 @@ export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose,
     
     // Cleanup
     URL.revokeObjectURL(url);
-    console.log('[Canvas] Download triggered for:', finalFilename);
   };
 
   const handlePreviousVersion = () => {
@@ -171,7 +178,6 @@ export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose,
       setCurrentVersionIndex(newIndex);
       const versionCode = versions[newIndex].code;
       setEditCode(versionCode);
-      console.log('[Canvas] Loaded previous version, index:', newIndex);
       if (!showCode) {
         handleRender(versionCode);
       }
@@ -184,7 +190,6 @@ export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose,
       setCurrentVersionIndex(newIndex);
       const versionCode = versions[newIndex].code;
       setEditCode(versionCode);
-      console.log('[Canvas] Loaded next version, index:', newIndex);
       if (!showCode) {
         handleRender(versionCode);
       }
@@ -192,7 +197,6 @@ export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose,
   };
 
   const handleSaveVersion = () => {
-    console.log('[Canvas] Saving new version, code length:', editCode.length);
     const newVersion: CodeVersion = { code: editCode, timestamp: Date.now() };
     const newVersions = versions.slice(0, currentVersionIndex + 1);
     newVersions.push(newVersion);
@@ -378,7 +382,7 @@ export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose,
                           : 'bg-blue-600 hover:bg-blue-700'
                       }`}
                     >
-                      {isFixingError ? '⏳ Fixing...' : '🔧 Fix Error'}
+                      {isFixingError ? 'Sending to Chat...' : 'Ask AI to Fix'}
                     </button>
                     <button
                       onClick={() => setShowCode(true)}
@@ -392,13 +396,14 @@ export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose,
                       View Code
                     </button>
                     <button
-                      onClick={() => setShowCode(false)}
+                      onClick={() => onError?.(null, '')}
                       disabled={isFixingError}
                       className={`px-4 py-2 text-gray-400 text-[10px] font-bold uppercase tracking-wider rounded border transition-colors ${
                         isFixingError
                           ? 'bg-white/5 border-white/5 cursor-not-allowed opacity-50'
                           : 'bg-white/5 hover:bg-white/10 border-white/10'
                       }`}
+                      title="Dismiss error"
                     >
                       ✕
                     </button>

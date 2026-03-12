@@ -25,9 +25,10 @@ constructlm/
 
 ### `/components/`
 React components following a flat structure:
-- `ChatInterface.tsx`: Main chat UI with canvas integration
-- `Sidebar.tsx`: File and session management
-- `SettingsModal.tsx`: API key configuration
+- `ChatInterface.tsx`: Main chat UI with message display, image upload, thinking process collapsible, code artifact cards
+- `Canvas.tsx`: Interactive code preview/editor with version history, error handling, and AI-powered error fixing
+- `Sidebar.tsx`: File and session management with upload, toggle, delete
+- `SettingsModal.tsx`: API key configuration for all providers
 - `CodeEditor.tsx`: Monaco-based code editor
 - `ui/`: Reusable UI primitives (Button, etc.)
 
@@ -35,15 +36,15 @@ React components following a flat structure:
 Pure functions and API integrations (no React state):
 - `vectorDb.ts`: IndexedDB operations for RAG (chunks, embeddings, search)
 - `embeddingService.ts`: Local Transformers.js embeddings
-- `geminiService.ts`: Google Gemini API integration
-- `cerebrasService.ts`: Cerebras API integration
-- `groqService.ts`: Groq API integration
-- `openrouterService.ts`: OpenRouter API integration
-- `ollamaService.ts`: Ollama local/cloud integration
-- `chatStorage.ts`: Chat session persistence (localStorage)
+- `geminiService.ts`: Google Gemini API integration with vision support
+- `cerebrasService.ts`: Cerebras API integration with reasoning tag detection
+- `groqService.ts`: Groq API integration with vision models
+- `openrouterService.ts`: OpenRouter API integration with free model access
+- `ollamaService.ts`: Ollama local/cloud integration with dual-mode support
+- `chatStorage.ts`: Chat session persistence (localStorage) with export/import
 - `pdfParser.ts`: PDF text extraction
-- `runtimeBundler.ts`: TSX/JSX compilation and import resolution
-- `citationService.ts`: Citation extraction and validation
+- `runtimeBundler.ts`: TSX/JSX compilation and import resolution for Canvas
+- `citationService.ts`: Citation extraction and validation from AI responses
 - `syntaxHighlighter.ts`: Code syntax highlighting
 
 ### Root Files
@@ -81,12 +82,27 @@ Pure functions and API integrations (no React state):
 6. Top results → AI context → streaming response
 
 ### Code Canvas Architecture
-1. Extract code blocks from markdown
+1. Extract code blocks from markdown (regex: ` ```jsx?|tsx?|html|css ` )
 2. Parse imports (line-by-line processing)
 3. Remove imports and inject dependencies as globals
 4. Babel transpilation (TSX → JS)
-5. Sandbox execution in iframe
-6. Version history tracking (undo/redo)
+5. Sandbox execution in iframe with error boundary
+6. Version history tracking (undo/redo with timestamps)
+7. Error detection and AI-powered error fixing
+8. Code editing with live preview toggle
+
+### Thinking Process Display
+- Extract `<think>` tags from AI responses
+- Display in collapsible "Thinking Process" section
+- Positioned before main message content
+- Supports both `msg.reasoning` property and extracted thinking blocks
+- Expandable/collapsible with chevron indicator
+
+### Canvas Error Handling
+- Iframe error detection via postMessage
+- Error state tracking with message and code
+- AI-powered error fixing with model selection
+- Error recovery without losing code history
 
 ## File Naming Conventions
 
@@ -148,3 +164,42 @@ const CONSTANT = value;
 - User-facing docs: `/docs/` (static HTML)
 - Implementation notes: Markdown files in root (e.g., `CANVAS_RUNTIME_BUNDLER.md`)
 - Session notes: `/user/` directory
+
+## ChatMessage Properties
+
+```typescript
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'model';
+  content: string;
+  timestamp: number;
+  isStreaming?: boolean;
+  citations?: Citation[];
+  inputTokens?: number;
+  outputTokens?: number;
+  reasoning?: string;  // Thinking/reasoning process for reasoning models
+  metadata?: {
+    imageBase64?: string;  // Comma-separated base64 images
+    activeSources?: string[];  // Document names used in RAG
+  };
+}
+```
+
+## ChatSession Properties
+
+```typescript
+interface ChatSession {
+  id: string;
+  title: string;
+  messages: ChatMessage[];
+  createdAt: number;
+  updatedAt: number;
+  aiModel: 'gemini' | 'cerebras' | 'groq' | 'openrouter' | 'ollama';
+  canvasState?: {
+    isOpen: boolean;
+    content: { html: string; code: string; language: string; blockId: string } | null;
+    showCode: boolean;
+    editedCode: string;
+  };
+}
+```

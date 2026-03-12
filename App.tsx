@@ -102,7 +102,6 @@ const ModelProviderSection: React.FC<ModelProviderSectionProps> = ({
 };
 
 const App: React.FC = () => {
-  console.log('🚀 [App] Component rendering');
   const [files, setFiles] = useState<FileDocument[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -294,9 +293,6 @@ const App: React.FC = () => {
   };
 
   const saveCurrentChat = () => {
-    console.log('[saveCurrentChat] Saving chat:', currentChatId);
-    console.log('[saveCurrentChat] Current aiModel:', aiModel);
-    console.log('[saveCurrentChat] Current selectedModel:', selectedModel);
     if (!currentChatId || messages.length === 0) return;
     
     const session: ChatSession = {
@@ -308,13 +304,11 @@ const App: React.FC = () => {
       aiModel: aiModel
     };
     
-    console.log('[saveCurrentChat] Saving session with aiModel:', session.aiModel);
     ChatStorage.saveChatSession(session);
     
     // Update the sessions list in state
     const updatedSessions = ChatStorage.getAllChatSessions();
     setChatSessions(updatedSessions);
-    console.log('[saveCurrentChat] Chat saved successfully');
   };
 
   const handleNewChat = () => {
@@ -333,23 +327,17 @@ const App: React.FC = () => {
   };
 
   const handleSelectChat = (id: string) => {
-    console.log('[handleSelectChat] Loading chat:', id);
     // Save current chat if it has messages
     if (currentChatId && messages.length > 0) {
-      console.log('[handleSelectChat] Saving current chat before switching');
       saveCurrentChat();
     }
     
     const session = ChatStorage.getChatSession(id);
     if (session) {
-      console.log('[handleSelectChat] Session found, aiModel in session:', session.aiModel);
-      console.log('[handleSelectChat] Current aiModel before load:', aiModel);
-      console.log('[handleSelectChat] Current selectedModel before load:', selectedModel);
       setCurrentChatId(id);
       setMessages(session.messages);
       // Don't override user's current model selection when loading chat
       // setAiModel(session.aiModel);
-      console.log('[handleSelectChat] Chat loaded, keeping current model selection');
     }
   };
 
@@ -452,36 +440,112 @@ const App: React.FC = () => {
   };
 
   const handleOpenCanvas = (code: string, filename: string) => {
-    console.log('[handleOpenCanvas] Called with filename:', filename);
-    console.log('[handleOpenCanvas] Code length:', code.length);
-    console.log('[handleOpenCanvas] Code preview (first 200 chars):', code.substring(0, 200));
-    console.log('[handleOpenCanvas] Code preview (around line 67):', code.substring(code.indexOf('</section>'), code.indexOf('</section>') + 100));
     setCanvasCode(code);
     setCanvasFilename(filename);
     setIsCanvasOpen(true);
     setIsMobileSidebarOpen(false);
     setCanvasError(null);
-    console.log('[handleOpenCanvas] Canvas state updated, isCanvasOpen should be true');
   };
 
-  const handleCanvasError = async (errorMessage: string, code: string) => {
-    console.log('[handleCanvasError] Error detected:', errorMessage);
+  const handleCanvasError = async (errorMessage: string | null, code: string) => {
+    if (errorMessage === null || errorMessage === '') {
+      // Clear error - render was successful
+      setCanvasError(null);
+      setIsFixingError(false);
+      return;
+    }
+    
     // Only set error if it's for the current code being displayed
     setCanvasError({ message: errorMessage, code });
     setIsFixingError(false);
   };
 
   const handleFixCanvasError = async (code: string) => {
-    // Prevent multiple simultaneous fix requests
     if (isFixingError) {
-      console.log('[handleFixCanvasError] Already fixing error, ignoring request');
       return;
     }
 
-    console.log('[handleFixCanvasError] Attempting to fix error');
     setIsFixingError(true);
     
     try {
+      const errorMsg = canvasError?.message || 'Unknown error';
+      
+      // Extract line number from error
+      const lineMatch = errorMsg.match(/line (\d+)|:(\d+):\d+/i);
+      const errorLine = lineMatch ? parseInt(lineMatch[1] || lineMatch[2]) : null;
+      
+      // Get ONLY relevant context (5 lines before and after error)
+      let contextLines = '';
+      if (errorLine) {
+        const lines = code.split('\n');
+        const start = Math.max(0, errorLine - 5);
+        const end = Math.min(lines.length, errorLine + 5);
+        
+        contextLines = lines.slice(start, end).map((line, idx) => {
+          const lineNum = start + idx + 1;
+          const marker = lineNum === errorLine ? '> ' : '  ';
+          return `${marker}${lineNum} | ${line}`;
+        }).join('\n');
+      } else {
+        // If no line number, send first 10 lines
+        contextLines = code.split('\n').slice(0, 10).map((line, idx) => 
+          `  ${idx + 1} | ${line}`
+        ).join('\n');
+      }
+      
+      // Semantic patch prompt - MINIMAL context only
+      const errorFixPrompt = `Fix this error using PATCH format:
+
+Error: ${errorMsg}
+
+Context (lines around error):
+${contextLines}
+
+Return ONLY patches:
+PATCH @@ line X @@
+old line content
+new line content
+
+Respond: "Fixed [description]" + patches.`;
+
+      // Send to chat
+      const userMsg: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: 'user',
+        content: errorFixPrompt,
+        timestamp: Date.now(),
+        inputTokens: GeminiService.estimateTokens(errorFixPrompt),
+        metadata: {
+          isErrorFix: true,
+          errorCode: code
+        }
+      };
+      
+      setMessages(prev => [...prev, userMsg]);
+      setIsStreaming(true);
+
+      // Get citations
+      const citations = await VectorDB.searchVectors(errorFixPrompt, 3);
+      
+      const modelMsgId = crypto.randomUUID();
+      setMessages(prev => [...prev, {
+        id: modelMsgId,
+        role: 'model',
+        content: '',
+        timestamp: Date.now(),
+        isStreaming: true,
+        citations: citations
+      }]);
+
+      let accumulatedText = '';
+      
+      const streamService = 
+        aiModel === 'gemini' ? GeminiService :
+        aiModel === 'cerebras' ? CerebrasService :
+        aiModel === 'groq' ? GroqService :
+        aiModel === 'openrouter' ? OpenRouterService :
+        OllamaService;
+      
       const apiKey = 
         aiModel === 'gemini' ? geminiApiKey :
         aiModel === 'cerebras' ? cerebrasApiKey :
@@ -489,70 +553,140 @@ const App: React.FC = () => {
         aiModel === 'openrouter' ? openrouterApiKey :
         ollamaApiKey;
 
-      if (!apiKey) {
-        console.error('[handleFixCanvasError] No API key available');
-        alert('API key not configured for ' + aiModel);
-        setIsFixingError(false);
-        return;
+      if (aiModel === 'ollama') {
+        const OllamaService = await import('./services/ollamaService');
+        await OllamaService.streamChatResponse(
+          errorFixPrompt,
+          messages,
+          citations,
+          (chunk) => {
+            accumulatedText += chunk;
+            setMessages(prev => prev.map(msg => 
+              msg.id === modelMsgId ? { ...msg, content: accumulatedText } : msg
+            ));
+          },
+          apiKey,
+          selectedModel,
+          undefined,
+          ollamaBaseUrl,
+          ollamaMode === 'cloud'
+        );
+      } else {
+        await streamService.streamChatResponse(
+          errorFixPrompt,
+          messages,
+          citations,
+          (chunk) => {
+            accumulatedText += chunk;
+            setMessages(prev => prev.map(msg => 
+              msg.id === modelMsgId ? { ...msg, content: accumulatedText } : msg
+            ));
+          },
+          apiKey,
+          selectedModel,
+          undefined
+        );
       }
 
-      const errorMsg = canvasError?.message || 'Unknown error';
+      // Parse patches from AI response
+      const patches = parsePatchesFromResponse(accumulatedText);
       
-      console.log('[handleFixCanvasError] Calling AI service to fix code');
-      // Don't clear error yet - keep it visible while fixing
-      
-      // Create a timeout to prevent hanging
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Fix timeout - request took too long')), 30000)
-      );
-
-      let fixedCode: string | null = null;
-
-      try {
-        if (aiModel === 'ollama') {
-          const OllamaService = await import('./services/ollamaService');
-          fixedCode = await Promise.race([
-            OllamaService.fixCodeError(code, errorMsg, apiKey, selectedModel, ollamaBaseUrl, ollamaMode === 'cloud'),
-            timeoutPromise
-          ]) as string | null;
-        } else if (aiModel === 'gemini') {
-          fixedCode = await Promise.race([
-            GeminiService.fixCodeError(code, errorMsg, apiKey, selectedOpenRouterModel),
-            timeoutPromise
-          ]) as string | null;
-        } else if (aiModel === 'cerebras') {
-          fixedCode = await Promise.race([
-            CerebrasService.fixCodeError(code, errorMsg, apiKey, selectedModel),
-            timeoutPromise
-          ]) as string | null;
-        } else if (aiModel === 'groq') {
-          fixedCode = await Promise.race([
-            GroqService.fixCodeError(code, errorMsg, apiKey, selectedModel),
-            timeoutPromise
-          ]) as string | null;
-        } else if (aiModel === 'openrouter') {
-          fixedCode = await Promise.race([
-            OpenRouterService.fixCodeError(code, errorMsg, apiKey, selectedOpenRouterModel),
-            timeoutPromise
-          ]) as string | null;
+      if (patches.length > 0) {
+        // Apply patches inline to existing code
+        const patchedCode = applyPatchesToCode(code, patches);
+        
+        // Update canvas with patched code
+        setCanvasCode(patchedCode);
+        
+        console.log(`[Canvas Fix] Applied ${patches.length} patch(es) inline`);
+      } else {
+        // Fallback: try to extract full code if AI didn't follow patch format
+        const codeMatch = accumulatedText.match(/```(?:jsx|tsx|js|typescript)?\s*\n([\s\S]*?)```/);
+        if (codeMatch) {
+          const fixedCode = codeMatch[1].trim();
+          setCanvasCode(fixedCode);
+          console.log('[Canvas Fix] Applied full code replacement (fallback)');
+        } else {
+          console.warn('[Canvas Fix] No patches or code found in AI response');
         }
-      } catch (raceError) {
-        throw raceError;
       }
 
-      if (fixedCode) {
-        console.log('[handleFixCanvasError] Fixed code received, clearing error and updating canvas');
-        // Clear error AFTER we have the fixed code
-        setCanvasError(null);
-        // Update code will trigger Canvas to re-render
-        setCanvasCode(fixedCode);
-      }
+      const outputTokens = GeminiService.estimateTokens(accumulatedText);
+      setMessages(prev => prev.map(msg => 
+        msg.id === modelMsgId 
+          ? { ...msg, isStreaming: false, outputTokens, inputTokens: userMsg.inputTokens }
+          : msg
+      ));
+
+      saveCurrentChat();
+      
     } catch (error) {
-      console.error('[handleFixCanvasError] Error fixing code:', error);
-      alert('Failed to fix code: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      console.error('[handleFixCanvasError] Error:', error);
+      alert('Failed to fix error: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setIsFixingError(false);
+      setIsStreaming(false);
     }
+  };
+
+  // Parse PATCH format from AI response
+  const parsePatchesFromResponse = (response: string): Array<{line: number, oldContent: string, newContent: string}> => {
+    const patches: Array<{line: number, oldContent: string, newContent: string}> = [];
+    
+    console.log('[Patch Parser] Raw response:', response);
+    
+    // Match: PATCH @@ line X @@ followed by two lines (old and new)
+    const patchRegex = /PATCH\s+@@\s+line\s+(\d+)\s+@@\s*\n([^\n]+)\n([^\n]+)/g;
+    
+    let match;
+    while ((match = patchRegex.exec(response)) !== null) {
+      const lineNum = parseInt(match[1]);
+      const oldContent = match[2].trim();
+      const newContent = match[3].trim();
+      
+      patches.push({
+        line: lineNum,
+        oldContent,
+        newContent
+      });
+      console.log(`[Patch Parsed] Line ${lineNum}:`);
+      console.log(`  Old: "${oldContent}"`);
+      console.log(`  New: "${newContent}"`);
+    }
+    
+    console.log(`[Patch Parser] Found ${patches.length} patch(es)`);
+    return patches;
+  };
+
+  // Apply patches to code inline
+  const applyPatchesToCode = (code: string, patches: Array<{line: number, oldContent: string, newContent: string}>): string => {
+    const lines = code.split('\n');
+    
+    console.log(`[Patch Applier] Total lines in code: ${lines.length}`);
+    
+    // Sort patches by line number (descending) to avoid offset issues
+    const sortedPatches = [...patches].sort((a, b) => b.line - a.line);
+    
+    for (const patch of sortedPatches) {
+      const lineIndex = patch.line - 1; // Convert to 0-based index
+      
+      if (lineIndex >= 0 && lineIndex < lines.length) {
+        const currentLine = lines[lineIndex];
+        
+        console.log(`[Patch Applier] Line ${patch.line}:`);
+        console.log(`  Current: "${currentLine}"`);
+        console.log(`  Expected: "${patch.oldContent}"`);
+        console.log(`  New: "${patch.newContent}"`);
+        
+        // Apply patch - replace the entire line
+        lines[lineIndex] = patch.newContent;
+        console.log(`[Patch Applied] Line ${patch.line} replaced`);
+      } else {
+        console.warn(`[Patch Skipped] Line ${patch.line} out of range (total lines: ${lines.length})`);
+      }
+    }
+    
+    return lines.join('\n');
   };
 
   const handleSendMessage = async (text: string, imageBase64?: string) => {
@@ -601,20 +735,12 @@ const App: React.FC = () => {
     setMessages(prev => [...prev, userMsg]);
     setIsStreaming(true);
 
-    console.log('[RAG Query]', text);
-
     try {
-      // Add initialization delay to ensure API state is ready (fixes first request timing issue)
+      // Add initialization delay to ensure API state is ready
       await new Promise(resolve => setTimeout(resolve, 100));
 
       // 1. RAG Search - get more chunks to ensure coverage
       const citations = await VectorDB.searchVectors(text, 8);
-      
-      console.log('[Citations Found]', citations.length, 'sources:');
-      citations.forEach((c, i) => {
-        console.log(`  ${i+1}. ${c.docName} (score: ${c.similarity.toFixed(3)})`);
-        console.log(`     "${c.text.substring(0, 80)}..."`);
-      });
       
       // 2. Prepare Placeholder Model Message
       const modelMsgId = crypto.randomUUID();
@@ -676,7 +802,6 @@ const App: React.FC = () => {
                   const codeMatch = accumulatedText.match(codeRegex);
                   if (codeMatch) {
                     const code = codeMatch[1].trim();
-                    console.log('[Auto-Open Canvas] Code detected, opening canvas with', code.length, 'chars');
                     handleOpenCanvas(code, 'component.jsx');
                   }
                 }, 800);
@@ -723,7 +848,6 @@ const App: React.FC = () => {
                   const codeMatch = accumulatedText.match(codeRegex);
                   if (codeMatch) {
                     const code = codeMatch[1].trim();
-                    console.log('[Auto-Open Canvas] Code detected, opening canvas with', code.length, 'chars');
                     handleOpenCanvas(code, 'component.jsx');
                   }
                 }, 800);
@@ -752,8 +876,6 @@ const App: React.FC = () => {
           ? { ...msg, isStreaming: false, outputTokens, inputTokens: userMsg.inputTokens }
           : msg
       ));
-
-      console.log('[AI Response]', accumulatedText.substring(0, 150) + (accumulatedText.length > 150 ? '...' : ''));
 
       // Save chat immediately after response completes
       saveCurrentChat();
