@@ -936,7 +936,41 @@ Respond: "Fixed [description]" + patches.`;
             ☰ Menu
           </button>
         </div>
+        
+        {/* Model Selector */}
         <div className="flex items-center gap-2">
+          <select 
+            value={aiModel}
+            onChange={(e) => {
+              const provider = e.target.value as 'gemini' | 'cerebras' | 'groq' | 'openrouter' | 'ollama';
+              setAiModel(provider);
+              localStorage.setItem('ai_model', provider);
+              
+              const modelLists = {
+                gemini: GeminiService.GEMINI_MODELS,
+                cerebras: CerebrasService.CEREBRAS_MODELS,
+                groq: GroqService.GROQ_MODELS,
+                openrouter: OpenRouterService.OPENROUTER_MODELS,
+                ollama: ollamaMode === 'cloud' ? OllamaService.OLLAMA_CLOUD_MODELS : OllamaService.OLLAMA_LOCAL_MODELS
+              };
+              
+              const isCompatible = modelLists[provider].some(model => model.id === selectedModel);
+              if (!isCompatible) {
+                const defaultModel = modelLists[provider][0].id;
+                setSelectedModel(defaultModel);
+                localStorage.setItem('selected_model', defaultModel);
+              }
+            }}
+            className="text-xs font-bold uppercase px-2 py-2 border border-slate-300 dark:border-white/10 bg-white dark:bg-[#0a0a0b] rounded min-h-[44px] touch-manipulation"
+            style={{ fontSize: '12px' }}
+          >
+            <option value="cerebras">CEREBRAS</option>
+            <option value="gemini">GEMINI</option>
+            <option value="groq">GROQ</option>
+            <option value="openrouter">OPENROUTER</option>
+            <option value="ollama">OLLAMA</option>
+          </select>
+          
           <button
             onClick={() => setIsSettingsOpen(true)}
             className="hover:bg-slate-100 dark:hover:bg-white/5 p-2 rounded transition-colors min-h-[44px] min-w-[44px] touch-manipulation flex items-center justify-center"
@@ -1142,7 +1176,7 @@ Respond: "Fixed [description]" + patches.`;
         {!isMobileSidebarOpen && !isCanvasOpen && (
           <button
             onClick={() => setIsMobileSidebarOpen(true)}
-            className="md:hidden fixed left-4 bottom-20 z-30 w-14 h-14 bg-blue-600 hover:bg-blue-700 rounded-full shadow-lg flex items-center justify-center text-white transition-all touch-manipulation"
+            className="md:hidden fixed left-4 bottom-32 z-30 w-14 h-14 bg-blue-600 hover:bg-blue-700 rounded-full shadow-lg flex items-center justify-center text-white transition-all touch-manipulation"
             style={{
               boxShadow: '0 4px 20px rgba(59, 130, 246, 0.4)'
             }}
