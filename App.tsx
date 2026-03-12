@@ -129,6 +129,7 @@ const App: React.FC = () => {
   const [isCanvasOpen, setIsCanvasOpen] = useState(false);
   const [canvasError, setCanvasError] = useState<{message: string; code: string} | null>(null);
   const [isFixingError, setIsFixingError] = useState(false);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const isResizingRef = useRef(false);
 
   // CONSTANT: Define exact header height to sync sidebar and header
@@ -412,6 +413,24 @@ const App: React.FC = () => {
 
   // Swipe gesture handling for mobile
   const minSwipeDistance = 50;
+
+  const handleSidebarTouchStart = (e: React.TouchEvent) => {
+    setTouchStartX(e.touches[0].clientX);
+  };
+
+  const handleSidebarTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX === null) return;
+    
+    const touchEndX = e.changedTouches[0].clientX;
+    const distance = touchStartX - touchEndX;
+    
+    // Swipe left to close
+    if (distance > minSwipeDistance) {
+      setIsMobileSidebarOpen(false);
+    }
+    
+    setTouchStartX(null);
+  };
 
   const handleOpenCanvas = (code: string, filename: string) => {
     setCanvasCode(code);
@@ -1070,6 +1089,8 @@ Respond: "Fixed [description]" + patches.`;
           top: 0,
           height: '100dvh'
         }}
+        onTouchStart={handleSidebarTouchStart}
+        onTouchEnd={handleSidebarTouchEnd}
       >
         <div 
           className="h-full flex flex-col overflow-hidden w-full md:w-auto"
