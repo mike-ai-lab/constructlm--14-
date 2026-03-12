@@ -1,7 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { Plus, Download, X } from 'lucide-react';
 import { FileDocument, ChatSession } from '../types';
-import { Button } from './ui/Button';
 
 interface SidebarProps {
   files: FileDocument[];
@@ -12,7 +11,6 @@ interface SidebarProps {
   uploadStatus: string;
   width: number;
   onClose?: () => void;
-  onOpenSettings: () => void;
   chatSessions: ChatSession[];
   currentChatId: string | null;
   onSelectChat: (id: string) => void;
@@ -31,7 +29,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   uploadStatus,
   width,
   onClose,
-  onOpenSettings,
   chatSessions,
   currentChatId,
   onSelectChat,
@@ -45,7 +42,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
     if (e.target.files && e.target.files.length > 0) {
       onUpload(e.target.files);
     }
-    // Reset input
     e.target.value = '';
   }, [onUpload]);
 
@@ -53,7 +49,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <div 
-      className={`w-full flex flex-col h-full bg-white dark:bg-[#0f0f11] flex-shrink-0 transition-all duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}
+      className={`w-full flex flex-col h-full bg-black flex-shrink-0 transition-all duration-300 ${isCollapsed ? 'opacity-0' : 'opacity-100'}`}
       style={{ 
         width: window.innerWidth >= 768 ? `${width}px` : '100vw', 
         maxWidth: '100vw',
@@ -61,7 +57,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
       }}
     >
       <style>{`
-        /* Scribble Checkbox Integration */
+        .sidebar-item {
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          transition: all 0.3s ease;
+        }
+
+        .sidebar-item:hover {
+          background: rgba(255, 255, 255, 0.05);
+        }
+
         .checkbox-wrapper input[type="checkbox"] {
           visibility: hidden;
           display: none;
@@ -112,31 +117,30 @@ export const Sidebar: React.FC<SidebarProps> = ({
           opacity: 1;
         }
 
-        /* Sidebar Scrollbar Styling */
         .sidebar-scroll::-webkit-scrollbar {
-          width: 4px;
+          width: 3px;
         }
         .sidebar-scroll::-webkit-scrollbar-track {
           background: transparent;
         }
         .sidebar-scroll::-webkit-scrollbar-thumb {
-          background: rgba(155, 155, 155, 0.1);
+          background: rgba(255, 255, 255, 0.1);
           border-radius: 10px;
         }
         .sidebar-scroll::-webkit-scrollbar-thumb:hover {
-          background: rgba(155, 155, 155, 0.2);
+          background: rgba(255, 255, 255, 0.15);
         }
       `}</style>
 
-      <div className="flex border-b border-slate-200 dark:border-white/5 shrink-0 h-14 items-center px-4 gap-3 bg-white dark:bg-[#0f0f11]">
+      <div className="flex border-b border-white/5 shrink-0 h-14 items-center px-4 gap-3 bg-black">
         {['CHATS', 'SOURCES'].map((tab) => (
           <button 
             key={tab}
             onClick={() => setActiveTab(tab.toLowerCase() as 'chats' | 'sources')}
             className={`flex-1 h-9 font-bold text-[10px] uppercase transition-all duration-200 rounded ${
               activeTab === tab.toLowerCase()
-              ? 'bg-brand-blue text-white shadow-lg' 
-              : 'bg-slate-50 dark:bg-[#1b1b1d] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#0a0a0b]'
+              ? 'bg-blue-600 text-white' 
+              : 'bg-white/5 text-gray-400 hover:bg-white/10'
             }`}
           >
             {tab}
@@ -145,27 +149,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {onClose && (
           <button 
             onClick={onClose}
-            className="md:hidden absolute right-3 p-2 hover:bg-slate-100 dark:hover:bg-surface-700 rounded"
+            className="md:hidden absolute right-3 p-2 hover:bg-white/5 rounded"
           >
             <X size={20} />
           </button>
         )}
       </div>
 
-      <div className="p-6 pr-4 flex-1 overflow-y-auto overflow-x-hidden sidebar-scroll">
+      <div className="p-4 flex-1 overflow-y-auto overflow-x-hidden sidebar-scroll">
         {activeTab === 'chats' ? (
           <>
-            {/* New Chat Button */}
             <button
               onClick={onNewChat}
-              className="w-full border border-dashed border-slate-300 dark:border-white/10 p-6 mb-6 flex flex-col items-center justify-center hover:bg-slate-50 dark:hover:bg-[#1b1b1d] hover:border-brand-blue/30 group rounded-lg transition-all"
+              className="w-full border border-white/10 p-4 mb-4 flex flex-col items-center justify-center hover:bg-white/5 group rounded-lg transition-all"
             >
-              <Plus className="mb-2 group-hover:rotate-90 transition-transform text-slate-400 dark:text-slate-500" size={20} />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">+ New Chat</span>
+              <Plus className="mb-2 group-hover:rotate-90 transition-transform text-gray-500" size={18} />
+              <span className="text-[9px] font-bold uppercase tracking-widest text-gray-500">+ New Chat</span>
             </button>
             
             {chatSessions.length === 0 && (
-              <div className="text-center mt-10 text-slate-400 dark:text-slate-500 font-sans text-xs opacity-60">
+              <div className="text-center mt-10 text-gray-600 text-xs opacity-60">
                 No chat history
               </div>
             )}
@@ -173,15 +176,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {chatSessions.map(session => (
               <div 
                 key={session.id}
-                className={`group relative mb-3 border p-2 bg-white dark:bg-[#1b1b1d] transition-all cursor-pointer rounded-lg min-h-[50px] ${
+                className={`group relative mb-3 p-3 cursor-pointer rounded-lg min-h-[50px] transition-all ${
                   currentChatId === session.id 
-                    ? 'border-brand-blue shadow-lg ring-1 ring-brand-blue/20' 
-                    : 'border-slate-200 dark:border-white/10 opacity-60 hover:opacity-100 hover:border-brand-blue/30'
+                    ? 'bg-white/10 border border-blue-500/30' 
+                    : 'sidebar-item hover:bg-white/5'
                 }`}
                 onClick={() => onSelectChat(session.id)}
               >
                 <div className="flex justify-between items-start mb-1">
-                  <span className="font-sans text-xs font-semibold truncate max-w-[150px]" title={session.title}>
+                  <span className="text-xs font-semibold truncate max-w-[150px] text-white" title={session.title}>
                     {session.title}
                   </span>
                   <div className="flex gap-1">
@@ -190,7 +193,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         e.stopPropagation();
                         onExportChat(session.id);
                       }}
-                      className="opacity-0 group-hover:opacity-100 text-[10px] hover:bg-slate-100 dark:hover:bg-[#0a0a0b] p-1 rounded transition-all"
+                      className="opacity-0 group-hover:opacity-100 text-[10px] hover:bg-white/10 p-1 rounded transition-all text-gray-400"
                       title="Export"
                     >
                       <Download size={12} />
@@ -200,13 +203,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         e.stopPropagation();
                         onDeleteChat(session.id);
                       }}
-                      className="opacity-0 group-hover:opacity-100 text-[10px] text-red-500 hover:text-red-600 font-sans px-1"
+                      className="opacity-0 group-hover:opacity-100 text-[10px] text-red-500 hover:text-red-400 px-1"
                     >
                       Del
                     </button>
                   </div>
                 </div>
-                <div className="flex justify-between text-[10px] text-slate-500 dark:text-slate-400 font-sans">
+                <div className="flex justify-between text-[9px] text-gray-500">
                   <span>{session.messages.length} msgs</span>
                   <span>{new Date(session.updatedAt).toLocaleDateString()}</span>
                 </div>
@@ -215,7 +218,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </>
         ) : (
           <>
-            {/* Add Source Button */}
             <label className="block w-full cursor-pointer">
               <input 
                 type="file" 
@@ -225,20 +227,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onChange={handleFileChange}
                 disabled={isUploading}
               />
-              <div className={`w-full border border-dashed border-slate-300 dark:border-white/10 p-6 mb-6 flex flex-col items-center justify-center hover:bg-slate-50 dark:hover:bg-[#1b1b1d] hover:border-brand-blue/30 group rounded-lg transition-all ${isUploading ? 'opacity-50' : ''}`}>
-                <Plus className="mb-2 group-hover:rotate-90 transition-transform text-slate-400 dark:text-slate-500" size={20} />
-                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Add Source</span>
+              <div className={`w-full border border-white/10 p-4 mb-4 flex flex-col items-center justify-center hover:bg-white/5 group rounded-lg transition-all ${isUploading ? 'opacity-50' : ''}`}>
+                <Plus className="mb-2 group-hover:rotate-90 transition-transform text-gray-500" size={18} />
+                <span className="text-[9px] font-bold uppercase tracking-widest text-gray-500">Add Source</span>
               </div>
             </label>
             
             {isUploading && (
-              <div className="mt-2 p-2 bg-brand-blue/10 text-brand-blue text-[10px] font-sans truncate rounded border border-brand-blue/20">
+              <div className="mt-2 p-2 bg-blue-500/10 text-blue-400 text-[9px] truncate rounded border border-blue-500/20">
                 {uploadStatus}
               </div>
             )}
             
             {files.length === 0 && (
-              <div className="text-center mt-10 text-slate-400 dark:text-slate-500 font-sans text-xs opacity-60">
+              <div className="text-center mt-10 text-gray-600 text-xs opacity-60">
                 No sources indexed
               </div>
             )}
@@ -248,10 +250,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <div 
                   key={file.id}
                   onClick={() => onToggleFile(file.id, !(file.isEnabled !== false))}
-                  className={`border p-2 cursor-pointer transition-all rounded-lg min-h-[50px] ${
+                  className={`p-3 cursor-pointer transition-all rounded-lg ${
                     file.isEnabled !== false
-                    ? 'border-brand-blue bg-white dark:bg-[#1b1b1d] shadow-lg ring-1 ring-brand-blue/20' 
-                    : 'border-slate-200 dark:border-white/10 opacity-60 hover:opacity-100 hover:border-brand-blue/30 bg-white dark:bg-[#1b1b1d]'
+                    ? 'sidebar-item bg-white/5 border-blue-500/30' 
+                    : 'sidebar-item opacity-60 hover:opacity-100'
                   }`}
                 >
                   <div className="flex items-start">
@@ -265,11 +267,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       />
                       <label htmlFor={`check-${file.id}`} className="label">
                         <svg width={45} height={45} viewBox="0 0 95 95">
-                          <rect x={30} y={20} width={50} height={50} stroke="black" strokeWidth={3} fill="none" />
+                          <rect x={30} y={20} width={50} height={50} stroke="white" strokeWidth={3} fill="none" />
                           <g transform="translate(0,-952.36222)">
                             <path 
                               d="m 56,963 c -102,122 6,9 7,9 17,-5 -66,69 -38,52 122,-77 -7,14 18,4 29,-11 45,-43 23,-4" 
-                              stroke="black" 
+                              stroke="white" 
                               strokeWidth={3} 
                               fill="none" 
                               className="path1" 
@@ -281,7 +283,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                     <div className="flex-1 min-w-0 mt-2">
                       <div className="flex justify-between items-start mb-1">
-                        <div className="font-semibold text-[11px] truncate uppercase max-w-[200px] font-sans" title={file.name}>
+                        <div className="font-semibold text-[10px] truncate uppercase max-w-[150px] text-white" title={file.name}>
                           {file.name}
                         </div>
                         <button 
@@ -289,12 +291,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             e.stopPropagation();
                             onDelete(file.id);
                           }}
-                          className="opacity-0 group-hover:opacity-100 text-[10px] text-red-500 hover:text-red-600 font-sans ml-2 px-1"
+                          className="opacity-0 group-hover:opacity-100 text-[10px] text-red-500 hover:text-red-400 ml-2 px-1"
                         >
                           Del
                         </button>
                       </div>
-                      <div className="text-[9px] mt-1 text-slate-400 dark:text-slate-500 font-semibold">
+                      <div className="text-[8px] mt-1 text-gray-600 font-semibold">
                         ~{Math.round(file.tokenCount || 0)} tokens
                       </div>
                     </div>
@@ -306,16 +308,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
       </div>
 
-      <div className="h-[88px] p-4 border-t border-slate-200 dark:border-white/5 bg-white dark:bg-[#0f0f11] flex flex-col justify-center flex-shrink-0">
-        <div className="flex justify-between items-center font-sans text-[10px] mb-2 font-semibold">
-          <span className="text-slate-600 dark:text-slate-400">Context Usage</span>
-          <span className={totalTokens > 30000 ? "text-red-500 font-bold" : "text-slate-600 dark:text-slate-400"}>
+      <div className="h-20 p-4 border-t border-white/5 bg-black flex flex-col justify-center flex-shrink-0">
+        <div className="flex justify-between items-center text-[9px] mb-2 font-semibold">
+          <span className="text-gray-500">Context Usage</span>
+          <span className={totalTokens > 30000 ? "text-red-500 font-bold" : "text-gray-500"}>
             {Math.round(totalTokens).toLocaleString()} / 1M
           </span>
         </div>
-        <div className="w-full bg-slate-100 dark:bg-[#0a0a0b] h-2 border border-slate-200 dark:border-white/10 rounded-full overflow-hidden">
+        <div className="w-full bg-white/5 h-2 border border-white/10 rounded-full overflow-hidden">
           <div 
-            className="bg-brand-blue h-full transition-all duration-500 rounded-full" 
+            className="bg-blue-600 h-full transition-all duration-500 rounded-full" 
             style={{ width: `${Math.min((totalTokens / 1000000) * 100, 100)}%` }}
           />
         </div>

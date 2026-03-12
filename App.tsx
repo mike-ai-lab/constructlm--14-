@@ -1,6 +1,7 @@
 ﻿import React, { useState, useEffect, useRef } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { ChatInterface } from './components/ChatInterface';
+import { Canvas } from './components/Canvas';
 import { SettingsModal } from './components/SettingsModal';
 import { FileDocument, ChatMessage, ChatSession } from './types';
 import * as VectorDB from './services/vectorDb';
@@ -125,6 +126,9 @@ const App: React.FC = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  const [canvasCode, setCanvasCode] = useState<string | null>(null);
+  const [canvasFilename, setCanvasFilename] = useState<string>('component.jsx');
+  const [isCanvasOpen, setIsCanvasOpen] = useState(false);
   const isResizingRef = useRef(false);
 
   // CONSTANT: Define exact header height to sync sidebar and header
@@ -444,6 +448,17 @@ const App: React.FC = () => {
     }
   };
 
+  const handleOpenCanvas = (code: string, filename: string) => {
+    console.log('[handleOpenCanvas] Called with filename:', filename);
+    console.log('[handleOpenCanvas] Code length:', code.length);
+    console.log('[handleOpenCanvas] Code preview:', code.substring(0, 100));
+    setCanvasCode(code);
+    setCanvasFilename(filename);
+    setIsCanvasOpen(true);
+    setIsMobileSidebarOpen(false);
+    console.log('[handleOpenCanvas] Canvas state updated, isCanvasOpen should be true');
+  };
+
   const handleSendMessage = async (text: string, imageBase64?: string) => {
     // Check if API key is configured for selected model
     if (aiModel === 'gemini' && !geminiApiKey) {
@@ -617,7 +632,7 @@ const App: React.FC = () => {
 
   return (
     <div 
-      className="flex flex-col min-h-[100dvh] h-[100dvh] w-full bg-white dark:bg-[#0a0a0b] text-slate-900 dark:text-slate-100 font-sans selection:bg-brand-blue selection:text-white overflow-hidden relative transition-colors duration-300"
+      className="flex flex-col min-h-[100dvh] h-[100dvh] w-full bg-black text-white font-sans selection:bg-blue-600 selection:text-white overflow-hidden relative transition-colors duration-300"
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
@@ -810,9 +825,9 @@ const App: React.FC = () => {
       )}
 
       {/* MAIN */}
-      <main className="flex-1 flex flex-col relative bg-white dark:bg-[#0a0a0b] min-w-0 w-full">
+      <main className="flex-1 flex flex-col relative bg-black min-w-0 w-full">
         {/* Desktop Header */}
-        <header className="hidden md:flex h-12 items-center justify-between px-8 bg-white dark:bg-[#0a0a0b] shrink-0 z-20">
+        <header className="flex h-[50px] items-center justify-between px-5 bg-black shrink-0 z-20 border-b border-white/5 sticky top-0">
           <div className="flex items-center gap-6">
             <button
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
@@ -940,12 +955,29 @@ const App: React.FC = () => {
           </div>
         </header>
         
-        <ChatInterface 
-          messages={messages} 
-          onSendMessage={handleSendMessage}
-          isStreaming={isStreaming}
-          aiModel={aiModel}
-        />
+        
+        {/* Content Wrapper - Chat + Canvas */}
+        <div className="flex-1 flex relative overflow-hidden">
+          <div className="flex-1 flex flex-col min-w-0">
+            <ChatInterface 
+              messages={messages} 
+              onSendMessage={handleSendMessage}
+              isStreaming={isStreaming}
+              aiModel={aiModel}
+              onOpenCanvas={handleOpenCanvas}
+            />
+          </div>
+          
+          {/* Canvas Panel */}
+          {isCanvasOpen && (
+            <Canvas
+              code={canvasCode || ''}
+              filename={canvasFilename}
+              isOpen={isCanvasOpen}
+              onClose={() => setIsCanvasOpen(false)}
+            />
+          )}
+        </div>
       </main>
 
       {/* Settings Modal */}
