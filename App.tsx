@@ -415,7 +415,11 @@ const App: React.FC = () => {
   const minSwipeDistance = 50;
 
   const handleSidebarTouchStart = (e: React.TouchEvent) => {
-    setTouchStartX(e.touches[0].clientX);
+    // Only track swipes that start from the sidebar content area
+    const target = e.target as HTMLElement;
+    if (target.closest('.sidebar-content')) {
+      setTouchStartX(e.touches[0].clientX);
+    }
   };
 
   const handleSidebarTouchEnd = (e: React.TouchEvent) => {
@@ -426,6 +430,7 @@ const App: React.FC = () => {
     
     // Swipe left to close
     if (distance > minSwipeDistance) {
+      console.log('[Mobile] Swipe left detected - closing sidebar');
       setIsMobileSidebarOpen(false);
     }
     
@@ -1074,14 +1079,23 @@ Respond: "Fixed [description]" + patches.`;
       {/* Mobile Sidebar Overlay - Covers area outside sidebar */}
       {isMobileSidebarOpen && (
         <div 
-          className="md:hidden fixed inset-0 bg-black/70 z-40 transition-opacity duration-300 backdrop-blur-sm"
-          onClick={() => setIsMobileSidebarOpen(false)}
+          className="md:hidden fixed inset-0 bg-black/70 z-[45] transition-opacity duration-300 backdrop-blur-sm"
+          onClick={(e) => {
+            e.stopPropagation();
+            console.log('[Mobile] Overlay clicked - closing sidebar');
+            setIsMobileSidebarOpen(false);
+          }}
+          onTouchEnd={(e) => {
+            e.stopPropagation();
+            console.log('[Mobile] Overlay touched - closing sidebar');
+            setIsMobileSidebarOpen(false);
+          }}
         />
       )}
       
       {/* SIDEBAR */}
       <aside 
-        className={`bg-white dark:bg-[#0f0f11] shrink-0 flex flex-col border-r border-slate-200 dark:border-white/5 shadow-lg fixed md:relative left-0 z-50 transition-transform duration-300 ease-out w-[85vw] max-w-[320px] md:w-auto md:max-w-none ${
+        className={`bg-white dark:bg-[#0f0f11] shrink-0 flex flex-col border-r border-slate-200 dark:border-white/5 shadow-lg fixed md:relative left-0 z-[50] transition-transform duration-300 ease-out w-[85vw] max-w-[320px] md:w-auto md:max-w-none ${
           isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
         style={{ 
@@ -1093,7 +1107,7 @@ Respond: "Fixed [description]" + patches.`;
         onTouchEnd={handleSidebarTouchEnd}
       >
         <div 
-          className="h-full flex flex-col overflow-hidden w-full md:w-auto"
+          className="sidebar-content h-full flex flex-col overflow-hidden w-full md:w-auto"
           style={{ 
             width: Math.min(sidebarWidth, 300)
           }}
@@ -1106,7 +1120,10 @@ Respond: "Fixed [description]" + patches.`;
             isUploading={isUploading}
             uploadStatus={uploadStatus}
             width={sidebarWidth}
-            onClose={() => setIsMobileSidebarOpen(false)}
+            onClose={() => {
+              console.log('[Mobile] Close button clicked - closing sidebar');
+              setIsMobileSidebarOpen(false);
+            }}
             onOpenSettings={() => setIsSettingsOpen(true)}
             chatSessions={chatSessions}
             currentChatId={currentChatId}

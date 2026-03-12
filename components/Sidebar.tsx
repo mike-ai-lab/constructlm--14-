@@ -135,7 +135,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="flex border-b border-white/5 shrink-0 h-14 items-center px-4 gap-3 bg-white dark:bg-[#0f0f11]">
         {onClose && (
           <button 
-            onClick={onClose}
+            onClick={(e) => {
+              e.stopPropagation();
+              console.log('[Sidebar] Close button clicked');
+              onClose();
+            }}
             className="md:hidden p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded min-h-[44px] min-w-[44px] flex items-center justify-center touch-manipulation"
             title="Close sidebar"
           >
