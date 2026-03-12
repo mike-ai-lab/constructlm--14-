@@ -1,148 +1,95 @@
-19:23:13.765 pdfParser.ts:17 PDF.js worker configured: https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.624/build/pdf.worker.min.mjs
-19:29:47.339 App.tsx:368 [RAG Query] Create a simple React UI component for a login form
-19:29:47.339 embeddingService.ts:31 🔄 Loading embedding model (Xenova/all-MiniLM-L6-v2)...
-19:30:05.865 embeddingService.ts:35 ✅ Embedding model loaded successfully
-19:30:06.017 vectorDb.ts:161 Searching across 0 chunks from 0 enabled files (0 total)
-19:30:06.017 vectorDb.ts:175 Top 10 scores before filtering:
-19:30:06.017 vectorDb.ts:185 Found 0 relevant chunks (threshold: 0.15)
-19:30:06.018 installHook.js:1 No chunks above threshold - returning top results as fallback
-overrideMethod @ installHook.js:1
-19:30:06.019 App.tsx:374 [Citations Found] 0 sources:
-19:30:07.719 installHook.js:1 Parse error: SyntaxError: Unterminated string in JSON at position 75 (line 1 column 76)
-    at JSON.parse (<anonymous>)
-    at Module.streamChatResponse (groqService.ts:147:31)
-    at async handleSendMessage (App.tsx:407:7)
-overrideMethod @ installHook.js:1
-19:30:09.364 App.tsx:441 [AI Response] ```jsx
+the app showed error:
+Component Error
+No valid component found
+
+while its valid in the test-enhanced-renderer.html and renderer correctly
+
+code:
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Link } from 'wouter';
-import { Lock, User } from 'luc...
-19:30:11.926 (index):64 cdn.tailwindcss.com should not be used in production. To use Tailwind CSS in production, install it as a PostCSS plugin or use the Tailwind CLI: https://tailwindcss.com/docs/installation
-(anonymous) @ (index):64
-(anonymous) @ (index):64
-19:30:12.090 about:srcdoc:50 [Canvas] Libraries loaded successfully
-19:30:12.091 about:srcdoc:85 [Canvas] Compiling component...
-19:30:12.120 about:srcdoc:117 [Canvas] Error: SyntaxError: /component.tsx: Unexpected token (7:0) (at babel.min.js:3:260002)
+import { Envelope, MessageCircle } from 'lucide-react';
 
-   5 |
-   6 |
->  7 | default export function LoginForm() {
-     | ^
-   8 |   const [email, setEmail] = useState('');
-   9 |   const [password, setPassword] = useState('');
-  10 |   const [error, setError] = useState(null);
-    at e (babel.min.js:3:260002)
-    at r.raise (babel.min.js:3:312098)
-    at r.unexpected (babel.min.js:3:312532)
-    at r.parseExprAtom (babel.min.js:3:485195)
-    at r.parseExprAtom (babel.min.js:3:353993)
-    at r.parseExprSubscripts (babel.min.js:3:477958)
-    at r.parseUpdate (babel.min.js:3:477579)
-    at r.parseMaybeUnary (babel.min.js:3:477193)
-    at r.parseMaybeUnary (babel.min.js:3:453135)
-    at r.parseMaybeUnaryOrPrivate (babel.min.js:3:473986)
-    at r.parseExprOps (babel.min.js:3:474096)
-    at r.parseMaybeConditional (babel.min.js:3:473566)
-    at r.parseMaybeAssign (babel.min.js:3:472472)
-    at r.parseMaybeAssign (babel.min.js:3:451891)
-    at r.parseExpressionBase (babel.min.js:3:471593)
-    at babel.min.js:3:471500
-    at r.allowInAnd (babel.min.js:3:505219)
-    at r.parseExpression (babel.min.js:3:471469)
-    at r.parseStatementContent (babel.min.js:3:514125)
-    at r.parseStatementContent (babel.min.js:3:444971)
-    at r.parseStatementLike (babel.min.js:3:511686)
-    at r.parseModuleItem (babel.min.js:3:511181)
-    at r.parseBlockOrModuleBlockBody (babel.min.js:3:523506)
-    at r.parseBlockBody (babel.min.js:3:523339)
-    at r.parseProgram (babel.min.js:3:508590)
-    at r.parseTopLevel (babel.min.js:3:507296)
-    at r.parse (babel.min.js:3:550298)
-    at r.parse (babel.min.js:3:459572)
-    at aR (babel.min.js:3:550496)
-    at babel.min.js:3:1117839
-    at Generator.<anonymous> (babel.min.js:3:1068)
-    at Generator.next (babel.min.js:3:1898)
-    at Generator.<anonymous> (babel.min.js:3:826)
-    at Generator.next (babel.min.js:3:1898)
-    at Generator.<anonymous> (babel.min.js:3:826)
-    at Generator.next (babel.min.js:3:1898)
-    at Generator.<anonymous> (babel.min.js:3:826)
-    at Generator.next (babel.min.js:3:1898)
-    at iF (babel.min.js:3:945724)
-    at sync (babel.min.js:3:943815)
-    at stopHiding - secret - don't use this - v1 (babel.min.js:3:1069524)
-    at SV (babel.min.js:3:1126276)
-    at Object.FEe [as transform] (babel.min.js:3:3132171)
-    at initComponent (about:srcdoc:87:41)
-    at HTMLDocument.checkLibrariesLoaded (about:srcdoc:51:11)
-initComponent @ about:srcdoc:117
-checkLibrariesLoaded @ about:srcdoc:51
-19:30:12.121 about:srcdoc:35 [Canvas] Component Error /component.tsx: Unexpected token (7:0)
+export default function ContactUsComponent() {
+  const [success, setSuccess] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    message: ''
+  });
 
-   5 |
-   6 |
->  7 | default export function LoginForm() {
-     | ^
-   8 |   const [email, setEmail] = useState('');
-   9 |   const [password, setPassword] = useState('');
-  10 |   const [error, setError] = useState(null);
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    // Simulate API call
+    setTimeout(() => {
+      setSuccess(true);
+      setFormData({ name: '', email: '', message: '' });
+      setTimeout(() => setSuccess(false), 3000);
+    }, 500);
+  };
 
-SyntaxError: /component.tsx: Unexpected token (7:0)
+  return (
+    <section className="py-8 px-4 max-w-2xl mx-auto">
+      <h2 className="text-2xl font-bold mb-6 text-center">Contact Us</h2>
+      
+      {success && (
+        <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded">
+          <p>Your message has been successfully sent!</p>
+        </div>
+      )}
 
-   5 |
-   6 |
->  7 | default export function LoginForm() {
-     | ^
-   8 |   const [email, setEmail] = useState('');
-   9 |   const [password, setPassword] = useState('');
-  10 |   const [error, setError] = useState(null);
-    at e (https://unpkg.com/@babel/standalone/babel.min.js:3:260002)
-    at r.raise (https://unpkg.com/@babel/standalone/babel.min.js:3:312098)
-    at r.unexpected (https://unpkg.com/@babel/standalone/babel.min.js:3:312532)
-    at r.parseExprAtom (https://unpkg.com/@babel/standalone/babel.min.js:3:485195)
-    at r.parseExprAtom (https://unpkg.com/@babel/standalone/babel.min.js:3:353993)
-    at r.parseExprSubscripts (https://unpkg.com/@babel/standalone/babel.min.js:3:477958)
-    at r.parseUpdate (https://unpkg.com/@babel/standalone/babel.min.js:3:477579)
-    at r.parseMaybeUnary (https://unpkg.com/@babel/standalone/babel.min.js:3:477193)
-    at r.parseMaybeUnary (https://unpkg.com/@babel/standalone/babel.min.js:3:453135)
-    at r.parseMaybeUnaryOrPrivate (https://unpkg.com/@babel/standalone/babel.min.js:3:473986)
-    at r.parseExprOps (https://unpkg.com/@babel/standalone/babel.min.js:3:474096)
-    at r.parseMaybeConditional (https://unpkg.com/@babel/standalone/babel.min.js:3:473566)
-    at r.parseMaybeAssign (https://unpkg.com/@babel/standalone/babel.min.js:3:472472)
-    at r.parseMaybeAssign (https://unpkg.com/@babel/standalone/babel.min.js:3:451891)
-    at r.parseExpressionBase (https://unpkg.com/@babel/standalone/babel.min.js:3:471593)
-    at https://unpkg.com/@babel/standalone/babel.min.js:3:471500
-    at r.allowInAnd (https://unpkg.com/@babel/standalone/babel.min.js:3:505219)
-    at r.parseExpression (https://unpkg.com/@babel/standalone/babel.min.js:3:471469)
-    at r.parseStatementContent (https://unpkg.com/@babel/standalone/babel.min.js:3:514125)
-    at r.parseStatementContent (https://unpkg.com/@babel/standalone/babel.min.js:3:444971)
-    at r.parseStatementLike (https://unpkg.com/@babel/standalone/babel.min.js:3:511686)
-    at r.parseModuleItem (https://unpkg.com/@babel/standalone/babel.min.js:3:511181)
-    at r.parseBlockOrModuleBlockBody (https://unpkg.com/@babel/standalone/babel.min.js:3:523506)
-    at r.parseBlockBody (https://unpkg.com/@babel/standalone/babel.min.js:3:523339)
-    at r.parseProgram (https://unpkg.com/@babel/standalone/babel.min.js:3:508590)
-    at r.parseTopLevel (https://unpkg.com/@babel/standalone/babel.min.js:3:507296)
-    at r.parse (https://unpkg.com/@babel/standalone/babel.min.js:3:550298)
-    at r.parse (https://unpkg.com/@babel/standalone/babel.min.js:3:459572)
-    at aR (https://unpkg.com/@babel/standalone/babel.min.js:3:550496)
-    at https://unpkg.com/@babel/standalone/babel.min.js:3:1117839
-    at Generator.<anonymous> (https://unpkg.com/@babel/standalone/babel.min.js:3:1068)
-    at Generator.next (https://unpkg.com/@babel/standalone/babel.min.js:3:1898)
-    at Generator.<anonymous> (https://unpkg.com/@babel/standalone/babel.min.js:3:826)
-    at Generator.next (https://unpkg.com/@babel/standalone/babel.min.js:3:1898)
-    at Generator.<anonymous> (https://unpkg.com/@babel/standalone/babel.min.js:3:826)
-    at Generator.next (https://unpkg.com/@babel/standalone/babel.min.js:3:1898)
-    at Generator.<anonymous> (https://unpkg.com/@babel/standalone/babel.min.js:3:826)
-    at Generator.next (https://unpkg.com/@babel/standalone/babel.min.js:3:1898)
-    at iF (https://unpkg.com/@babel/standalone/babel.min.js:3:945724)
-    at sync (https://unpkg.com/@babel/standalone/babel.min.js:3:943815)
-    at stopHiding - secret - don't use this - v1 (https://unpkg.com/@babel/standalone/babel.min.js:3:1069524)
-    at SV (https://unpkg.com/@babel/standalone/babel.min.js:3:1126276)
-    at Object.FEe [as transform] (https://unpkg.com/@babel/standalone/babel.min.js:3:3132171)
-    at initComponent (about:srcdoc:87:41)
-    at HTMLDocument.checkLibrariesLoaded (about:srcdoc:51:11)
-showError @ about:srcdoc:35
-initComponent @ about:srcdoc:118
-checkLibrariesLoaded @ about:srcdoc:51
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+            Name
+          </label>
+          <input
+            type="text"
+            id="name"
+            value={formData.name}
+            onChange={(e) => setFormData({...formData, name: e.target.value})}
+            required
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+        </div>
+        
+        <div>
+          <label htmlFor="email" className="block text-sm font-medium text-gray-700 flex items-center">
+            <Envelope className="mr-2 h-4 w-4" />
+            Email
+          </label>
+          <input
+            type="email"
+            id="email"
+            value={formData.email}
+            onChange={(e) => setFormData({...formData, email: e.target.value})}
+            required
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+        </div>
+        
+        <div>
+          <label htmlFor="message" className="block text-sm font-medium text-gray-700 flex items-center">
+            <MessageCircle className="mr-2 h-4 w-4" />
+            Message
+          </label>
+          <textarea
+            id="message"
+            rows={4}
+            value={formData.message}
+            onChange={(e) => setFormData({...formData, message: e.target.value})}
+            required
+            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+          />
+        </div>
+        
+        <div className="pt-2">
+          <button
+            type="submit"
+            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            Send Message
+          </button>
+        </div>
+      </form>
+    </section>
+  );
+}

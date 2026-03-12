@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Test - Enhanced Renderer</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Courier New', monospace;
+      background: #0f0f11;
+      color: white;
+      padding: 20px;
+    }
+    .container { max-width: 1400px; margin: 0 auto; }
+    h1 { font-size: 24px; margin-bottom: 20px; }
+    .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; height: calc(100vh - 100px); }
+    .panel { background: #1b1b1d; border: 2px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; }
+    .panel-header { padding: 15px; background: black; border-bottom: 2px solid rgba(255,255,255,0.1); font-weight: bold; }
+    .panel-content { flex: 1; overflow: auto; }
+    textarea { width: 100%; height: 100%; background: #252526; color: #d4d4d4; border: none; padding: 15px; font-family: 'Courier New', monospace; font-size: 13px; resize: none; }
+    iframe { width: 100%; height: 100%; border: none; background: white; }
+    .controls { padding: 15px; background: black; display: flex; gap: 10px; flex-wrap: wrap; }
+    button { padding: 10px 20px; background: white; color: black; border: 2px solid white; font-family: 'Courier New', monospace; font-weight: bold; font-size: 11px; cursor: pointer; }
+    button:hover { background: black; color: white; }
+    .status { padding: 10px 15px; background: #1b1b1d; border: 2px solid rgba(255,255,255,0.1); margin-bottom: 20px; font-size: 12px; }
+    .status.success { border-color: #10b981; color: #10b981; }
+    .status.error { border-color: #ef4444; color: #ef4444; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Enhanced React Component Renderer - Simple Test</h1>
+    
+    <div id="status" class="status" style="display: none;"></div>
+    
+    <div class="layout">
+      <div class="panel">
+        <div class="panel-header">Source Code Editor</div>
+        <div class="panel-content">
+          <textarea id="codeEditor" placeholder="Paste your React component code here..."></textarea>
+        </div>
+        <div class="controls">
+          <button id="renderBtn">Render</button>
+          <button id="clearBtn">Clear</button>
+        </div>
+        <div class="panel-header">Quick Examples</div>
+        <div class="controls">
+          <button onclick="loadExample('counter')">Counter</button>
+          <button onclick="loadExample('todo')">Todo</button>
+          <button onclick="loadExample('icons')">Icons</button>
+          <button onclick="loadExample('hooks')">Hooks</button>
+        </div>
+      </div>
+      
+      <div class="panel">
+        <div class="panel-header">Live Preview</div>
+        <div class="panel-content">
+          <iframe id="preview" sandbox="allow-scripts"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="ReactComponentRenderer.enhanced.js"></script>
+  <script>
+    const EXAMPLES = {
+      counter: `function Counter() {
+  const [count, setCount] = React.useState(0);
+  
+  return (
+    <div className="p-8 bg-white rounded-xl shadow-lg max-w-sm mx-auto mt-10">
+      <h1 className="text-3xl font-bold text-blue-600 mb-4">Counter App</h1>
+      <div className="text-6xl font-bold text-center mb-6">{count}</div>
+      <div className="flex gap-2">
+        <button 
+          onClick={() => setCount(count - 1)}
+          className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold"
+        >
+          -
+        </button>
+        <button 
+          onClick={() => setCount(0)}
+          className="flex-1 py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-semibold"
+        >
+          Reset
+        </button>
+        <button 
+          onClick={() => setCount(count + 1)}
+          className="flex-1 py-3 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold"
+        >
+          +
+        </button>
+      </div>
+    </div>
+  );
+}
+
+return Counter;`,
+
+      todo: `function TodoList() {
+  const [todos, setTodos] = React.useState(['Learn React', 'Build a project']);
+  const [input, setInput] = React.useState('');
+  
+  const addTodo = () => {
+    if (input.trim()) {
+      setTodos([...todos, input]);
+      setInput('');
+    }
+  };
+  
+  return (
+    <div className="p-8 bg-gradient-to-br from-purple-50 to-blue-50 min-h-screen">
+      <div className="max-w-md mx-auto bg-white rounded-xl shadow-lg p-6">
+        <h1 className="text-2xl font-bold text-purple-600 mb-4">Todo List</h1>
+        <div className="flex gap-2 mb-4">
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && addTodo()}
+            placeholder="Add task..."
+            className="flex-1 px-4 py-2 border rounded-lg"
+          />
+          <button onClick={addTodo} className="px-6 py-2 bg-purple-600 text-white rounded-lg">
+            Add
+          </button>
+        </div>
+        <ul className="space-y-2">
+          {todos.map((todo, i) => (
+            <li key={i} className="flex justify-between bg-gray-50 p-3 rounded-lg">
+              <span>{todo}</span>
+              <button 
+                onClick={() => setTodos(todos.filter((_, idx) => idx !== i))}
+                className="px-3 py-1 bg-red-500 text-white rounded text-sm"
+              >
+                Delete
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+return TodoList;`,
+
+      icons: `import React, { useState } from 'react';
+import { Heart, Star, Mail } from 'lucide-react';
+
+function IconDemo() {
+  const [liked, setLiked] = useState(false);
+  const [rating, setRating] = useState(0);
+  
+  return (
+    <div className="p-8 bg-gradient-to-br from-blue-500 to-cyan-500 min-h-screen flex items-center justify-center">
+      <div className="bg-white p-8 rounded-2xl shadow-2xl max-w-md">
+        <h1 className="text-3xl font-bold mb-4">Icons Work!</h1>
+        <p className="text-gray-600 mb-6">Lucide icons are mocked</p>
+        <div className="space-y-4">
+          <button 
+            onClick={() => setLiked(!liked)}
+            className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-red-500 text-white rounded-lg"
+          >
+            <Heart className={liked ? 'fill-current' : ''} />
+            {liked ? 'Liked!' : 'Like'}
+          </button>
+          <div className="flex gap-2 justify-center">
+            {[1, 2, 3, 4, 5].map(n => (
+              <button key={n} onClick={() => setRating(n)} className="p-2">
+                <Star className={n <= rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'} />
+              </button>
+            ))}
+          </div>
+          <button className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg">
+            <Mail /> Contact
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default IconDemo;`,
+
+      hooks: `import React, { useState, useEffect } from 'react';
+
+function Clock() {
+  const [time, setTime] = useState(new Date());
+  const [count, setCount] = useState(0);
+  
+  useEffect(() => {
+    const timer = setInterval(() => setTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+  
+  return (
+    <div className="p-8 bg-gradient-to-br from-indigo-500 to-purple-500 min-h-screen flex items-center justify-center">
+      <div className="bg-white p-8 rounded-2xl shadow-2xl">
+        <h1 className="text-3xl font-bold mb-4">Hooks Work!</h1>
+        <p className="text-gray-600 mb-6">useEffect and useState</p>
+        <div className="text-4xl font-mono text-blue-600 mb-6">
+          {time.toLocaleTimeString()}
+        </div>
+        <div className="text-6xl font-bold text-center mb-6">{count}</div>
+        <button 
+          onClick={() => setCount(count + 1)}
+          className="w-full py-3 bg-purple-600 text-white rounded-lg font-semibold"
+        >
+          Increment
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default Clock;`
+    };
+    
+    const codeEditor = document.getElementById('codeEditor');
+    const preview = document.getElementById('preview');
+    const renderBtn = document.getElementById('renderBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const status = document.getElementById('status');
+    
+    const renderer = new ReactComponentRenderer();
+    
+    function showStatus(message, type = 'success') {
+      status.textContent = message;
+      status.className = 'status ' + type;
+      status.style.display = 'block';
+    }
+    
+    function loadExample(name) {
+      if (EXAMPLES[name]) {
+        codeEditor.value = EXAMPLES[name];
+        showStatus('Example loaded: ' + name, 'success');
+      }
+    }
+    
+    renderer.initialize().then(() => {
+      showStatus('Ready!', 'success');
+      setTimeout(() => status.style.display = 'none', 2000);
+    });
+    
+    renderBtn.addEventListener('click', async () => {
+      const code = codeEditor.value.trim();
+      if (!code) {
+        showStatus('Please enter code', 'error');
+        return;
+      }
+      
+      renderBtn.disabled = true;
+      showStatus('Rendering...', 'success');
+      
+      try {
+        await renderer.renderToIframe(preview, code);
+        showStatus('Rendered!', 'success');
+      } catch (err) {
+        showStatus('Error: ' + err.message, 'error');
+      } finally {
+        renderBtn.disabled = false;
+      }
+    });
+    
+    clearBtn.addEventListener('click', () => {
+      codeEditor.value = '';
+      preview.srcdoc = '';
+      status.style.display = 'none';
+    });
+  </script>
+</body>
+</html>

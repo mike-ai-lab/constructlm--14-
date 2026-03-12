@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Enhanced React Component Renderer - Test</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Courier New', monospace;
+      background: #0f0f11;
+      color: white;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      height: calc(100vh - 100px);
+    }
+    .panel {
+      background: #1b1b1d;
+      border: 2px solid rgba(255,255,255,0.1);
+      display: flex;
+      flex-direction: column;
+    }
+    .panel-header {
+      padding: 15px;
+      background: black;
+      border-bottom: 2px solid rgba(255,255,255,0.1);
+      font-weight: bold;
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: 1px;
+    }
+    .panel-content {
+      flex: 1;
+      overflow: auto;
+    }
+    textarea {
+      width: 100%;
+      height: 100%;
+      background: #252526;
+      color: #d4d4d4;
+      border: none;
+      padding: 15px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      resize: none;
+      line-height: 1.6;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      background: white;
+    }
+    .controls {
+      padding: 15px;
+      background: black;
+      border-top: 2px solid rgba(255,255,255,0.1);
+      display: flex;
+      gap: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      background: white;
+      color: black;
+      border: 2px solid white;
+      font-family: 'Courier New', monospace;
+      font-weight: bold;
+      text-transform: uppercase;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    button:hover {
+      background: black;
+      color: white;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .status {
+      padding: 10px 15px;
+      background: #1b1b1d;
+      border: 2px solid rgba(255,255,255,0.1);
+      margin-bottom: 20px;
+      font-size: 12px;
+    }
+    .status.success { border-color: #10b981; color: #10b981; }
+    .status.error { border-color: #ef4444; color: #ef4444; }
+    .examples {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .example-btn {
+      padding: 8px 15px;
+      background: #1b1b1d;
+      color: white;
+      border: 2px solid rgba(255,255,255,0.1);
+      font-family: 'Courier New', monospace;
+      font-size: 10px;
+      cursor: pointer;
+    }
+    .example-btn:hover {
+      border-color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Enhanced React Component Renderer</h1>
+    
+    <div id="status" class="status" style="display: none;"></div>
+    
+    <div class="layout">
+      <div class="panel">
+        <div class="panel-header">Source Code Editor</div>
+        <div class="panel-content">
+          <textarea id="codeEditor" placeholder="Paste your React component code here..."></textarea>
+        </div>
+        <div class="controls">
+          <button id="renderBtn">Render Component</button>
+          <button id="validateBtn">Validate Only</button>
+          <button id="clearBtn">Clear</button>
+        </div>
+        <div class="panel-header">Basic Tests</div>
+        <div class="controls examples">
+          <button class="example-btn" data-example="counter">Counter</button>
+          <button class="example-btn" data-example="todo">Todo List</button>
+          <button class="example-btn" data-example="colorpicker">Color Picker</button>
+          <button class="example-btn" data-example="login">Login Form</button>
+          <button class="example-btn" data-example="gallery">Card Gallery</button>
+        </div>
+        <div class="panel-header">Advanced Tests - Proof of Power</div>
+        <div class="controls examples">
+          <button class="example-btn" data-example="typescript">TypeScript</button>
+          <button class="example-btn" data-example="iconsdemo">Icons Demo</button>
+          <button class="example-btn" data-example="complexstate">Complex State</button>
+          <button class="example-btn" data-example="hooks">Advanced Hooks</button>
+          <button class="example-btn" data-example="carousel">Carousel</button>
+        </div>
+      </div>
+      
+      <div class="panel">
+        <div class="panel-header">Live Preview</div>
+        <div class="panel-content">
+          <iframe id="preview" sandbox="allow-scripts"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="ReactComponentRenderer.enhanced.js"></script>
+  <script>
+    // Inline examples to ensure they load
+    window.EXAMPLES = window.EXAMPLES || {};
+  </script>
+  <script src="test-examples.js"></script>
+  <script>
+    const codeEditor = document.getElementById('codeEditor');
+    const preview = document.getElementById('preview');
+    const renderBtn = document.getElementById('renderBtn');
+    const validateBtn = document.getElementById('validateBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const status = document.getElementById('status');
+    
+    const renderer = new ReactComponentRenderer();
+    
+    // Wait for all scripts to load
+    window.addEventListener('load', () => {
+      console.log('Page fully loaded');
+      console.log('EXAMPLES available:', window.EXAMPLES ? 'YES' : 'NO');
+      if (window.EXAMPLES) {
+        console.log('Example keys:', Object.keys(window.EXAMPLES));
+      }
+    });
+    
+    renderer.initialize().then(() => {
+      showStatus('Renderer initialized successfully', 'success');
+      setTimeout(() => status.style.display = 'none', 2000);
+    }).catch(err => {
+      showStatus('Failed to initialize: ' + err.message, 'error');
+    });
+    
+    function showStatus(message, type = 'success') {
+      status.textContent = message;
+      status.className = 'status ' + type;
+      status.style.display = 'block';
+    }
+    
+    renderBtn.addEventListener('click', async () => {
+      const code = codeEditor.value.trim();
+      if (!code) {
+        showStatus('Please enter some code', 'error');
+        return;
+      }
+      
+      renderBtn.disabled = true;
+      showStatus('Rendering...', 'success');
+      
+      try {
+        await renderer.renderToIframe(preview, code);
+        showStatus('Rendered successfully!', 'success');
+      } catch (err) {
+        showStatus('Render error: ' + err.message, 'error');
+      } finally {
+        renderBtn.disabled = false;
+      }
+    });
+    
+    validateBtn.addEventListener('click', async () => {
+      const code = codeEditor.value.trim();
+      if (!code) {
+        showStatus('Please enter some code', 'error');
+        return;
+      }
+      
+      validateBtn.disabled = true;
+      showStatus('Validating...', 'success');
+      
+      try {
+        const result = await renderer.validate(code);
+        if (result.valid) {
+          showStatus('Code is valid!', 'success');
+        } else {
+          showStatus('Validation error: ' + result.error, 'error');
+        }
+      } catch (err) {
+        showStatus('Validation error: ' + err.message, 'error');
+      } finally {
+        validateBtn.disabled = false;
+      }
+    });
+    
+    clearBtn.addEventListener('click', () => {
+      codeEditor.value = '';
+      preview.srcdoc = '';
+      status.style.display = 'none';
+    });
+    
+    // Debug: Check if examples are loaded
+    console.log('EXAMPLES loaded:', window.EXAMPLES ? 'YES' : 'NO');
+    if (window.EXAMPLES) {
+      console.log('Available examples:', Object.keys(window.EXAMPLES));
+    }
+    
+    document.querySelectorAll('.example-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const example = btn.dataset.example;
+        console.log('Button clicked:', example);
+        
+        if (window.EXAMPLES && window.EXAMPLES[example]) {
+          codeEditor.value = window.EXAMPLES[example];
+          showStatus('Example loaded: ' + example, 'success');
+          console.log('Example loaded successfully');
+        } else {
+          showStatus('Example not found: ' + example, 'error');
+          console.error('Example not found:', example);
+          console.log('Available:', window.EXAMPLES ? Object.keys(window.EXAMPLES) : 'EXAMPLES not loaded');
+        }
+      });
+    });
+  </script>
+</body>
+</html>
