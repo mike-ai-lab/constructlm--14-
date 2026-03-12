@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Editor - Standalone React Renderer</title>
+  <link rel="stylesheet" href="ai-editor-renderer.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>AI Editor React Renderer</h1>
+      <button class="run-button" onclick="renderComponent()">Render Component</button>
+    </div>
+    <div class="main-content">
+      <div class="editor-panel">
+        <div class="editor-header">component.tsx</div>
+        <textarea class="editor" id="codeEditor" spellcheck="false"></textarea>
+      </div>
+      <div class="preview-panel">
+        <div class="preview-header">Preview</div>
+        <div class="preview-container">
+          <div class="preview-loading" id="previewLoading">
+            <div class="preview-spinner"></div>
+            <span>Loading preview...</span>
+          </div>
+          <div class="preview-error" id="previewError" style="display: none;">
+            <div class="preview-error-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3.05h16.94a2 2 0 0 0 1.71-3.05L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+              </svg>
+            </div>
+            <div class="preview-error-message" id="errorMessage"></div>
+          </div>
+          <iframe class="preview-iframe" id="previewFrame" sandbox="allow-scripts"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="ai-editor-renderer.js"></script>
+</body>
+</html>

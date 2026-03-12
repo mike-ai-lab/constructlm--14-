@@ -1,0 +1,156 @@
+========================================
+AI Provider Model Validation Tests
+========================================
+
+Starting tests...
+
+[dotenv@17.3.1] injecting env (6) from .env.local -- tip: 🤖 agentic secret storage: https://dotenvx.com/as2
+
+======================================================================
+AI Provider Model Validation Test Suite
+======================================================================
+Testing all configured AI providers and models
+
+API Key Status:
+  Gemini:     ✓ Configured
+  Cerebras:   ✓ Configured
+  Groq:       ✓ Configured
+  OpenRouter: ✓ Configured
+  Ollama:     http://localhost:11434
+
+======================================================================
+Testing Google Gemini Models
+======================================================================
+▶ [Gemini] Gemini Flash (Latest)
+  Testing...
+  Retry 1/1...
+✗ [Gemini] Gemini Flash (Latest)
+  Error: models/gemini-flash-latest is not found for API version v1, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+▶ [Gemini] Gemini 2.5 Flash
+  Testing...
+✓ [Gemini] Gemini 2.5 Flash
+  Response: SUCCESS
+▶ [Gemini] Gemini 2.5 Flash Lite
+  Testing...
+✓ [Gemini] Gemini 2.5 Flash Lite
+  Response: SUCCESS
+
+======================================================================
+Testing Cerebras Models
+======================================================================
+▶ [Cerebras] Llama 3.1 8B
+  Testing...
+✓ [Cerebras] Llama 3.1 8B
+  Response: Achieved.
+▶ [Cerebras] Llama 3.3 70B
+  Testing...
+  Retry 1/1...
+✗ [Cerebras] Llama 3.3 70B
+  Error: HTTP 404: {"message":"Model llama-3.3-70b does not exist or you do not have access to it.","type":"not_found_error","param":"model","code":"model_not_found"}
+
+======================================================================
+Testing Groq Models
+======================================================================
+▶ [Groq] Llama 3.3 70B Versatile
+  Testing...
+✓ [Groq] Llama 3.3 70B Versatile
+  Response: SUCCESS
+▶ [Groq] Llama 3.1 70B Versatile
+  Testing...
+  Retry 1/1...
+✗ [Groq] Llama 3.1 70B Versatile
+  Error: HTTP 400: {"error":{"message":"The model `llama-3.1-70b-versatile` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.","type":"invalid_request_error","code":"model_decommissioned"}}
+
+▶ [Groq] Llama 3.1 8B Instant
+  Testing...
+✓ [Groq] Llama 3.1 8B Instant
+  Response: Achieved.
+▶ [Groq] Mixtral 8x7B
+  Testing...
+  Retry 1/1...
+✗ [Groq] Mixtral 8x7B
+  Error: HTTP 400: {"error":{"message":"The model `mixtral-8x7b-32768` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.","type":"invalid_request_error","code":"model_decommissioned"}}
+
+▶ [Groq] Gemma 2 9B
+  Testing...
+  Retry 1/1...
+✗ [Groq] Gemma 2 9B
+  Error: HTTP 400: {"error":{"message":"The model `gemma2-9b-it` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.","type":"invalid_request_error","code":"model_decommissioned"}}
+
+
+======================================================================
+Testing OpenRouter Models
+======================================================================
+▶ [OpenRouter] GPT OSS 20B
+  Testing...
+  Retry 1/1...
+✓ [OpenRouter] GPT OSS 20B
+  Response: SUCCESS
+▶ [OpenRouter] Step 3.5 Flash
+  Testing...
+  Retry 1/1...
+✓ [OpenRouter] Step 3.5 Flash
+  Response: SUCCESS
+▶ [OpenRouter] GLM-4.5-Air
+  Testing...
+  Retry 1/1...
+✓ [OpenRouter] GLM-4.5-Air
+  Response: SUCCESS
+▶ [OpenRouter] Arcee Trinity Large
+  Testing...
+✓ [OpenRouter] Arcee Trinity Large
+  Response: SUCCESS
+▶ [OpenRouter] LFM 2.5 Thinking
+  Testing...
+  Retry 1/1...
+✗ [OpenRouter] LFM 2.5 Thinking
+  Error: Empty response from API
+
+======================================================================
+Testing Ollama Local Models
+======================================================================
+Note: Ollama must be running locally for these tests
+✗ Ollama is not running or not accessible
+○ [Ollama] Llama 3.1 8B
+  Ollama not running
+○ [Ollama] Mistral 7B
+  Ollama not running
+
+======================================================================
+Test Summary
+======================================================================
+Total Tests: 17
+✓ Passed:  9
+✗ Failed:  6
+○ Skipped: 2
+Duration:  41.32s
+
+======================================================================
+Failed Tests Details
+======================================================================
+✗ [Gemini] Gemini Flash (Latest)
+  models/gemini-flash-latest is not found for API version v1, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.
+✗ [Cerebras] Llama 3.3 70B
+  HTTP 404: {"message":"Model llama-3.3-70b does not exist or you do not have access to it.","type":"not_found_error","param":"model","code":"model_not_found"}
+✗ [Groq] Llama 3.1 70B Versatile
+  HTTP 400: {"error":{"message":"The model `llama-3.1-70b-versatile` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.","type":"invalid_request_error","code":"model_decommissioned"}}
+
+✗ [Groq] Mixtral 8x7B
+  HTTP 400: {"error":{"message":"The model `mixtral-8x7b-32768` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.","type":"invalid_request_error","code":"model_decommissioned"}}
+
+✗ [Groq] Gemma 2 9B
+  HTTP 400: {"error":{"message":"The model `gemma2-9b-it` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.","type":"invalid_request_error","code":"model_decommissioned"}}
+
+✗ [OpenRouter] LFM 2.5 Thinking
+  Empty response from API
+
+======================================================================
+✗ Some tests failed
+======================================================================
+
+
+========================================
+Tests completed
+========================================
+
+Press any key to continue . . .

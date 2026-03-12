@@ -5,17 +5,31 @@ const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
 
 // Groq model registry - all verified working models
 export const GROQ_MODELS = [
+  // Chat Completion Models
   { id: "llama-3.3-70b-versatile", name: "Llama 3.3 70B Versatile", vision: false, text: true, multimodal: false, context: "128K", tags: ["TEXT", "VERSATILE"] },
-  { id: "llama-3.1-70b-versatile", name: "Llama 3.1 70B Versatile", vision: false, text: true, multimodal: false, context: "128K", tags: ["TEXT", "VERSATILE"] },
   { id: "llama-3.1-8b-instant", name: "Llama 3.1 8B Instant", vision: false, text: true, multimodal: false, context: "128K", tags: ["TEXT", "FAST"] },
+  { id: "meta-llama/llama-4-scout-17b-16e-instruct", name: "Llama 4 Scout 17B", vision: false, text: true, multimodal: false, context: "16K", tags: ["TEXT", "ADVANCED"] },
+  { id: "qwen/qwen3-32b", name: "Qwen 3 32B", vision: false, text: true, multimodal: false, context: "32K", tags: ["TEXT", "REASONING"] },
+  { id: "openai/gpt-oss-120b", name: "GPT OSS 120B", vision: false, text: true, multimodal: false, context: "128K", tags: ["TEXT", "LARGE"] },
+  { id: "openai/gpt-oss-20b", name: "GPT OSS 20B", vision: false, text: true, multimodal: false, context: "128K", tags: ["TEXT", "GENERAL"] },
+  { id: "moonshotai/kimi-k2-instruct", name: "Kimi K2 Instruct", vision: false, text: true, multimodal: false, context: "128K", tags: ["TEXT", "INSTRUCT"] },
+  { id: "moonshotai/kimi-k2-instruct-0905", name: "Kimi K2 Instruct 0905", vision: false, text: true, multimodal: false, context: "128K", tags: ["TEXT", "INSTRUCT"] },
+  { id: "groq/compound", name: "Groq Compound", vision: false, text: true, multimodal: false, context: "128K", tags: ["TEXT", "COMPOUND"] },
+  { id: "groq/compound-mini", name: "Groq Compound Mini", vision: false, text: true, multimodal: false, context: "128K", tags: ["TEXT", "COMPACT"] },
+  
+  // Vision Models
   { id: "llama-3.2-90b-vision-preview", name: "Llama 3.2 90B Vision", vision: true, text: true, multimodal: true, context: "128K", tags: ["VISION", "TEXT", "MULTIMODAL"] },
   { id: "llama-3.2-11b-vision-preview", name: "Llama 3.2 11B Vision", vision: true, text: true, multimodal: true, context: "128K", tags: ["VISION", "TEXT", "MULTIMODAL"] },
-  { id: "llama-3.2-3b-preview", name: "Llama 3.2 3B", vision: false, text: true, multimodal: false, context: "128K", tags: ["TEXT", "COMPACT"] },
-  { id: "llama-3.2-1b-preview", name: "Llama 3.2 1B", vision: false, text: true, multimodal: false, context: "128K", tags: ["TEXT", "COMPACT"] },
-  { id: "mixtral-8x7b-32768", name: "Mixtral 8x7B", vision: false, text: true, multimodal: false, context: "32K", tags: ["TEXT", "MOE"] },
-  { id: "gemma2-9b-it", name: "Gemma 2 9B", vision: false, text: true, multimodal: false, context: "8K", tags: ["TEXT"] },
-  { id: "gemma-7b-it", name: "Gemma 7B", vision: false, text: true, multimodal: false, context: "8K", tags: ["TEXT"] },
-  { id: "llama-guard-3-8b", name: "Llama Guard 3 8B", vision: false, text: true, multimodal: false, context: "8K", tags: ["SAFETY", "MODERATION"] }
+  
+  // Safety & Moderation Models (utility only - not for chat)
+  { id: "meta-llama/llama-guard-4-12b", name: "Llama Guard 4 12B", vision: false, text: true, multimodal: false, context: "8K", tags: ["SAFETY", "MODERATION"], utilityOnly: true },
+  { id: "meta-llama/llama-prompt-guard-2-22m", name: "Llama Prompt Guard 2 22M", vision: false, text: true, multimodal: false, context: "8K", tags: ["SAFETY", "GUARD"], utilityOnly: true },
+  { id: "meta-llama/llama-prompt-guard-2-86m", name: "Llama Prompt Guard 2 86M", vision: false, text: true, multimodal: false, context: "8K", tags: ["SAFETY", "GUARD"], utilityOnly: true },
+  { id: "openai/gpt-oss-safeguard-20b", name: "GPT OSS Safeguard 20B", vision: false, text: true, multimodal: false, context: "128K", tags: ["SAFETY", "MODERATION"], utilityOnly: true },
+  
+  // Speech-to-Text Models (for future implementation)
+  { id: "whisper-large-v3", name: "Whisper Large V3", vision: false, text: false, multimodal: false, context: "N/A", tags: ["SPEECH", "TRANSCRIPTION"], speechToText: true },
+  { id: "whisper-large-v3-turbo", name: "Whisper Large V3 Turbo", vision: false, text: false, multimodal: false, context: "N/A", tags: ["SPEECH", "TRANSCRIPTION", "FAST"], speechToText: true }
 ];
 
 export const streamChatResponse = async (
@@ -95,37 +109,45 @@ REQUIRED FORMAT:
 Context Information:
 ${contextString}`;
 
-  // Build messages
-  const messages: any[] = [
-    { role: "system", content: systemInstruction }
-  ];
+  // Determine max_tokens and streaming based on model type
+  const isSafetyModel = model.includes('guard') || model.includes('safeguard');
+  const maxTokens = isSafetyModel ? 512 : 8000;
+  const useStreaming = !isSafetyModel; // Safety models don't support streaming
 
-  // Add history
-  history
-    .filter(h => !h.isStreaming)
-    .forEach(h => {
-      messages.push({
-        role: h.role === "model" ? "assistant" : h.role,
-        content: h.content
-      });
-    });
-
-  // Add current message with optional image
-  if (imageBase64 && model.includes('vision')) {
-    // Vision models support images
-    const images = imageBase64.split(',');
-    messages.push({
-      role: "user",
-      content: [
-        { type: "text", text: message },
-        ...images.map(img => ({
-          type: "image_url",
-          image_url: { url: `data:image/jpeg;base64,${img.trim()}` }
-        }))
-      ]
-    });
+  // Build messages array
+  let messages: any[];
+  
+  if (isSafetyModel) {
+    // Safety models require single user message only (no system, no history)
+    messages = [{ role: "user", content: message }];
   } else {
-    messages.push({ role: "user", content: message });
+    // Regular models get full context
+    messages = [
+      { role: "system", content: systemInstruction },
+      ...history
+        .filter(h => !h.isStreaming)
+        .map(h => ({
+          role: h.role === "model" ? "assistant" : h.role,
+          content: h.content
+        }))
+    ];
+
+    // Add current message with optional image
+    if (imageBase64 && model.includes('vision')) {
+      const images = imageBase64.split(',');
+      messages.push({
+        role: "user",
+        content: [
+          { type: "text", text: message },
+          ...images.map(img => ({
+            type: "image_url",
+            image_url: { url: `data:image/jpeg;base64,${img.trim()}` }
+          }))
+        ]
+      });
+    } else {
+      messages.push({ role: "user", content: message });
+    }
   }
 
   const response = await fetch(GROQ_API_URL, {
@@ -137,8 +159,8 @@ ${contextString}`;
     body: JSON.stringify({
       model,
       messages,
-      stream: true,
-      max_tokens: 8000,
+      stream: useStreaming,
+      max_tokens: maxTokens,
       temperature: 0.7
     })
   });
@@ -146,6 +168,18 @@ ${contextString}`;
   if (!response.ok) {
     const errorText = await response.text();
     throw new Error(`Groq API error: ${errorText}`);
+  }
+
+  // Handle non-streaming response for safety models
+  if (!useStreaming) {
+    const data = await response.json();
+    const text = data.choices?.[0]?.message?.content || '';
+    
+    // Send in chunks to simulate streaming
+    for (let i = 0; i < text.length; i += 5) {
+      onChunk(text.slice(i, i + 5));
+    }
+    return;
   }
 
   const reader = response.body?.getReader();

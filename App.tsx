@@ -893,7 +893,7 @@ const App: React.FC = () => {
                   {/* Groq Section */}
                   <ModelProviderSection
                     title="Groq"
-                    models={GeminiService.GROQ_MODELS}
+                    models={GeminiService.GROQ_MODELS.filter(m => !m.utilityOnly)}
                     selectedModel={selectedModel}
                     onSelectModel={(modelId) => {
                       setSelectedModel(modelId);

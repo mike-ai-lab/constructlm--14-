@@ -142,6 +142,10 @@ ${contextString}`;
     { role: "user", content: message }
   ];
 
+  // Determine max_tokens based on model type
+  const isSafetyModel = model.includes('guard') || model.includes('safeguard');
+  const maxTokens = isSafetyModel ? 512 : 8000;
+
   // Determine API endpoint
   if (isCloud) {
     // Use backend proxy to bypass CORS
@@ -152,6 +156,7 @@ ${contextString}`;
       messages,
       stream: true,
       temperature: 0.7,
+      max_tokens: maxTokens,
       apiKey: apiKey
     };
 
@@ -234,6 +239,7 @@ ${contextString}`;
     messages,
     stream: true,
     temperature: 0.7,
+    max_tokens: maxTokens,
   };
 
   const response = await fetch(apiUrl, {

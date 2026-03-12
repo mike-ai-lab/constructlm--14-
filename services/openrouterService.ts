@@ -7,14 +7,10 @@ const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
 export const OPENROUTER_MODELS = [
   // General
   { id: "openai/gpt-oss-20b:free", name: "GPT OSS 20B", vision: false, text: true, multimodal: false, context: "131K", tags: ["TEXT", "GENERAL"] },
-  { id: "stepfun/step-3.5-flash:free", name: "Step 3.5 Flash", vision: false, text: true, multimodal: false, context: "256K", tags: ["TEXT", "GENERAL"] },
   { id: "z-ai/glm-4.5-air:free", name: "GLM-4.5-Air", vision: false, text: true, multimodal: false, context: "131K", tags: ["TEXT", "GENERAL"] },
   
   // Reasoning
   { id: "arcee-ai/trinity-large-preview:free", name: "Arcee Trinity Large", vision: false, text: true, multimodal: false, context: "131K", tags: ["TEXT", "REASONING"] },
-  { id: "arcee-ai/trinity-mini:free", name: "Arcee Trinity Mini", vision: false, text: true, multimodal: false, context: "131K", tags: ["TEXT", "REASONING"] },
-  { id: "liquid/lfm-2.5-1.2b-thinking:free", name: "LFM 2.5 Thinking", vision: false, text: true, multimodal: false, context: "32K", tags: ["TEXT", "REASONING"] },
-  { id: "liquid/lfm-2.5-1.2b-instruct:free", name: "LFM 2.5 Instruct", vision: false, text: true, multimodal: false, context: "32K", tags: ["TEXT", "REASONING"] },
   
   // Multimodal
   { id: "nvidia/nemotron-nano-12b-v2-vl:free", name: "Nemotron Nano 12B VL", vision: true, text: true, multimodal: true, context: "128K", tags: ["VISION", "TEXT", "MULTIMODAL"] },
@@ -141,6 +137,10 @@ ${contextString}`;
     messages.push({ role: "user", content: message });
   }
 
+  // Determine max_tokens based on model type
+  const isSafetyModel = model.includes('guard') || model.includes('safeguard');
+  const maxTokens = isSafetyModel ? 512 : 8000;
+
   const response = await fetch(OPENROUTER_API_URL, {
     method: "POST",
     headers: {
@@ -153,7 +153,7 @@ ${contextString}`;
       model,
       messages,
       stream: true,
-      max_tokens: 8000,
+      max_tokens: maxTokens,
       temperature: 0.7
     })
   });

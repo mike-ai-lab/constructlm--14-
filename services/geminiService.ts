@@ -6,38 +6,46 @@ const DEFAULT_CHAT_MODEL = "gemini-2.5-flash"; // Updated to working model
 
 // Model options available to users - VERIFIED WORKING MODELS ONLY
 export const GEMINI_MODELS = [
-  { id: "gemini-flash-latest", name: "Gemini Flash (Latest)", vision: true, text: true, multimodal: true, context: "1M tokens", tags: ["VISION", "TEXT", "MULTIMODAL"] },
   { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", vision: true, text: true, multimodal: true, context: "1M tokens", tags: ["VISION", "TEXT", "MULTIMODAL"] },
   { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash Lite", vision: true, text: true, multimodal: true, context: "1M tokens", tags: ["VISION", "TEXT", "FAST"] },
 ];
 
 export const CEREBRAS_MODELS = [
   { id: "llama3.1-8b", name: "Llama 3.1 8B", vision: false, text: true, multimodal: false, context: "128K tokens", tags: ["TEXT", "FAST"], reasoning: false },
-  { id: "llama-3.3-70b", name: "Llama 3.3 70B", vision: false, text: true, multimodal: false, context: "128K tokens", tags: ["TEXT", "ADVANCED"], reasoning: false },
 ];
 
 export const GROQ_MODELS = [
-  { id: "llama-3.3-70b-versatile", name: "Llama 3.3 70B Versatile", context: "128K tokens", tags: ["TEXT", "FAST"] },
-  { id: "llama-3.1-70b-versatile", name: "Llama 3.1 70B Versatile", context: "128K tokens", tags: ["TEXT", "FAST"] },
-  { id: "llama-3.1-8b-instant", name: "Llama 3.1 8B Instant", context: "128K tokens", tags: ["TEXT", "INSTANT"] },
+  // Chat Completion Models
+  { id: "llama-3.3-70b-versatile", name: "Llama 3.3 70B Versatile", context: "128K tokens", tags: ["TEXT", "VERSATILE"] },
+  { id: "llama-3.1-8b-instant", name: "Llama 3.1 8B Instant", context: "128K tokens", tags: ["TEXT", "FAST"] },
+  { id: "meta-llama/llama-4-scout-17b-16e-instruct", name: "Llama 4 Scout 17B", context: "16K tokens", tags: ["TEXT", "ADVANCED"] },
+  { id: "qwen/qwen3-32b", name: "Qwen 3 32B", context: "32K tokens", tags: ["TEXT", "REASONING"] },
+  { id: "openai/gpt-oss-120b", name: "GPT OSS 120B", context: "128K tokens", tags: ["TEXT", "LARGE"] },
+  { id: "openai/gpt-oss-20b", name: "GPT OSS 20B", context: "128K tokens", tags: ["TEXT", "GENERAL"] },
+  { id: "moonshotai/kimi-k2-instruct", name: "Kimi K2 Instruct", context: "128K tokens", tags: ["TEXT", "INSTRUCT"] },
+  { id: "moonshotai/kimi-k2-instruct-0905", name: "Kimi K2 Instruct 0905", context: "128K tokens", tags: ["TEXT", "INSTRUCT"] },
+  { id: "groq/compound", name: "Groq Compound", context: "128K tokens", tags: ["TEXT", "COMPOUND"] },
+  { id: "groq/compound-mini", name: "Groq Compound Mini", context: "128K tokens", tags: ["TEXT", "COMPACT"] },
+  
+  // Vision Models
   { id: "llama-3.2-90b-vision-preview", name: "Llama 3.2 90B Vision", context: "128K tokens", tags: ["VISION", "ADVANCED"], vision: true },
   { id: "llama-3.2-11b-vision-preview", name: "Llama 3.2 11B Vision", context: "128K tokens", tags: ["VISION"], vision: true },
-  { id: "llama-3.2-3b-preview", name: "Llama 3.2 3B", context: "128K tokens", tags: ["TEXT", "COMPACT"] },
-  { id: "llama-3.2-1b-preview", name: "Llama 3.2 1B", context: "128K tokens", tags: ["TEXT", "COMPACT"] },
-  { id: "mixtral-8x7b-32768", name: "Mixtral 8x7B", context: "32K tokens", tags: ["TEXT", "MOE"] },
-  { id: "gemma2-9b-it", name: "Gemma 2 9B", context: "8K tokens", tags: ["TEXT"] },
-  { id: "gemma-7b-it", name: "Gemma 7B", context: "8K tokens", tags: ["TEXT"] },
-  { id: "llama-guard-3-8b", name: "Llama Guard 3 8B", context: "8K tokens", tags: ["SAFETY"] },
+  
+  // Safety & Moderation
+  { id: "meta-llama/llama-guard-4-12b", name: "Llama Guard 4 12B", context: "8K tokens", tags: ["SAFETY"] },
+  { id: "meta-llama/llama-prompt-guard-2-22m", name: "Llama Prompt Guard 2 22M", context: "8K tokens", tags: ["SAFETY"] },
+  { id: "meta-llama/llama-prompt-guard-2-86m", name: "Llama Prompt Guard 2 86M", context: "8K tokens", tags: ["SAFETY"] },
+  { id: "openai/gpt-oss-safeguard-20b", name: "GPT OSS Safeguard 20B", context: "128K tokens", tags: ["SAFETY"] },
+  
+  // Speech-to-Text (future feature)
+  { id: "whisper-large-v3", name: "Whisper Large V3", context: "N/A", tags: ["SPEECH"], speechToText: true },
+  { id: "whisper-large-v3-turbo", name: "Whisper Large V3 Turbo", context: "N/A", tags: ["SPEECH", "FAST"], speechToText: true },
 ];
 
 export const OPENROUTER_MODELS = [
   { id: "openai/gpt-oss-20b:free", name: "GPT OSS 20B", context: "131K tokens", tags: ["GENERAL"] },
-  { id: "stepfun/step-3.5-flash:free", name: "Step 3.5 Flash", context: "256K tokens", tags: ["GENERAL"] },
   { id: "z-ai/glm-4.5-air:free", name: "GLM-4.5-Air", context: "131K tokens", tags: ["GENERAL"] },
   { id: "arcee-ai/trinity-large-preview:free", name: "Arcee Trinity Large", context: "131K tokens", tags: ["REASONING"] },
-  { id: "arcee-ai/trinity-mini:free", name: "Arcee Trinity Mini", context: "131K tokens", tags: ["REASONING"] },
-  { id: "liquid/lfm-2.5-1.2b-thinking:free", name: "LFM 2.5 Thinking", context: "32K tokens", tags: ["REASONING"], reasoning: true },
-  { id: "liquid/lfm-2.5-1.2b-instruct:free", name: "LFM 2.5 Instruct", context: "32K tokens", tags: ["REASONING"] },
   { id: "nvidia/nemotron-nano-12b-v2-vl:free", name: "Nemotron Nano 12B VL", context: "128K tokens", tags: ["MULTIMODAL"], vision: true },
   { id: "google/gemma-3-27b-it:free", name: "Gemma 3 27B", context: "131K tokens", tags: ["MULTIMODAL"] },
   { id: "google/gemma-3-12b-it:free", name: "Gemma 3 12B", context: "33K tokens", tags: ["MULTIMODAL"] },
@@ -201,11 +209,15 @@ Canvas renders this immediately - no setup needed.`;
     });
   }
 
+  // Determine max_tokens based on model type
+  const isSafetyModel = model.includes('guard') || model.includes('safeguard');
+  const maxTokens = isSafetyModel ? 512 : 8192;
+
   const requestBody = {
     contents: [{ parts }],
     generationConfig: {
       temperature: 0.7,
-      maxOutputTokens: 8192,
+      maxOutputTokens: maxTokens,
     }
   };
 

@@ -120,6 +120,10 @@ ${contextString}`;
     { role: "user", content: message }
   ];
 
+  // Determine max_tokens based on model type
+  const isSafetyModel = model.includes('guard') || model.includes('safeguard');
+  const maxTokens = isSafetyModel ? 512 : 8000;
+
   const response = await fetch(CEREBRAS_API_URL, {
     method: "POST",
     headers: {
@@ -131,7 +135,7 @@ ${contextString}`;
       model: model,
       messages,
       stream: true,
-      max_tokens: 8000,
+      max_tokens: maxTokens,
       temperature: 0.7
     })
   });
