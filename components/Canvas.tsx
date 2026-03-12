@@ -28,6 +28,8 @@ export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose,
   const [showCode, setShowCode] = useState(false);
   const [editCode, setEditCode] = useState(code);
   const [isRendering, setIsRendering] = useState(false);
+  const [rendererLoaded, setRendererLoaded] = useState(false);
+  const [rendererError, setRendererError] = useState<string>('');
   const [versions, setVersions] = useState<CodeVersion[]>([{ code, timestamp: Date.now() }]);
   const [currentVersionIndex, setCurrentVersionIndex] = useState(0);
   const [copyFeedback, setCopyFeedback] = useState(false);
@@ -44,22 +46,27 @@ export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose,
   // Initialize renderer on mount
   useEffect(() => {
     const initRenderer = async () => {
+      setRendererError('Loading renderer...');
       if (!window.ReactComponentRenderer) {
         const script = document.createElement('script');
         script.src = '/user/standalone_tools/ReactComponentRenderer.enhanced.js';
         script.onload = () => {
           rendererRef.current = new window.ReactComponentRenderer();
+          setRendererLoaded(true);
+          setRendererError('');
           if (isOpen && code && code !== lastRenderedCodeRef.current) {
             lastRenderedCodeRef.current = code;
             handleRender(code);
           }
         };
         script.onerror = () => {
-          console.error('[Canvas] Failed to load renderer');
+          setRendererError('FAILED TO LOAD RENDERER SCRIPT! Path: /user/standalone_tools/ReactComponentRenderer.enhanced.js');
         };
         document.head.appendChild(script);
       } else {
         rendererRef.current = new window.ReactComponentRenderer();
+        setRendererLoaded(true);
+        setRendererError('');
         if (isOpen && code && code !== lastRenderedCodeRef.current) {
           lastRenderedCodeRef.current = code;
           handleRender(code);
@@ -353,6 +360,17 @@ export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose,
         ) : (
           // Preview View
           <div className="flex-1 overflow-hidden relative">
+            {/* Renderer Error - Visible on screen */}
+            {rendererError && (
+              <div className="absolute inset-0 bg-red-900 flex items-center justify-center z-50 p-4">
+                <div className="text-white text-center">
+                  <div className="text-2xl mb-4">⚠️</div>
+                  <div className="text-lg font-bold mb-2">RENDERER ERROR</div>
+                  <div className="text-sm">{rendererError}</div>
+                </div>
+              </div>
+            )}
+            
             {isRendering && (
               <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10 backdrop-blur-sm">
                 <div className="flex flex-col items-center gap-3">
