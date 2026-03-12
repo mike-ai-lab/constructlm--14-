@@ -251,8 +251,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       </div>
 
       {/* Input Area */}
-      <div className="flex-shrink-0 px-6 md:px-12 py-6 border-t border-white/5 bg-black">
-        <div className="max-w-2xl mx-auto">
+      <div className="flex-shrink-0 border-b border-white/5 bg-black px-6 md:px-12 py-1 flex justify-center">
+        <div className="w-full max-w-2xl">
           {/* Image Previews */}
           {selectedImages.length > 0 && (
             <div className="mb-4 flex gap-3 flex-wrap">
@@ -276,36 +276,39 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
           {/* Input Form */}
           <form onSubmit={handleSubmit} className="relative">
-            <textarea
-              ref={textareaRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Inquire about building codes or design specs..."
-              className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 px-6 text-base text-white placeholder:text-gray-600 focus:outline-none focus:border-blue-500/30 focus:ring-1 focus:ring-blue-500/20 transition-all resize-none"
-              rows={1}
-              disabled={isStreaming}
-            />
-            
-            {/* Image Upload Button */}
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isStreaming}
-              className="absolute left-4 bottom-4 p-2 text-gray-500 hover:text-white hover:bg-white/5 rounded transition-colors disabled:opacity-50"
-              title="Upload image"
-            >
-              <ImageIcon size={18} />
-            </button>
+            <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 hover:border-white/20 transition-colors focus-within:border-blue-500/50 focus-within:ring-1 focus-within:ring-blue-500/20">
+              {/* Image Upload Button */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isStreaming}
+                className="flex-shrink-0 p-2 text-gray-500 hover:text-white hover:bg-white/10 rounded-lg transition-colors disabled:opacity-50"
+                title="Upload image"
+              >
+                <ImageIcon size={18} />
+              </button>
 
-            {/* Send Button */}
-            <button
-              type="submit"
-              disabled={isStreaming || (!input.trim() && selectedImages.length === 0)}
-              className="absolute right-3 bottom-3 w-9 h-9 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 rounded-full flex items-center justify-center transition-colors disabled:cursor-not-allowed"
-              title="Send message"
-            >
-              <Send size={16} />
-            </button>
+              {/* Textarea */}
+              <textarea
+                ref={textareaRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Inquire about building codes or design specs..."
+                className="flex-1 bg-transparent text-base text-white placeholder:text-gray-600 placeholder:truncate placeholder:overflow-hidden focus:outline-none resize-none max-h-24"
+                rows={1}
+                disabled={isStreaming}
+              />
+
+              {/* Send Button */}
+              <button
+                type="submit"
+                disabled={isStreaming || (!input.trim() && selectedImages.length === 0)}
+                className="flex-shrink-0 w-10 h-10 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700 rounded-lg flex items-center justify-center transition-colors disabled:cursor-not-allowed"
+                title="Send message"
+              >
+                <Send size={18} />
+              </button>
+            </div>
 
             <input
               ref={fileInputRef}

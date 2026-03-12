@@ -11,6 +11,7 @@ interface SidebarProps {
   uploadStatus: string;
   width: number;
   onClose?: () => void;
+  onOpenSettings?: () => void;
   chatSessions: ChatSession[];
   currentChatId: string | null;
   onSelectChat: (id: string) => void;

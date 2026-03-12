@@ -1,8 +1,9 @@
-﻿import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { ChatInterface } from './components/ChatInterface';
-import { Canvas } from './components/Canvas';
 import { SettingsModal } from './components/SettingsModal';
+
+const Canvas = lazy(() => import('./components/Canvas').then(m => ({ default: m.Canvas })));
 import { FileDocument, ChatMessage, ChatSession } from './types';
 import * as VectorDB from './services/vectorDb';
 import * as GeminiService from './services/geminiService';
@@ -537,7 +538,7 @@ const App: React.FC = () => {
         aiModel === 'cerebras' ? CerebrasService :
         aiModel === 'groq' ? GroqService :
         aiModel === 'openrouter' ? OpenRouterService :
-        (await import('./services/ollamaService')).default;
+        OllamaService;
       
       const apiKey = 
         aiModel === 'gemini' ? geminiApiKey :
@@ -760,13 +761,13 @@ const App: React.FC = () => {
       
       {/* SIDEBAR */}
       <aside 
-        className={`bg-white dark:bg-[#0f0f11] shrink-0 flex flex-col border-r border-slate-200 dark:border-white/5 shadow-lg fixed md:relative left-0 z-50 ${
+        className={`bg-white dark:bg-[#0f0f11] shrink-0 flex flex-col border-r border-slate-200 dark:border-white/5 shadow-lg fixed md:relative left-0 z-50 max-w-[300px] ${
           isMobileSidebarOpen ? '' : '-translate-x-full md:translate-x-0'
         }`}
         style={{ 
           width: isMobileSidebarOpen 
             ? '100vw' 
-            : (isSidebarCollapsed ? 0 : sidebarWidth),
+            : (isSidebarCollapsed ? 0 : Math.min(sidebarWidth, 300)),
           top: 0,
           height: isMobileSidebarOpen ? '100dvh' : '100%',
           transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
@@ -774,8 +775,8 @@ const App: React.FC = () => {
       >
         <div 
           style={{ 
-            width: isMobileSidebarOpen ? '100vw' : sidebarWidth,
-            transform: (!isMobileSidebarOpen && isSidebarCollapsed) ? `translateX(-${sidebarWidth}px)` : 'translateX(0)',
+            width: isMobileSidebarOpen ? '100vw' : Math.min(sidebarWidth, 300),
+            transform: (!isMobileSidebarOpen && isSidebarCollapsed) ? `translateX(-${Math.min(sidebarWidth, 300)}px)` : 'translateX(0)',
           }}
           className={`h-full flex flex-col overflow-hidden ${transitionStyle} ${(!isMobileSidebarOpen && isSidebarCollapsed) ? 'opacity-0' : 'opacity-100'}`}
         >
@@ -908,7 +909,7 @@ const App: React.FC = () => {
                   {/* Groq Section */}
                   <ModelProviderSection
                     title="Groq"
-                    models={GeminiService.GROQ_MODELS.filter(m => !m.utilityOnly)}
+                    models={GeminiService.GROQ_MODELS.filter(m => !(m as any).utilityOnly)}
                     selectedModel={selectedModel}
                     onSelectModel={(modelId) => {
                       setSelectedModel(modelId);
@@ -957,7 +958,7 @@ const App: React.FC = () => {
         
         
         {/* Content Wrapper - Chat + Canvas */}
-        <div className="flex-1 flex relative overflow-hidden">
+        <div className="flex-1 flex relative overflow-hidden min-w-0 gap-0 pr-[30px] pb-[30px]">
           <div className="flex-1 flex flex-col min-w-0">
             <ChatInterface 
               messages={messages} 
@@ -970,12 +971,16 @@ const App: React.FC = () => {
           
           {/* Canvas Panel */}
           {isCanvasOpen && (
-            <Canvas
-              code={canvasCode || ''}
-              filename={canvasFilename}
-              isOpen={isCanvasOpen}
-              onClose={() => setIsCanvasOpen(false)}
-            />
+            <div className="max-w-[750px] flex-1 min-w-[300px]">
+              <Suspense fallback={<div className="bg-black rounded-2xl" />}>
+                <Canvas
+                  code={canvasCode || ''}
+                  filename={canvasFilename}
+                  isOpen={isCanvasOpen}
+                  onClose={() => setIsCanvasOpen(false)}
+                />
+              </Suspense>
+            </div>
           )}
         </div>
       </main>

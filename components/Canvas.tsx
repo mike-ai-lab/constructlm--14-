@@ -174,42 +174,39 @@ export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose 
   const canGoNext = currentVersionIndex < versions.length - 1;
 
   return (
-    <div className="fixed md:relative right-0 top-0 bottom-0 w-full md:w-[750px] bg-black border-l border-white/5 flex flex-col z-40 md:z-auto md:mr-[30px] md:mb-[30px] md:rounded-2xl overflow-hidden">
+    <div className="w-full h-full bg-black border-l border-white/5 flex flex-col z-40 rounded-2xl overflow-hidden">
       {/* Canvas Header */}
-      <div className="h-[72px] border-b border-white/5 flex items-center justify-between px-4 flex-shrink-0 overflow-x-auto">
-        <div className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.3em]">
-          Interactive Canvas
-        </div>
-        <div className="flex items-center gap-1">
+      <div className="h-[72px] border-b border-white/5 flex items-center justify-end px-4 flex-shrink-0 overflow-hidden">
+        <div className="flex items-center gap-1 flex-shrink-0">
           {/* Version Navigation */}
           <button
             onClick={handlePreviousVersion}
             disabled={!canGoPrevious}
-            className={`h-10 w-10 flex items-center justify-center rounded-lg border transition-all ${
+            className={`h-8 w-8 flex items-center justify-center rounded border transition-all flex-shrink-0 ${
               canGoPrevious
                 ? 'border-white/5 text-gray-500 hover:bg-white/5 hover:text-white cursor-pointer'
                 : 'border-white/5 text-gray-700 cursor-not-allowed opacity-50'
             }`}
             title="Previous version"
           >
-            <ChevronLeft size={16} />
+            <ChevronLeft size={14} />
           </button>
 
-          <div className="text-[8px] text-gray-500 px-2 font-bold">
-            {currentVersionIndex + 1} / {versions.length}
+          <div className="text-[7px] text-gray-500 px-1 font-bold whitespace-nowrap flex-shrink-0">
+            {currentVersionIndex + 1}/{versions.length}
           </div>
 
           <button
             onClick={handleNextVersion}
             disabled={!canGoNext}
-            className={`h-10 w-10 flex items-center justify-center rounded-lg border transition-all ${
+            className={`h-8 w-8 flex items-center justify-center rounded border transition-all flex-shrink-0 ${
               canGoNext
                 ? 'border-white/5 text-gray-500 hover:bg-white/5 hover:text-white cursor-pointer'
                 : 'border-white/5 text-gray-700 cursor-not-allowed opacity-50'
             }`}
             title="Next version"
           >
-            <ChevronRight size={16} />
+            <ChevronRight size={14} />
           </button>
 
           {/* Divider */}
