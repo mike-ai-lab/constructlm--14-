@@ -78,6 +78,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   // Extract code blocks from message content (updated for markdown format)
   const extractCodeBlocks = (content: string) => {
+    // Skip extraction if content contains PATCH format (semantic patches)
+    if (content.includes('PATCH @@ line')) {
+      return [];
+    }
+    
     // Match ``` blocks with language identifier
     const codeBlockRegex = /```(?:jsx|tsx|jsx?|js|typescript)?\s*\n([\s\S]*?)```/g;
     const blocks: Array<{type: string, code: string}> = [];
@@ -372,7 +377,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       </div>
 
       {/* Input Area */}
-      <div className="flex-shrink-0 border-b border-white/5 bg-black px-6 md:px-12 py-1 flex justify-center">
+      <div className="flex-shrink-0 border-b border-white/5 bg-black px-3 md:px-12 py-1 flex justify-center">
         <div className="w-full max-w-2xl">
           {/* Image Previews */}
           {selectedImages.length > 0 && (

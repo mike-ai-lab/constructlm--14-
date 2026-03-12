@@ -124,8 +124,6 @@ const App: React.FC = () => {
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
-  const [touchStart, setTouchStart] = useState<number | null>(null);
-  const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const [canvasCode, setCanvasCode] = useState<string | null>(null);
   const [canvasFilename, setCanvasFilename] = useState<string>('component.jsx');
   const [isCanvasOpen, setIsCanvasOpen] = useState(false);
@@ -415,30 +413,6 @@ const App: React.FC = () => {
   // Swipe gesture handling for mobile
   const minSwipeDistance = 50;
 
-  const onTouchStart = (e: React.TouchEvent) => {
-    setTouchEnd(null);
-    setTouchStart(e.targetTouches[0].clientX);
-  };
-
-  const onTouchMove = (e: React.TouchEvent) => {
-    setTouchEnd(e.targetTouches[0].clientX);
-  };
-
-  const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
-    
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
-    
-    if (isLeftSwipe && isMobileSidebarOpen) {
-      setIsMobileSidebarOpen(false);
-    }
-    if (isRightSwipe && !isMobileSidebarOpen) {
-      setIsMobileSidebarOpen(true);
-    }
-  };
-
   const handleOpenCanvas = (code: string, filename: string) => {
     setCanvasCode(code);
     setCanvasFilename(filename);
@@ -635,14 +609,21 @@ Respond: "Fixed [description]" + patches.`;
     
     console.log('[Patch Parser] Raw response:', response);
     
-    // Match: PATCH @@ line X @@ followed by two lines (old and new)
-    const patchRegex = /PATCH\s+@@\s+line\s+(\d+)\s+@@\s*\n([^\n]+)\n([^\n]+)/g;
+    // Match: PATCH @@ line X @@ followed by old/new content (handles blank lines, +/- prefixes)
+    const patchRegex = /PATCH\s+@@\s+line\s+(\d+)\s+@@\s*\n+([^\n]*)\n+([+\-]?\s*[^\n]+)/gi;
     
     let match;
     while ((match = patchRegex.exec(response)) !== null) {
       const lineNum = parseInt(match[1]);
-      const oldContent = match[2].trim();
-      const newContent = match[3].trim();
+      let oldContent = match[2].trim();
+      let newContent = match[3].trim();
+      
+      // Remove +/- prefixes if present
+      oldContent = oldContent.replace(/^[-]\s*/, '');
+      newContent = newContent.replace(/^[+]\s*/, '');
+      
+      // Skip if both are empty
+      if (!oldContent && !newContent) continue;
       
       patches.push({
         line: lineNum,
@@ -897,9 +878,6 @@ Respond: "Fixed [description]" + patches.`;
   return (
     <div 
       className="flex flex-col min-h-[100dvh] h-[100dvh] w-full bg-black text-white font-sans selection:bg-blue-600 selection:text-white overflow-hidden relative transition-colors duration-300"
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
     >
       <style>{`
         /* Custom Scrollbar Styling */
@@ -944,63 +922,28 @@ Respond: "Fixed [description]" + patches.`;
 
       {/* Mobile Header - Always visible on mobile */}
       <header 
-        className="block md:hidden p-3 border-b border-slate-200 dark:border-white/5 flex justify-between items-center bg-white/80 dark:bg-[#0a0a0b]/80 glass z-50 flex-shrink-0 sticky top-0"
-        style={{ height: MOBILE_HEADER_HEIGHT_WITH_SAFE_AREA, paddingTop: 'calc(env(safe-area-inset-top) + 7px)' }}
+        className="block md:hidden px-3 py-2 border-b border-slate-200 dark:border-white/5 flex justify-between items-center bg-white/80 dark:bg-[#0a0a0b]/80 glass z-50 flex-shrink-0 sticky top-0"
+        style={{ 
+          paddingTop: 'max(8px, env(safe-area-inset-top))',
+          minHeight: '56px'
+        }}
       >
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => window.open('/docs/index.html', '_blank')}
-            className="hover:bg-slate-100 dark:hover:bg-white/5 p-1.5 rounded transition-colors"
-            title="Documentation"
-          >
-            <BookOpen size={16} />
-          </button>
-          <button
-            onClick={() => setIsSettingsOpen(true)}
-            className="hover:bg-slate-100 dark:hover:bg-white/5 p-1.5 rounded transition-colors"
-            title="Settings"
-          >
-            <Settings size={16} />
-          </button>
+        <div className="flex items-center gap-2">
           <button 
             onClick={() => setIsMobileSidebarOpen(true)}
-            className="font-sans font-bold text-[10px] hover:bg-slate-100 dark:hover:bg-white/5 px-2 py-1 flex items-center gap-1 uppercase tracking-tight transition-colors"
+            className="font-sans font-bold text-xs hover:bg-slate-100 dark:hover:bg-white/5 px-2 py-1.5 flex items-center gap-1 uppercase tracking-tight transition-colors rounded min-h-[44px] touch-manipulation"
           >
-            ConstructLM
+            ☰ Menu
           </button>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[8px] font-bold uppercase tracking-wider opacity-60 whitespace-nowrap">{files.length} Files</span>
-          <select 
-            value={aiModel}
-            onChange={(e) => {
-              const provider = e.target.value as 'gemini' | 'cerebras' | 'groq' | 'openrouter';
-              setAiModel(provider);
-              localStorage.setItem('ai_model', provider);
-              
-              const modelLists = {
-                gemini: GeminiService.GEMINI_MODELS,
-                cerebras: GeminiService.CEREBRAS_MODELS,
-                groq: GeminiService.GROQ_MODELS,
-                openrouter: GeminiService.OPENROUTER_MODELS,
-                ollama: ollamaMode === 'cloud' ? OllamaService.OLLAMA_CLOUD_MODELS : OllamaService.OLLAMA_LOCAL_MODELS
-              };
-              
-              const isCompatible = modelLists[provider].some(model => model.id === selectedModel);
-              if (!isCompatible) {
-                const defaultModel = modelLists[provider][0].id;
-                setSelectedModel(defaultModel);
-                localStorage.setItem('selected_model', defaultModel);
-              }
-            }}
-            className="text-[9px] font-bold uppercase px-2 py-1 border border-slate-200 dark:border-white/10 bg-white dark:bg-surface-800 rounded"
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="hover:bg-slate-100 dark:hover:bg-white/5 p-2 rounded transition-colors min-h-[44px] min-w-[44px] touch-manipulation flex items-center justify-center"
+            title="Settings"
           >
-            <option value="gemini">GEMINI</option>
-            <option value="cerebras">CEREBRAS</option>
-            <option value="groq">GROQ</option>
-            <option value="openrouter">OPENROUTER</option>
-            <option value="ollama">OLLAMA</option>
-          </select>
+            <Settings size={18} />
+          </button>
         </div>
       </header>
 
@@ -1008,40 +951,33 @@ Respond: "Fixed [description]" + patches.`;
       <div className="flex flex-1 overflow-hidden relative">
       
       {/* Mobile Sidebar Overlay */}
-      {isMobileSidebarOpen && (
-        <div 
-          className="md:hidden fixed bg-black/50 z-40 transition-opacity duration-300"
-          style={{ 
-            top: 0,
-            left: 0, 
-            right: 0, 
-            bottom: 0,
-            opacity: isMobileSidebarOpen ? 0.5 : 0
-          }}
-          onClick={() => setIsMobileSidebarOpen(false)}
-        />
-      )}
+      <div 
+        className={`md:hidden fixed inset-0 bg-black/70 z-40 transition-opacity duration-300 backdrop-blur-sm ${
+          isMobileSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={() => setIsMobileSidebarOpen(false)}
+      />
       
       {/* SIDEBAR */}
       <aside 
-        className={`bg-white dark:bg-[#0f0f11] shrink-0 flex flex-col border-r border-slate-200 dark:border-white/5 shadow-lg fixed md:relative left-0 z-50 max-w-[300px] ${
-          isMobileSidebarOpen ? '' : '-translate-x-full md:translate-x-0'
+        className={`bg-white dark:bg-[#0f0f11] shrink-0 flex flex-col border-r border-slate-200 dark:border-white/5 shadow-lg fixed md:relative left-0 z-50 transition-transform duration-300 ease-out ${
+          isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
         style={{ 
-          width: isMobileSidebarOpen 
-            ? '100vw' 
+          width: window.innerWidth < 768 
+            ? '85vw' 
             : (isSidebarCollapsed ? 0 : Math.min(sidebarWidth, 300)),
+          maxWidth: window.innerWidth < 768 ? '320px' : '300px',
           top: 0,
-          height: isMobileSidebarOpen ? '100dvh' : '100%',
-          transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1), transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+          height: '100dvh'
         }}
       >
         <div 
           style={{ 
-            width: isMobileSidebarOpen ? '100vw' : Math.min(sidebarWidth, 300),
-            transform: (!isMobileSidebarOpen && isSidebarCollapsed) ? `translateX(-${Math.min(sidebarWidth, 300)}px)` : 'translateX(0)',
+            width: window.innerWidth < 768 ? '85vw' : Math.min(sidebarWidth, 300),
+            maxWidth: window.innerWidth < 768 ? '320px' : '300px'
           }}
-          className={`h-full flex flex-col overflow-hidden ${transitionStyle} ${(!isMobileSidebarOpen && isSidebarCollapsed) ? 'opacity-0' : 'opacity-100'}`}
+          className="h-full flex flex-col overflow-hidden"
         >
           <Sidebar 
             files={files} 
@@ -1071,27 +1007,10 @@ Respond: "Fixed [description]" + patches.`;
         )}
       </aside>
 
-      {/* Mobile Swipe Indicator - Only visible when sidebar is closed */}
-      {!isMobileSidebarOpen && (
-        <div 
-          className="md:hidden fixed left-0 top-1/2 -translate-y-1/2 z-30 pointer-events-none"
-          style={{ top: 'calc(50% + 30px)' }}
-        >
-          <div className="flex items-center">
-            <div className="w-1 h-16 bg-brand-blue/30 rounded-r-full animate-pulse" />
-            <div className="ml-1 flex flex-col gap-1">
-              <div className="w-2 h-2 bg-brand-blue/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-              <div className="w-2 h-2 bg-brand-blue/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-              <div className="w-2 h-2 bg-brand-blue/50 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* MAIN */}
       <main className="flex-1 flex flex-col relative bg-black min-w-0 w-full">
         {/* Desktop Header */}
-        <header className="flex h-[50px] items-center justify-between px-5 bg-black shrink-0 z-20 border-b border-white/5 sticky top-0">
+        <header className="hidden md:flex h-[50px] items-center justify-between px-5 bg-black shrink-0 z-20 border-b border-white/5 sticky top-0">
           <div className="flex items-center gap-6">
             <button
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
@@ -1219,10 +1138,27 @@ Respond: "Fixed [description]" + patches.`;
           </div>
         </header>
         
+        {/* Floating Sidebar Toggle Button - Mobile Only */}
+        {!isMobileSidebarOpen && !isCanvasOpen && (
+          <button
+            onClick={() => setIsMobileSidebarOpen(true)}
+            className="md:hidden fixed left-4 bottom-20 z-30 w-14 h-14 bg-blue-600 hover:bg-blue-700 rounded-full shadow-lg flex items-center justify-center text-white transition-all touch-manipulation"
+            style={{
+              boxShadow: '0 4px 20px rgba(59, 130, 246, 0.4)'
+            }}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="3" y1="12" x2="21" y2="12"/>
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+        )}
         
         {/* Content Wrapper - Chat + Canvas */}
-        <div className="flex-1 flex relative overflow-hidden min-w-0 gap-0 pr-[30px] pb-[30px]">
-          <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex relative overflow-hidden min-w-0 gap-0 md:pr-[30px] md:pb-[30px]">
+          {/* Chat Interface - Hidden on mobile when canvas is open */}
+          <div className={`flex-1 flex flex-col min-w-0 ${isCanvasOpen ? 'hidden md:flex' : 'flex'}`}>
             <ChatInterface 
               messages={messages} 
               onSendMessage={handleSendMessage}
@@ -1232,10 +1168,10 @@ Respond: "Fixed [description]" + patches.`;
             />
           </div>
           
-          {/* Canvas Panel */}
+          {/* Canvas Panel - Full screen on mobile */}
           {isCanvasOpen && (
-            <div className="max-w-[750px] flex-1 min-w-[300px]">
-              <Suspense fallback={<div className="bg-black rounded-2xl" />}>
+            <div className="fixed md:relative inset-0 md:inset-auto md:max-w-[750px] md:flex-1 md:min-w-[300px] z-50 md:z-auto">
+              <Suspense fallback={<div className="bg-black w-full h-full md:rounded-2xl" />}>
                 <Canvas
                   code={canvasCode || ''}
                   filename={canvasFilename}

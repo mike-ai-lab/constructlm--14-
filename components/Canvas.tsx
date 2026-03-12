@@ -210,39 +210,49 @@ export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose,
   const canGoNext = currentVersionIndex < versions.length - 1;
 
   return (
-    <div className="w-full h-full bg-black border-l border-white/5 flex flex-col z-40 rounded-2xl overflow-hidden">
+    <div className="w-full h-full bg-black md:border-l border-white/5 flex flex-col z-40 md:rounded-2xl overflow-hidden">
       {/* Canvas Header */}
-      <div className="h-[72px] border-b border-white/5 flex items-center justify-end px-4 flex-shrink-0 overflow-hidden">
+      <div className="h-[60px] md:h-[72px] border-b border-white/5 flex items-center justify-between md:justify-end px-3 md:px-4 flex-shrink-0 overflow-x-auto">
+        {/* Mobile: Back button */}
+        <button
+          onClick={onClose}
+          className="md:hidden flex items-center gap-2 px-2 py-2 hover:bg-white/5 rounded transition-colors min-h-[44px] min-w-[44px] touch-manipulation"
+          title="Back to chat"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M19 12H5M12 19l-7-7 7-7"/>
+          </svg>
+        </button>
         <div className="flex items-center gap-1 flex-shrink-0">
           {/* Version Navigation */}
           <button
             onClick={handlePreviousVersion}
             disabled={!canGoPrevious}
-            className={`h-8 w-8 flex items-center justify-center rounded border transition-all flex-shrink-0 ${
+            className={`h-10 w-10 md:h-8 md:w-8 flex items-center justify-center rounded border transition-all flex-shrink-0 touch-manipulation ${
               canGoPrevious
                 ? 'border-white/5 text-gray-500 hover:bg-white/5 hover:text-white cursor-pointer'
                 : 'border-white/5 text-gray-700 cursor-not-allowed opacity-50'
             }`}
             title="Previous version"
           >
-            <ChevronLeft size={14} />
+            <ChevronLeft size={16} className="md:w-3.5 md:h-3.5" />
           </button>
 
-          <div className="text-[7px] text-gray-500 px-1 font-bold whitespace-nowrap flex-shrink-0">
+          <div className="text-[8px] md:text-[7px] text-gray-500 px-1 font-bold whitespace-nowrap flex-shrink-0">
             {currentVersionIndex + 1}/{versions.length}
           </div>
 
           <button
             onClick={handleNextVersion}
             disabled={!canGoNext}
-            className={`h-8 w-8 flex items-center justify-center rounded border transition-all flex-shrink-0 ${
+            className={`h-10 w-10 md:h-8 md:w-8 flex items-center justify-center rounded border transition-all flex-shrink-0 touch-manipulation ${
               canGoNext
                 ? 'border-white/5 text-gray-500 hover:bg-white/5 hover:text-white cursor-pointer'
                 : 'border-white/5 text-gray-700 cursor-not-allowed opacity-50'
             }`}
             title="Next version"
           >
-            <ChevronRight size={14} />
+            <ChevronRight size={16} className="md:w-3.5 md:h-3.5" />
           </button>
 
           {/* Divider */}
@@ -252,30 +262,30 @@ export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose,
           <button
             onClick={handleRefreshRender}
             disabled={isRendering}
-            className={`h-10 w-10 flex items-center justify-center rounded-lg border transition-all ${
+            className={`h-11 w-11 md:h-10 md:w-10 flex items-center justify-center rounded-lg border transition-all touch-manipulation ${
               isRendering
                 ? 'border-white/5 text-gray-700 cursor-not-allowed opacity-50'
                 : 'border-white/5 text-gray-500 hover:bg-white/5 hover:text-white'
             }`}
             title="Refresh render"
           >
-            <RotateCcw size={16} />
+            <RotateCcw size={18} className="md:w-4 md:h-4" />
           </button>
 
           <button
             onClick={handleCopyCode}
-            className="h-10 w-10 flex items-center justify-center rounded-lg border border-white/5 text-gray-500 hover:bg-white/5 hover:text-white transition-all"
+            className="h-11 w-11 md:h-10 md:w-10 flex items-center justify-center rounded-lg border border-white/5 text-gray-500 hover:bg-white/5 hover:text-white transition-all touch-manipulation"
             title="Copy code"
           >
-            <Copy size={16} />
+            <Copy size={18} className="md:w-4 md:h-4" />
           </button>
 
           <button
             onClick={handleDownloadCode}
-            className="h-10 w-10 flex items-center justify-center rounded-lg border border-white/5 text-gray-500 hover:bg-white/5 hover:text-white transition-all"
+            className="h-11 w-11 md:h-10 md:w-10 flex items-center justify-center rounded-lg border border-white/5 text-gray-500 hover:bg-white/5 hover:text-white transition-all touch-manipulation"
             title="Download code"
           >
-            <Download size={16} />
+            <Download size={18} className="md:w-4 md:h-4" />
           </button>
 
           {/* Divider */}
