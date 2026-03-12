@@ -1263,8 +1263,8 @@ Respond: "Fixed [description]" + patches.`;
           
           {/* Canvas Panel - Full screen on mobile */}
           {isCanvasOpen && (
-            <div className="fixed md:relative inset-0 md:inset-auto md:max-w-[750px] md:flex-1 md:min-w-[300px] z-50 md:z-auto">
-              <Suspense fallback={<div className="bg-black w-full h-full md:rounded-2xl" />}>
+            <div className="fixed md:relative inset-0 md:inset-auto md:max-w-[750px] md:flex-1 md:min-w-[300px] z-[60] md:z-auto bg-black">
+              <Suspense fallback={<div className="bg-black w-full h-full md:rounded-2xl flex items-center justify-center text-white">Loading...</div>}>
                 <Canvas
                   code={canvasCode || ''}
                   filename={canvasFilename}

@@ -210,9 +210,9 @@ export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose,
   const canGoNext = currentVersionIndex < versions.length - 1;
 
   return (
-    <div className="w-full h-full bg-black md:border-l border-white/5 flex flex-col z-40 md:rounded-2xl overflow-hidden">
+    <div className="w-full h-full min-h-screen md:min-h-0 bg-black md:border-l border-white/5 flex flex-col z-40 md:rounded-2xl overflow-hidden">
       {/* Canvas Header */}
-      <div className="h-[60px] md:h-[72px] border-b border-white/5 flex items-center justify-between md:justify-end px-3 md:px-4 flex-shrink-0 overflow-x-auto">
+      <div className="h-[60px] md:h-[72px] border-b border-white/5 flex items-center justify-between md:justify-end px-3 md:px-4 flex-shrink-0 overflow-x-auto bg-black">
         {/* Mobile: Back button */}
         <button
           onClick={onClose}
@@ -423,7 +423,7 @@ export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose,
             )}
             <iframe
               ref={iframeRef}
-              className="w-full h-full border-0"
+              className="w-full h-full min-h-[calc(100vh-60px)] md:min-h-0 border-0 bg-white"
               sandbox="allow-scripts allow-same-origin"
               title="Canvas Preview"
               onLoad={() => {
