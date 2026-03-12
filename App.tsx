@@ -1052,13 +1052,13 @@ Respond: "Fixed [description]" + patches.`;
       {/* Content wrapper for desktop/mobile */}
       <div className="flex flex-1 overflow-hidden relative">
       
-      {/* Mobile Sidebar Overlay */}
-      <div 
-        className={`md:hidden fixed inset-0 bg-black/70 z-40 transition-opacity duration-300 backdrop-blur-sm ${
-          isMobileSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        }`}
-        onClick={() => setIsMobileSidebarOpen(false)}
-      />
+      {/* Mobile Sidebar Overlay - Covers area outside sidebar */}
+      {isMobileSidebarOpen && (
+        <div 
+          className="md:hidden fixed inset-0 bg-black/70 z-40 transition-opacity duration-300 backdrop-blur-sm"
+          onClick={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
       
       {/* SIDEBAR */}
       <aside 
