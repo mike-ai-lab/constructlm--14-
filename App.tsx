@@ -968,7 +968,7 @@ Respond: "Fixed [description]" + patches.`;
         </div>
       </header>
       
-      {/* Model Dropdown Menu - Rendered outside header to avoid overflow issues */}
+      {/* Model Dropdown Menu - Mobile Only - Rendered outside header to avoid overflow issues */}
       {isModelDropdownOpen && (
         <>
           <div 
@@ -979,7 +979,7 @@ Respond: "Fixed [description]" + patches.`;
             {/* Cerebras Section */}
             <ModelProviderSection
               title="Cerebras"
-              models={CerebrasService.CEREBRAS_MODELS}
+              models={GeminiService.CEREBRAS_MODELS}
               selectedModel={selectedModel}
               onSelectModel={(modelId) => {
                 setSelectedModel(modelId);
@@ -1007,7 +1007,7 @@ Respond: "Fixed [description]" + patches.`;
             {/* Groq Section */}
             <ModelProviderSection
               title="Groq"
-              models={GroqService.GROQ_MODELS.filter(m => !(m as any).utilityOnly)}
+              models={GeminiService.GROQ_MODELS.filter(m => !(m as any).utilityOnly)}
               selectedModel={selectedModel}
               onSelectModel={(modelId) => {
                 setSelectedModel(modelId);
@@ -1021,7 +1021,7 @@ Respond: "Fixed [description]" + patches.`;
             {/* OpenRouter Section */}
             <ModelProviderSection
               title="OpenRouter"
-              models={OpenRouterService.OPENROUTER_MODELS}
+              models={GeminiService.OPENROUTER_MODELS}
               selectedModel={selectedModel}
               onSelectModel={(modelId) => {
                 setSelectedModel(modelId);
@@ -1062,24 +1062,20 @@ Respond: "Fixed [description]" + patches.`;
       
       {/* SIDEBAR */}
       <aside 
-        className={`bg-white dark:bg-[#0f0f11] shrink-0 flex flex-col border-r border-slate-200 dark:border-white/5 shadow-lg fixed md:relative left-0 z-50 transition-transform duration-300 ease-out ${
+        className={`bg-white dark:bg-[#0f0f11] shrink-0 flex flex-col border-r border-slate-200 dark:border-white/5 shadow-lg fixed md:relative left-0 z-50 transition-transform duration-300 ease-out w-[85vw] max-w-[320px] md:w-auto md:max-w-none ${
           isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
         style={{ 
-          width: window.innerWidth < 768 
-            ? '85vw' 
-            : (isSidebarCollapsed ? 0 : Math.min(sidebarWidth, 300)),
-          maxWidth: window.innerWidth < 768 ? '320px' : '300px',
+          width: isSidebarCollapsed ? 0 : Math.min(sidebarWidth, 300),
           top: 0,
           height: '100dvh'
         }}
       >
         <div 
+          className="h-full flex flex-col overflow-hidden w-full md:w-auto"
           style={{ 
-            width: window.innerWidth < 768 ? '85vw' : Math.min(sidebarWidth, 300),
-            maxWidth: window.innerWidth < 768 ? '320px' : '300px'
+            width: Math.min(sidebarWidth, 300)
           }}
-          className="h-full flex flex-col overflow-hidden"
         >
           <Sidebar 
             files={files} 
