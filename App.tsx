@@ -931,104 +931,32 @@ Respond: "Fixed [description]" + patches.`;
         <div className="flex items-center gap-2">
           <button 
             onClick={() => setIsMobileSidebarOpen(true)}
-            className="font-sans font-bold text-xs hover:bg-slate-100 dark:hover:bg-white/5 px-2 py-1.5 flex items-center gap-1 uppercase tracking-tight transition-colors rounded min-h-[44px] touch-manipulation"
+            className="w-11 h-11 bg-blue-600 hover:bg-blue-700 rounded-lg flex items-center justify-center text-white transition-all touch-manipulation shadow-md"
           >
-            ☰
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="3" y1="12" x2="21" y2="12"/>
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
           </button>
         </div>
         
-        {/* Model Dropdown - Same as Desktop */}
+        {/* Model Dropdown - Simplified for Mobile */}
         <div className="flex items-center gap-2">
-          <div className="relative">
-            <button
-              onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
-              className="h-11 px-3 text-[10px] font-bold uppercase border border-slate-300 dark:border-white/10 bg-white dark:bg-[#1b1b1d] hover:bg-slate-50 dark:hover:bg-[#0f0f11] transition-all flex items-center gap-2 rounded touch-manipulation"
-            >
-              <div className="flex flex-col items-start leading-tight">
-                <span className="text-[8px] opacity-60">
-                  {aiModel === 'ollama' ? `Ollama ${ollamaMode === 'cloud' ? '(Cloud)' : '(Local)'}` : aiModel}
-                </span>
-                <span className="text-[9px]">
-                  {selectedModel}
-                </span>
-              </div>
-              <span className="text-[8px]">▼</span>
-            </button>
-            
-            {isModelDropdownOpen && (
-              <div className="absolute top-full right-0 mt-1 bg-white dark:bg-[#1b1b1d] border border-slate-200 dark:border-white/10 shadow-xl rounded-lg z-50 min-w-[320px] max-h-[70vh] overflow-y-auto">
-                {/* Cerebras Section */}
-                <ModelProviderSection
-                  title="Cerebras"
-                  models={CerebrasService.CEREBRAS_MODELS}
-                  selectedModel={selectedModel}
-                  onSelectModel={(modelId) => {
-                    setSelectedModel(modelId);
-                    setAiModel('cerebras');
-                    setIsModelDropdownOpen(false);
-                    localStorage.setItem('selected_model', modelId);
-                    localStorage.setItem('ai_model', 'cerebras');
-                  }}
-                />
-                
-                {/* Gemini Section */}
-                <ModelProviderSection
-                  title="Gemini"
-                  models={GeminiService.GEMINI_MODELS}
-                  selectedModel={selectedModel}
-                  onSelectModel={(modelId) => {
-                    setSelectedModel(modelId);
-                    setAiModel('gemini');
-                    setIsModelDropdownOpen(false);
-                    localStorage.setItem('selected_model', modelId);
-                    localStorage.setItem('ai_model', 'gemini');
-                  }}
-                />
-                
-                {/* Groq Section */}
-                <ModelProviderSection
-                  title="Groq"
-                  models={GroqService.GROQ_MODELS.filter(m => !(m as any).utilityOnly)}
-                  selectedModel={selectedModel}
-                  onSelectModel={(modelId) => {
-                    setSelectedModel(modelId);
-                    setAiModel('groq');
-                    setIsModelDropdownOpen(false);
-                    localStorage.setItem('selected_model', modelId);
-                    localStorage.setItem('ai_model', 'groq');
-                  }}
-                />
-                
-                {/* OpenRouter Section */}
-                <ModelProviderSection
-                  title="OpenRouter"
-                  models={OpenRouterService.OPENROUTER_MODELS}
-                  selectedModel={selectedModel}
-                  onSelectModel={(modelId) => {
-                    setSelectedModel(modelId);
-                    setAiModel('openrouter');
-                    setIsModelDropdownOpen(false);
-                    localStorage.setItem('selected_model', modelId);
-                    localStorage.setItem('ai_model', 'openrouter');
-                  }}
-                />
-
-                {/* Ollama Section */}
-                <ModelProviderSection
-                  title={`Ollama ${ollamaMode === 'cloud' ? '(Cloud)' : '(Local)'}`}
-                  models={ollamaMode === 'cloud' ? OllamaService.OLLAMA_CLOUD_MODELS : OllamaService.OLLAMA_LOCAL_MODELS}
-                  selectedModel={selectedModel}
-                  onSelectModel={(modelId) => {
-                    setSelectedModel(modelId);
-                    setAiModel('ollama');
-                    setIsModelDropdownOpen(false);
-                    localStorage.setItem('selected_model', modelId);
-                    localStorage.setItem('ai_model', 'ollama');
-                  }}
-                />
-              </div>
-            )}
-          </div>
+          <button
+            onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
+            className="h-11 px-3 text-[9px] font-bold uppercase border border-slate-300 dark:border-white/10 bg-white dark:bg-[#1b1b1d] hover:bg-slate-50 dark:hover:bg-[#0f0f11] transition-all flex items-center gap-1 rounded touch-manipulation max-w-[140px]"
+          >
+            <div className="flex flex-col items-start leading-tight truncate">
+              <span className="text-[7px] opacity-60 truncate">
+                {aiModel.toUpperCase()}
+              </span>
+              <span className="text-[8px] truncate">
+                {selectedModel.length > 15 ? selectedModel.substring(0, 15) + '...' : selectedModel}
+              </span>
+            </div>
+            <span className="text-[8px]">▼</span>
+          </button>
           
           <button
             onClick={() => setIsSettingsOpen(true)}
@@ -1039,6 +967,87 @@ Respond: "Fixed [description]" + patches.`;
           </button>
         </div>
       </header>
+      
+      {/* Model Dropdown Menu - Rendered outside header to avoid overflow issues */}
+      {isModelDropdownOpen && (
+        <>
+          <div 
+            className="md:hidden fixed inset-0 bg-black/50 z-[60]"
+            onClick={() => setIsModelDropdownOpen(false)}
+          />
+          <div className="md:hidden fixed top-[70px] right-3 left-3 bg-white dark:bg-[#1b1b1d] border border-slate-200 dark:border-white/10 shadow-xl rounded-lg z-[70] max-h-[70vh] overflow-y-auto">
+            {/* Cerebras Section */}
+            <ModelProviderSection
+              title="Cerebras"
+              models={CerebrasService.CEREBRAS_MODELS}
+              selectedModel={selectedModel}
+              onSelectModel={(modelId) => {
+                setSelectedModel(modelId);
+                setAiModel('cerebras');
+                setIsModelDropdownOpen(false);
+                localStorage.setItem('selected_model', modelId);
+                localStorage.setItem('ai_model', 'cerebras');
+              }}
+            />
+            
+            {/* Gemini Section */}
+            <ModelProviderSection
+              title="Gemini"
+              models={GeminiService.GEMINI_MODELS}
+              selectedModel={selectedModel}
+              onSelectModel={(modelId) => {
+                setSelectedModel(modelId);
+                setAiModel('gemini');
+                setIsModelDropdownOpen(false);
+                localStorage.setItem('selected_model', modelId);
+                localStorage.setItem('ai_model', 'gemini');
+              }}
+            />
+            
+            {/* Groq Section */}
+            <ModelProviderSection
+              title="Groq"
+              models={GroqService.GROQ_MODELS.filter(m => !(m as any).utilityOnly)}
+              selectedModel={selectedModel}
+              onSelectModel={(modelId) => {
+                setSelectedModel(modelId);
+                setAiModel('groq');
+                setIsModelDropdownOpen(false);
+                localStorage.setItem('selected_model', modelId);
+                localStorage.setItem('ai_model', 'groq');
+              }}
+            />
+            
+            {/* OpenRouter Section */}
+            <ModelProviderSection
+              title="OpenRouter"
+              models={OpenRouterService.OPENROUTER_MODELS}
+              selectedModel={selectedModel}
+              onSelectModel={(modelId) => {
+                setSelectedModel(modelId);
+                setAiModel('openrouter');
+                setIsModelDropdownOpen(false);
+                localStorage.setItem('selected_model', modelId);
+                localStorage.setItem('ai_model', 'openrouter');
+              }}
+            />
+
+            {/* Ollama Section */}
+            <ModelProviderSection
+              title={`Ollama ${ollamaMode === 'cloud' ? '(Cloud)' : '(Local)'}`}
+              models={ollamaMode === 'cloud' ? OllamaService.OLLAMA_CLOUD_MODELS : OllamaService.OLLAMA_LOCAL_MODELS}
+              selectedModel={selectedModel}
+              onSelectModel={(modelId) => {
+                setSelectedModel(modelId);
+                setAiModel('ollama');
+                setIsModelDropdownOpen(false);
+                localStorage.setItem('selected_model', modelId);
+                localStorage.setItem('ai_model', 'ollama');
+              }}
+            />
+          </div>
+        </>
+      )}
 
       {/* Content wrapper for desktop/mobile */}
       <div className="flex flex-1 overflow-hidden relative">
@@ -1230,23 +1239,6 @@ Respond: "Fixed [description]" + patches.`;
             </div>
           </div>
         </header>
-        
-        {/* Floating Sidebar Toggle Button - Mobile Only */}
-        {!isMobileSidebarOpen && !isCanvasOpen && (
-          <button
-            onClick={() => setIsMobileSidebarOpen(true)}
-            className="md:hidden fixed left-4 bottom-32 z-30 w-14 h-14 bg-blue-600 hover:bg-blue-700 rounded-full shadow-lg flex items-center justify-center text-white transition-all touch-manipulation"
-            style={{
-              boxShadow: '0 4px 20px rgba(59, 130, 246, 0.4)'
-            }}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="3" y1="12" x2="21" y2="12"/>
-              <line x1="3" y1="6" x2="21" y2="6"/>
-              <line x1="3" y1="18" x2="21" y2="18"/>
-            </svg>
-          </button>
-        )}
         
         {/* Content Wrapper - Chat + Canvas */}
         <div className="flex-1 flex relative overflow-hidden min-w-0 gap-0 md:pr-[30px] md:pb-[30px]">
