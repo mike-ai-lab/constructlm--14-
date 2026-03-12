@@ -129,7 +129,6 @@ const App: React.FC = () => {
   const [isCanvasOpen, setIsCanvasOpen] = useState(false);
   const [canvasError, setCanvasError] = useState<{message: string; code: string} | null>(null);
   const [isFixingError, setIsFixingError] = useState(false);
-  const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const isResizingRef = useRef(false);
 
   // CONSTANT: Define exact header height to sync sidebar and header
@@ -411,32 +410,8 @@ const App: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  // Swipe gesture handling for mobile - SIMPLIFIED
-  const minSwipeDistance = 80;
-
-  const handleSidebarTouchStart = (e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    setTouchStartX(touch.clientX);
-    console.log('[Swipe] Touch started at X:', touch.clientX);
-  };
-
-  const handleSidebarTouchEnd = (e: React.TouchEvent) => {
-    if (touchStartX === null) return;
-    
-    const touch = e.changedTouches[0];
-    const touchEndX = touch.clientX;
-    const distance = touchStartX - touchEndX;
-    
-    console.log('[Swipe] Touch ended at X:', touchEndX, 'Distance:', distance);
-    
-    // Swipe left to close (must swipe at least 80px)
-    if (distance > minSwipeDistance) {
-      console.log('[Swipe] CLOSING SIDEBAR - swipe left detected');
-      setIsMobileSidebarOpen(false);
-    }
-    
-    setTouchStartX(null);
-  };
+  // Swipe gesture handling for mobile
+  const minSwipeDistance = 50;
 
   const handleOpenCanvas = (code: string, filename: string) => {
     setCanvasCode(code);
@@ -956,32 +931,104 @@ Respond: "Fixed [description]" + patches.`;
         <div className="flex items-center gap-2">
           <button 
             onClick={() => setIsMobileSidebarOpen(true)}
-            className="w-11 h-11 bg-blue-600 hover:bg-blue-700 rounded-lg flex items-center justify-center text-white transition-all touch-manipulation shadow-md"
+            className="font-sans font-bold text-xs hover:bg-slate-100 dark:hover:bg-white/5 px-2 py-1.5 flex items-center gap-1 uppercase tracking-tight transition-colors rounded min-h-[44px] touch-manipulation"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="3" y1="12" x2="21" y2="12"/>
-              <line x1="3" y1="6" x2="21" y2="6"/>
-              <line x1="3" y1="18" x2="21" y2="18"/>
-            </svg>
+            ☰
           </button>
         </div>
         
-        {/* Model Dropdown - Simplified for Mobile */}
+        {/* Model Dropdown - Same as Desktop */}
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
-            className="h-11 px-3 text-[9px] font-bold uppercase border border-slate-300 dark:border-white/10 bg-white dark:bg-[#1b1b1d] hover:bg-slate-50 dark:hover:bg-[#0f0f11] transition-all flex items-center gap-1 rounded touch-manipulation max-w-[140px]"
-          >
-            <div className="flex flex-col items-start leading-tight truncate">
-              <span className="text-[7px] opacity-60 truncate">
-                {aiModel.toUpperCase()}
-              </span>
-              <span className="text-[8px] truncate">
-                {selectedModel.length > 15 ? selectedModel.substring(0, 15) + '...' : selectedModel}
-              </span>
-            </div>
-            <span className="text-[8px]">▼</span>
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setIsModelDropdownOpen(!isModelDropdownOpen)}
+              className="h-11 px-3 text-[10px] font-bold uppercase border border-slate-300 dark:border-white/10 bg-white dark:bg-[#1b1b1d] hover:bg-slate-50 dark:hover:bg-[#0f0f11] transition-all flex items-center gap-2 rounded touch-manipulation"
+            >
+              <div className="flex flex-col items-start leading-tight">
+                <span className="text-[8px] opacity-60">
+                  {aiModel === 'ollama' ? `Ollama ${ollamaMode === 'cloud' ? '(Cloud)' : '(Local)'}` : aiModel}
+                </span>
+                <span className="text-[9px]">
+                  {selectedModel}
+                </span>
+              </div>
+              <span className="text-[8px]">▼</span>
+            </button>
+            
+            {isModelDropdownOpen && (
+              <div className="absolute top-full right-0 mt-1 bg-white dark:bg-[#1b1b1d] border border-slate-200 dark:border-white/10 shadow-xl rounded-lg z-50 min-w-[320px] max-h-[70vh] overflow-y-auto">
+                {/* Cerebras Section */}
+                <ModelProviderSection
+                  title="Cerebras"
+                  models={CerebrasService.CEREBRAS_MODELS}
+                  selectedModel={selectedModel}
+                  onSelectModel={(modelId) => {
+                    setSelectedModel(modelId);
+                    setAiModel('cerebras');
+                    setIsModelDropdownOpen(false);
+                    localStorage.setItem('selected_model', modelId);
+                    localStorage.setItem('ai_model', 'cerebras');
+                  }}
+                />
+                
+                {/* Gemini Section */}
+                <ModelProviderSection
+                  title="Gemini"
+                  models={GeminiService.GEMINI_MODELS}
+                  selectedModel={selectedModel}
+                  onSelectModel={(modelId) => {
+                    setSelectedModel(modelId);
+                    setAiModel('gemini');
+                    setIsModelDropdownOpen(false);
+                    localStorage.setItem('selected_model', modelId);
+                    localStorage.setItem('ai_model', 'gemini');
+                  }}
+                />
+                
+                {/* Groq Section */}
+                <ModelProviderSection
+                  title="Groq"
+                  models={GroqService.GROQ_MODELS.filter(m => !(m as any).utilityOnly)}
+                  selectedModel={selectedModel}
+                  onSelectModel={(modelId) => {
+                    setSelectedModel(modelId);
+                    setAiModel('groq');
+                    setIsModelDropdownOpen(false);
+                    localStorage.setItem('selected_model', modelId);
+                    localStorage.setItem('ai_model', 'groq');
+                  }}
+                />
+                
+                {/* OpenRouter Section */}
+                <ModelProviderSection
+                  title="OpenRouter"
+                  models={OpenRouterService.OPENROUTER_MODELS}
+                  selectedModel={selectedModel}
+                  onSelectModel={(modelId) => {
+                    setSelectedModel(modelId);
+                    setAiModel('openrouter');
+                    setIsModelDropdownOpen(false);
+                    localStorage.setItem('selected_model', modelId);
+                    localStorage.setItem('ai_model', 'openrouter');
+                  }}
+                />
+
+                {/* Ollama Section */}
+                <ModelProviderSection
+                  title={`Ollama ${ollamaMode === 'cloud' ? '(Cloud)' : '(Local)'}`}
+                  models={ollamaMode === 'cloud' ? OllamaService.OLLAMA_CLOUD_MODELS : OllamaService.OLLAMA_LOCAL_MODELS}
+                  selectedModel={selectedModel}
+                  onSelectModel={(modelId) => {
+                    setSelectedModel(modelId);
+                    setAiModel('ollama');
+                    setIsModelDropdownOpen(false);
+                    localStorage.setItem('selected_model', modelId);
+                    localStorage.setItem('ai_model', 'ollama');
+                  }}
+                />
+              </div>
+            )}
+          </div>
           
           <button
             onClick={() => setIsSettingsOpen(true)}
@@ -990,156 +1037,60 @@ Respond: "Fixed [description]" + patches.`;
           >
             <Settings size={18} />
           </button>
-          
-          {/* CLOSE SIDEBAR BUTTON - Only shows when sidebar is open */}
-          {isMobileSidebarOpen && (
-            <button
-              onClick={() => {
-                console.log('[Mobile Header] CLOSE BUTTON CLICKED');
-                setIsMobileSidebarOpen(false);
-              }}
-              className="w-11 h-11 bg-red-600 hover:bg-red-700 rounded-lg flex items-center justify-center text-white transition-all touch-manipulation shadow-md"
-              title="Close Sidebar"
-            >
-              <X size={20} />
-            </button>
-          )}
         </div>
       </header>
-      
-      {/* Model Dropdown Menu - Mobile Only - Rendered outside header to avoid overflow issues */}
-      {isModelDropdownOpen && (
-        <>
-          <div 
-            className="md:hidden fixed inset-0 bg-black/50 z-[60]"
-            onClick={() => setIsModelDropdownOpen(false)}
-          />
-          <div className="md:hidden fixed top-[70px] right-3 left-3 bg-white dark:bg-[#1b1b1d] border border-slate-200 dark:border-white/10 shadow-xl rounded-lg z-[70] max-h-[70vh] overflow-y-auto">
-            {/* Cerebras Section */}
-            <ModelProviderSection
-              title="Cerebras"
-              models={GeminiService.CEREBRAS_MODELS}
-              selectedModel={selectedModel}
-              onSelectModel={(modelId) => {
-                setSelectedModel(modelId);
-                setAiModel('cerebras');
-                setIsModelDropdownOpen(false);
-                localStorage.setItem('selected_model', modelId);
-                localStorage.setItem('ai_model', 'cerebras');
-              }}
-            />
-            
-            {/* Gemini Section */}
-            <ModelProviderSection
-              title="Gemini"
-              models={GeminiService.GEMINI_MODELS}
-              selectedModel={selectedModel}
-              onSelectModel={(modelId) => {
-                setSelectedModel(modelId);
-                setAiModel('gemini');
-                setIsModelDropdownOpen(false);
-                localStorage.setItem('selected_model', modelId);
-                localStorage.setItem('ai_model', 'gemini');
-              }}
-            />
-            
-            {/* Groq Section */}
-            <ModelProviderSection
-              title="Groq"
-              models={GeminiService.GROQ_MODELS.filter(m => !(m as any).utilityOnly)}
-              selectedModel={selectedModel}
-              onSelectModel={(modelId) => {
-                setSelectedModel(modelId);
-                setAiModel('groq');
-                setIsModelDropdownOpen(false);
-                localStorage.setItem('selected_model', modelId);
-                localStorage.setItem('ai_model', 'groq');
-              }}
-            />
-            
-            {/* OpenRouter Section */}
-            <ModelProviderSection
-              title="OpenRouter"
-              models={GeminiService.OPENROUTER_MODELS}
-              selectedModel={selectedModel}
-              onSelectModel={(modelId) => {
-                setSelectedModel(modelId);
-                setAiModel('openrouter');
-                setIsModelDropdownOpen(false);
-                localStorage.setItem('selected_model', modelId);
-                localStorage.setItem('ai_model', 'openrouter');
-              }}
-            />
-
-            {/* Ollama Section */}
-            <ModelProviderSection
-              title={`Ollama ${ollamaMode === 'cloud' ? '(Cloud)' : '(Local)'}`}
-              models={ollamaMode === 'cloud' ? OllamaService.OLLAMA_CLOUD_MODELS : OllamaService.OLLAMA_LOCAL_MODELS}
-              selectedModel={selectedModel}
-              onSelectModel={(modelId) => {
-                setSelectedModel(modelId);
-                setAiModel('ollama');
-                setIsModelDropdownOpen(false);
-                localStorage.setItem('selected_model', modelId);
-                localStorage.setItem('ai_model', 'ollama');
-              }}
-            />
-          </div>
-        </>
-      )}
 
       {/* Content wrapper for desktop/mobile */}
       <div className="flex flex-1 overflow-hidden relative">
       
-      {/* Mobile Sidebar Overlay - Covers area outside sidebar */}
-      {isMobileSidebarOpen && (
-        <div 
-          className="md:hidden fixed inset-0 bg-black/70 z-[45] transition-opacity duration-300 backdrop-blur-sm"
-          onClick={() => {
-            console.log('[Overlay] CLICKED - CLOSING SIDEBAR');
-            setIsMobileSidebarOpen(false);
-          }}
-          onTouchStart={() => {
-            console.log('[Overlay] TOUCHED - CLOSING SIDEBAR');
-            setIsMobileSidebarOpen(false);
-          }}
-        />
-      )}
+      {/* Mobile Sidebar Overlay */}
+      <div 
+        className={`md:hidden fixed inset-0 bg-black/70 z-40 transition-opacity duration-300 backdrop-blur-sm ${
+          isMobileSidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={() => setIsMobileSidebarOpen(false)}
+      />
       
       {/* SIDEBAR */}
       <aside 
-        className={`bg-white dark:bg-[#0f0f11] shrink-0 flex flex-col border-r border-slate-200 dark:border-white/5 shadow-lg fixed md:relative left-0 z-[50] transition-transform duration-300 ease-out w-[85vw] max-w-[320px] md:w-auto md:max-w-none ${
+        className={`bg-white dark:bg-[#0f0f11] shrink-0 flex flex-col border-r border-slate-200 dark:border-white/5 shadow-lg fixed md:relative left-0 z-50 transition-transform duration-300 ease-out ${
           isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
         style={{ 
-          width: isSidebarCollapsed ? 0 : Math.min(sidebarWidth, 300),
+          width: window.innerWidth < 768 
+            ? '85vw' 
+            : (isSidebarCollapsed ? 0 : Math.min(sidebarWidth, 300)),
+          maxWidth: window.innerWidth < 768 ? '320px' : '300px',
           top: 0,
           height: '100dvh'
         }}
-        onTouchStart={handleSidebarTouchStart}
-        onTouchEnd={handleSidebarTouchEnd}
       >
-        <Sidebar 
-          files={files} 
-          onUpload={handleUpload} 
-          onDelete={handleDelete}
-          onToggleFile={handleToggleFile}
-          isUploading={isUploading}
-          uploadStatus={uploadStatus}
-          width={Math.min(sidebarWidth, 300)}
-          onClose={() => {
-            console.log('[Sidebar] INTERNAL CLOSE BUTTON CLICKED');
-            setIsMobileSidebarOpen(false);
+        <div 
+          style={{ 
+            width: window.innerWidth < 768 ? '85vw' : Math.min(sidebarWidth, 300),
+            maxWidth: window.innerWidth < 768 ? '320px' : '300px'
           }}
-          onOpenSettings={() => setIsSettingsOpen(true)}
-          chatSessions={chatSessions}
-          currentChatId={currentChatId}
-          onSelectChat={handleSelectChat}
-          onNewChat={handleNewChat}
-          onDeleteChat={handleDeleteChat}
-          onExportChat={handleExportChat}
-          isCollapsed={isSidebarCollapsed}
-        />
+          className="h-full flex flex-col overflow-hidden"
+        >
+          <Sidebar 
+            files={files} 
+            onUpload={handleUpload} 
+            onDelete={handleDelete}
+            onToggleFile={handleToggleFile}
+            isUploading={isUploading}
+            uploadStatus={uploadStatus}
+            width={sidebarWidth}
+            onClose={() => setIsMobileSidebarOpen(false)}
+            onOpenSettings={() => setIsSettingsOpen(true)}
+            chatSessions={chatSessions}
+            currentChatId={currentChatId}
+            onSelectChat={handleSelectChat}
+            onNewChat={handleNewChat}
+            onDeleteChat={handleDeleteChat}
+            onExportChat={handleExportChat}
+            isCollapsed={isSidebarCollapsed}
+          />
+        </div>
 
         {!isSidebarCollapsed && !isMobileSidebarOpen && (
           <div 
@@ -1279,6 +1230,23 @@ Respond: "Fixed [description]" + patches.`;
             </div>
           </div>
         </header>
+        
+        {/* Floating Sidebar Toggle Button - Mobile Only */}
+        {!isMobileSidebarOpen && !isCanvasOpen && (
+          <button
+            onClick={() => setIsMobileSidebarOpen(true)}
+            className="md:hidden fixed left-4 bottom-32 z-30 w-14 h-14 bg-blue-600 hover:bg-blue-700 rounded-full shadow-lg flex items-center justify-center text-white transition-all touch-manipulation"
+            style={{
+              boxShadow: '0 4px 20px rgba(59, 130, 246, 0.4)'
+            }}
+          >
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="3" y1="12" x2="21" y2="12"/>
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+        )}
         
         {/* Content Wrapper - Chat + Canvas */}
         <div className="flex-1 flex relative overflow-hidden min-w-0 gap-0 md:pr-[30px] md:pb-[30px]">
