@@ -351,7 +351,8 @@ class ReactComponentRenderer {
     const compileResult = await this.compile(sourceCode);
     
     if (!compileResult.success) {
-      return this._generateErrorHTML(compileResult.error);
+      // Throw compilation error so it can be caught by Canvas
+      throw new Error(compileResult.error);
     }
 
     const encoded = encodeURIComponent(compileResult.transpiledCode);
@@ -415,6 +416,17 @@ class ReactComponentRenderer {
         hasError = true;
         
         console.error('[ReactRenderer]', title, message);
+        
+        // Send error to parent window
+        try {
+          window.parent.postMessage({
+            type: 'renderer-error',
+            title: title,
+            message: message
+          }, '*');
+        } catch (e) {
+          console.error('[ReactRenderer] Could not post message to parent');
+        }
         
         const overlay = document.createElement('div');
         overlay.className = 'error-overlay';

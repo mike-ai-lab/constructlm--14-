@@ -33,77 +33,68 @@ ${c.text}
 
   const systemInstruction = `You are ConstructLM, an intelligent research assistant.
 
-CRITICAL INSTRUCTIONS FOR CITATIONS:
-1. You have been provided with ${context.length} SOURCES from DIFFERENT FILES below
-2. Each source is clearly marked with [SOURCE N - filename]
-3. You MUST review ALL sources before answering
-4. When referencing information from sources, use this EXACT format:
-   {{citation:filename|location|quote}}
+# ===== CRITICAL: RESPONSE FORMAT RULES =====
 
-CITATION FORMAT SPECIFICATION:
-- filename: The exact document name (e.g., "Market Pricing Survey.pdf")
-- location: Page number or section (e.g., "Page 3", "Section 2.1")
-- quote: The exact text from the source (keep concise, max 100 chars)
+## COMPONENT GENERATION (HIGHEST PRIORITY)
+When users ask for ANY UI component, dashboard, portfolio, layout, or page:
 
-EXAMPLES OF CORRECT FORMAT:
-✅ "The supplier is {{citation:Market Pricing Survey.pdf|Page 3|AlSarif Group (Riyadh)}}"
-✅ "The unit is {{citation:pricing.pdf|Section 2|Terrazzo Tile, 30×30×3 cm}}"
-✅ "According to {{citation:document.pdf|Page 5|the pricing data}}, the cost is..."
+### DO THIS - EXACT STRUCTURE:
+1. Write 2-3 sentences describing what it does
+2. Write ONE SINGLE \`\`\`jsx code block with COMPLETE working component
+3. Optional: Add 2-3 sentences of tips (NOT in code)
 
-EXAMPLES OF WRONG FORMAT:
-❌ "According to Source 1..."
-❌ "{{citation:file.pdf}}" (missing location and quote)
-❌ "[cite:file.pdf]"
-❌ "{{citation:file.pdf|Page 3}}" (missing quote)
+### NEVER DO THIS:
+- ❌ Split code across multiple blocks
+- ❌ Import from external files (./components, ./pages, etc)
+- ❌ Reference files that don't exist
+- ❌ Use incomplete snippets
+- ❌ Scatter code in explanations
+- ❌ Mix explanations with code
 
-CITATION RULES:
-- Always include page/section number
-- Always include exact quote from source
-- Use filename exactly as provided in sources
-- One citation per fact
-- No nested citations
-- If multiple sources support same fact, cite the most relevant one
+### CODE BLOCK RULES (MANDATORY):
+✅ MUST HAVE:
+- Default export
+- Self-contained (no external imports except React, lucide-react, Tailwind)
+- All state, functions, data INSIDE the component
+- Complete and ready to render immediately
+- Production-quality HTML/JSX
+- Realistic content (not Lorem ipsum placeholders)
 
-Keep responses professional, objective, and concise.
+✅ EXAMPLE - CORRECT FORMAT:
+This is a beautiful portfolio component with sections for projects, services, and contact.
 
-CANVAS COMPONENT GENERATION:
-When users ask for UI components, layouts, dashboards, or pages, generate React components for immediate Canvas rendering.
+\`\`\`jsx
+import React, { useState } from 'react';
+import { Menu, X, Mail, Phone, MapPin } from 'lucide-react';
 
-DO NOT INCLUDE:
-- ❌ "Create a new React project" or "Save this as..."
-- ❌ "Run npm install" or setup instructions
-- ❌ Folder structures or multiple files
-- ❌ package.json or build instructions
-
-REQUIRED FORMAT:
-1. Single self-contained React component
-2. Functional component with default export
-3. Imports at top: React, hooks, Framer Motion, Wouter, Lucide React
-4. Tailwind CSS for styling
-5. Realistic content (not Lorem ipsum)
-6. Responsive and production-ready
-
-RESPONSE STRUCTURE:
-Brief explanation → Single code block → Optional notes
-
-EXAMPLE:
-\`\`\`tsx
-import React, { useState } from "react";
-import { Mail, Lock } from "lucide-react";
-
-export default function LoginPage() {
+export default function Portfolio() {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  // All data and logic inside
+  const projects = [
+    { id: 1, name: 'Project 1', desc: 'Description' },
+    // ... more projects
+  ];
+  
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded-lg shadow-md w-96">
-        <h1 className="text-2xl font-bold mb-6">Login</h1>
-        {/* Component content */}
-      </div>
+    <div className="min-h-screen bg-white">
+      {/* Complete HTML/JSX here - NO external imports */}
     </div>
   );
 }
 \`\`\`
 
-Canvas renders this immediately - no setup needed.
+Tips: You can customize colors using Tailwind classes. Add more projects to the array as needed.
+
+### CRITICAL RULES FOR CODE BLOCKS:
+1. Use \`\`\`jsx with jsx identifier
+2. ALL imports on first 2 lines (React, lucide-react only)
+3. NO import from './components' or './pages'
+4. NO import from external packages except React and lucide-react
+5. Component data must be INSIDE the component function
+6. Export default the component
+7. Complete HTML structure (not snippets)
+8. No comments except essential ones (max 3 lines)
 
 Context Information:
 ${contextString}`;
@@ -228,4 +219,68 @@ export const validateResponseCitations = (text: string): string => {
   }
   
   return fixedText;
+};
+
+/**
+ * Fix code that has errors - minimal tokens, patch-mode only
+ */
+export const fixCodeError = async (
+  code: string,
+  errorMessage: string,
+  apiKey?: string,
+  model: string = "llama3.1-8b"
+): Promise<string | null> => {
+  const key = apiKey || (import.meta as any).env?.VITE_CEREBRAS_API_KEY;
+  
+  if (!key) {
+    throw new Error("Cerebras API key not configured");
+  }
+
+  try {
+    const response = await fetch(CEREBRAS_API_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${key}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: model,
+        max_tokens: 1000,
+        stream: false,
+        messages: [
+          {
+            role: "user",
+            content: `You are a code fixer. Fix ONLY the error in this React component. Return ONLY the corrected code in a single \`\`\`jsx block.
+
+ERROR: ${errorMessage}
+
+CODE:
+\`\`\`jsx
+${code}
+\`\`\`
+
+Fix the error and return the corrected component.`
+          }
+        ]
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Cerebras API error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content || '';
+    
+    // Extract code from response
+    const codeMatch = content.match(/```(?:jsx|tsx|js)?\n([\s\S]*?)\n```/);
+    if (codeMatch) {
+      return codeMatch[1].trim();
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('[Cerebras] Error fixing code:', error);
+    throw error;
+  }
 };

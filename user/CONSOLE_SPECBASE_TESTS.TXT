@@ -1,467 +1,98 @@
-14:21:40.851 app.js:83 Retrying Monaco initialization...
-14:21:40.851 installHook.js:1 Editor container #editor not found! Available elements: (3) ['app', 'dev-wand-floating-btn', 'dev-wand-visual-editor-btn']
+17:05:31.080 Canvas.tsx:111 [Canvas] Switching to preview, rendering edited code
+17:05:31.094 installHook.js:1 [Canvas] Manual render error: /component.tsx: Unexpected token (27:6)
+
+  25 |         { date: 'Apr', confirmed: 3000000, recovered: 2500000, deaths: 75000 },
+  26 |         { date: 'May', confirmed: 4100000, recovered: 3600000, deaths: 90000 },
+> 27 |       ;
+     |       ^
+  28 |
+  29 |       setHistory(mockHistory);
+  30 |       setData({
 overrideMethod @ installHook.js:1
-initializeMonacoEditor @ app.js:78
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:55
-setTimeout
-(anonymous) @ app.js:44
-Promise.then
-initializeApp @ app.js:40
-14:21:41.358 app.js:83 Retrying Monaco initialization...
-14:21:41.358 installHook.js:1 Editor container #editor not found! Available elements: (3) ['app', 'dev-wand-floating-btn', 'dev-wand-visual-editor-btn']
+handleSwitchToPreview @ Canvas.tsx:119
+await in handleSwitchToPreview
+executeDispatch @ react-dom-client.development.js:19116
+runWithFiberInDEV @ react-dom-client.development.js:871
+processDispatchQueue @ react-dom-client.development.js:19166
+(anonymous) @ react-dom-client.development.js:19767
+batchedUpdates$1 @ react-dom-client.development.js:3255
+dispatchEventForPluginEventSystem @ react-dom-client.development.js:19320
+dispatchEvent @ react-dom-client.development.js:23585
+dispatchDiscreteEvent @ react-dom-client.development.js:23553
+17:05:31.162 Canvas.tsx:56 [Canvas] Renderer already available
+17:05:31.162 Canvas.tsx:95 [Canvas] Starting render, code length: 140
+17:05:31.176 Canvas.tsx:100 [Canvas] Render complete
+17:05:37.074 Canvas.tsx:56 [Canvas] Renderer already available
+17:05:37.075 Canvas.tsx:95 [Canvas] Starting render, code length: 140
+17:05:37.085 Canvas.tsx:100 [Canvas] Render complete
+17:05:37.101 Canvas.tsx:65 [Canvas] Iframe error event: {source: 'react-devtools-bridge', payload: {…}}
+17:05:38.715 Canvas.tsx:56 [Canvas] Renderer already available
+17:05:38.716 Canvas.tsx:95 [Canvas] Starting render, code length: 140
+17:05:38.725 Canvas.tsx:100 [Canvas] Render complete
+17:05:49.520 Canvas.tsx:111 [Canvas] Switching to preview, rendering edited code
+17:05:49.537 installHook.js:1 [Canvas] Manual render error: /component.tsx: Unexpected token (27:6)
+
+  25 |         { date: 'Apr', confirmed: 3000000, recovered: 2500000, deaths: 75000 },
+  26 |         { date: 'May', confirmed: 4100000, recovered: 3600000, deaths: 90000 },
+> 27 |       ;
+     |       ^
+  28 |
+  29 |       setHistory(mockHistory);
+  30 |       setData({
 overrideMethod @ installHook.js:1
-initializeMonacoEditor @ app.js:78
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:55
-setTimeout
-(anonymous) @ app.js:44
-Promise.then
-initializeApp @ app.js:40
-14:21:41.872 app.js:83 Retrying Monaco initialization...
-14:21:41.872 installHook.js:1 Editor container #editor not found! Available elements: (3) ['app', 'dev-wand-floating-btn', 'dev-wand-visual-editor-btn']
+handleSwitchToPreview @ Canvas.tsx:119
+await in handleSwitchToPreview
+executeDispatch @ react-dom-client.development.js:19116
+runWithFiberInDEV @ react-dom-client.development.js:871
+processDispatchQueue @ react-dom-client.development.js:19166
+(anonymous) @ react-dom-client.development.js:19767
+batchedUpdates$1 @ react-dom-client.development.js:3255
+dispatchEventForPluginEventSystem @ react-dom-client.development.js:19320
+dispatchEvent @ react-dom-client.development.js:23585
+dispatchDiscreteEvent @ react-dom-client.development.js:23553
+17:05:49.638 Canvas.tsx:56 [Canvas] Renderer already available
+17:05:49.639 Canvas.tsx:95 [Canvas] Starting render, code length: 140
+17:05:49.653 Canvas.tsx:100 [Canvas] Render complete
+17:05:49.672 Canvas.tsx:65 [Canvas] Iframe error event: {source: 'react-devtools-bridge', payload: {…}}
+17:05:52.966 Canvas.tsx:56 [Canvas] Renderer already available
+17:05:52.966 Canvas.tsx:95 [Canvas] Starting render, code length: 140
+17:05:52.980 Canvas.tsx:100 [Canvas] Render complete
+17:05:52.993 Canvas.tsx:65 [Canvas] Iframe error event: {source: 'react-devtools-bridge', payload: {…}}
+17:05:55.746 Canvas.tsx:56 [Canvas] Renderer already available
+17:05:55.747 Canvas.tsx:95 [Canvas] Starting render, code length: 140
+17:05:55.759 Canvas.tsx:100 [Canvas] Render complete
+17:06:01.522 Canvas.tsx:65 [Canvas] Iframe error event: {source: 'react-devtools-bridge', payload: {…}}
+17:06:01.888 Canvas.tsx:111 [Canvas] Switching to preview, rendering edited code
+17:06:01.951 Canvas.tsx:65 [Canvas] Iframe error event: {source: 'react-devtools-bridge', payload: {…}}
+17:06:05.080 Canvas.tsx:111 [Canvas] Switching to preview, rendering edited code
+17:06:05.095 installHook.js:1 [Canvas] Manual render error: /component.tsx: Unexpected token (27:6)
+
+  25 |         { date: 'Apr', confirmed: 3000000, recovered: 2500000, deaths: 75000 },
+  26 |         { date: 'May', confirmed: 4100000, recovered: 3600000, deaths: 90000 },
+> 27 |       ;
+     |       ^
+  28 |
+  29 |       setHistory(mockHistory);
+  30 |       setData({
 overrideMethod @ installHook.js:1
-initializeMonacoEditor @ app.js:78
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:55
-setTimeout
-(anonymous) @ app.js:44
-Promise.then
-initializeApp @ app.js:40
-14:21:42.388 app.js:83 Retrying Monaco initialization...
-14:21:42.389  Editor container #editor not found! Available elements: (3) ['app', 'dev-wand-floating-btn', 'dev-wand-visual-editor-btn']
-overrideMethod @ chrome-extension://f…ld/installHook.js:1
-initializeMonacoEditor @ app.js:78
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:55
-setTimeout
-(anonymous) @ app.js:44
-Promise.then
-initializeApp @ app.js:40
-14:21:42.556 Navigated to http://localhost:5000/
-14:21:42.742 app.js:32 Initializing AI Code Editor...
-14:21:42.818 app.js:41 All components loaded
-14:21:42.843 favicon.ico:1  GET http://localhost:5000/favicon.ico 404 (Not Found)
-14:21:42.854 app.js:62 Fetch finished loading: GET "http://localhost:5000/components/header.html".
-loadComponent @ app.js:62
-initializeApp @ app.js:36
-14:21:42.859 app.js:62 Fetch finished loading: GET "http://localhost:5000/components/explorer.html".
-loadComponent @ app.js:62
-initializeApp @ app.js:37
-14:21:42.875 app.js:62 Fetch finished loading: GET "http://localhost:5000/components/editor.html".
-loadComponent @ app.js:62
-initializeApp @ app.js:38
-14:21:42.876 app.js:62 Fetch finished loading: GET "http://localhost:5000/components/chat.html".
-loadComponent @ app.js:62
-initializeApp @ app.js:39
-14:21:42.920 app.js:345 Preview system initialized
-14:21:42.920 app.js:349 Semantic patch client initialized
-14:21:42.922 installHook.js:1 Editor container #editor not found! Available elements: (3) ['app', 'dev-wand-floating-btn', 'dev-wand-visual-editor-btn']
-overrideMethod @ installHook.js:1
-initializeMonacoEditor @ app.js:78
-(anonymous) @ app.js:55
-setTimeout
-(anonymous) @ app.js:44
-Promise.then
-initializeApp @ app.js:40
-14:21:43.431 app.js:83 Retrying Monaco initialization...
-14:21:43.432 installHook.js:1 Editor container #editor not found! Available elements: (3) ['app', 'dev-wand-floating-btn', 'dev-wand-visual-editor-btn']
-overrideMethod @ installHook.js:1
-initializeMonacoEditor @ app.js:78
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:55
-setTimeout
-(anonymous) @ app.js:44
-Promise.then
-initializeApp @ app.js:40
-14:21:43.943 app.js:83 Retrying Monaco initialization...
-14:21:43.943 installHook.js:1 Editor container #editor not found! Available elements: (3) ['app', 'dev-wand-floating-btn', 'dev-wand-visual-editor-btn']
-overrideMethod @ installHook.js:1
-initializeMonacoEditor @ app.js:78
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:55
-setTimeout
-(anonymous) @ app.js:44
-Promise.then
-initializeApp @ app.js:40
-14:21:44.459 app.js:83 Retrying Monaco initialization...
-14:21:44.460 installHook.js:1 Editor container #editor not found! Available elements: (3) ['app', 'dev-wand-floating-btn', 'dev-wand-visual-editor-btn']
-overrideMethod @ installHook.js:1
-initializeMonacoEditor @ app.js:78
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:55
-setTimeout
-(anonymous) @ app.js:44
-Promise.then
-initializeApp @ app.js:40
-14:21:44.976 app.js:83 Retrying Monaco initialization...
-14:21:44.977 installHook.js:1 Editor container #editor not found! Available elements: (3) ['app', 'dev-wand-floating-btn', 'dev-wand-visual-editor-btn']
-overrideMethod @ installHook.js:1
-initializeMonacoEditor @ app.js:78
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:55
-setTimeout
-(anonymous) @ app.js:44
-Promise.then
-initializeApp @ app.js:40
-14:21:45.486 app.js:83 Retrying Monaco initialization...
-14:21:45.487 installHook.js:1 Editor container #editor not found! Available elements: (3) ['app', 'dev-wand-floating-btn', 'dev-wand-visual-editor-btn']
-overrideMethod @ installHook.js:1
-initializeMonacoEditor @ app.js:78
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:55
-setTimeout
-(anonymous) @ app.js:44
-Promise.then
-initializeApp @ app.js:40
-14:21:45.997 app.js:83 Retrying Monaco initialization...
-14:21:45.998 installHook.js:1 Editor container #editor not found! Available elements: (3) ['app', 'dev-wand-floating-btn', 'dev-wand-visual-editor-btn']
-overrideMethod @ installHook.js:1
-initializeMonacoEditor @ app.js:78
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:55
-setTimeout
-(anonymous) @ app.js:44
-Promise.then
-initializeApp @ app.js:40
-14:21:46.513 app.js:83 Retrying Monaco initialization...
-14:21:46.514 installHook.js:1 Editor container #editor not found! Available elements: (3) ['app', 'dev-wand-floating-btn', 'dev-wand-visual-editor-btn']
-overrideMethod @ installHook.js:1
-initializeMonacoEditor @ app.js:78
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:55
-setTimeout
-(anonymous) @ app.js:44
-Promise.then
-initializeApp @ app.js:40
-14:21:47.031 app.js:83 Retrying Monaco initialization...
-14:21:47.032 installHook.js:1 Editor container #editor not found! Available elements: (3) ['app', 'dev-wand-floating-btn', 'dev-wand-visual-editor-btn']
-overrideMethod @ installHook.js:1
-initializeMonacoEditor @ app.js:78
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:55
-setTimeout
-(anonymous) @ app.js:44
-Promise.then
-initializeApp @ app.js:40
-14:21:47.537 app.js:83 Retrying Monaco initialization...
-14:21:47.537 installHook.js:1 Editor container #editor not found! Available elements: (3) ['app', 'dev-wand-floating-btn', 'dev-wand-visual-editor-btn']
-overrideMethod @ installHook.js:1
-initializeMonacoEditor @ app.js:78
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:55
-setTimeout
-(anonymous) @ app.js:44
-Promise.then
-initializeApp @ app.js:40
-14:21:48.051 app.js:83 Retrying Monaco initialization...
-14:21:48.051 installHook.js:1 Editor container #editor not found! Available elements: (3) ['app', 'dev-wand-floating-btn', 'dev-wand-visual-editor-btn']
-overrideMethod @ installHook.js:1
-initializeMonacoEditor @ app.js:78
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:84
-setTimeout
-initializeMonacoEditor @ app.js:82
-(anonymous) @ app.js:55
-setTimeout
-(anonymous) @ app.js:44
-Promise.then
-initializeApp @ app.js:40
+handleSwitchToPreview @ Canvas.tsx:119
+await in handleSwitchToPreview
+executeDispatch @ react-dom-client.development.js:19116
+runWithFiberInDEV @ react-dom-client.development.js:871
+processDispatchQueue @ react-dom-client.development.js:19166
+(anonymous) @ react-dom-client.development.js:19767
+batchedUpdates$1 @ react-dom-client.development.js:3255
+dispatchEventForPluginEventSystem @ react-dom-client.development.js:19320
+dispatchEvent @ react-dom-client.development.js:23585
+dispatchDiscreteEvent @ react-dom-client.development.js:23553
+17:06:05.191 Canvas.tsx:56 [Canvas] Renderer already available
+17:06:05.191 Canvas.tsx:95 [Canvas] Starting render, code length: 140
+17:06:05.203 Canvas.tsx:100 [Canvas] Render complete
+17:06:05.222 Canvas.tsx:65 [Canvas] Iframe error event: {source: 'react-devtools-bridge', payload: {…}}
+17:06:07.994 Canvas.tsx:56 [Canvas] Renderer already available
+17:06:07.994 Canvas.tsx:95 [Canvas] Starting render, code length: 140
+17:06:08.008 Canvas.tsx:100 [Canvas] Render complete
+17:06:08.022 Canvas.tsx:65 [Canvas] Iframe error event: {source: 'react-devtools-bridge', payload: {…}}
+17:06:11.676 Canvas.tsx:56 [Canvas] Renderer already available
+17:06:11.677 Canvas.tsx:95 [Canvas] Starting render, code length: 140
+17:06:11.687 Canvas.tsx:100 [Canvas] Render complete

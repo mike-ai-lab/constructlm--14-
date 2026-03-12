@@ -1,0 +1,132 @@
+import React, { useState } from 'react';
+import { Menu, X, Mail, Phone, MapPin } from 'lucide-react';
+
+export default function Portfolio() {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  // All data and logic inside
+  const projects = [
+    {
+      id: 1,
+      name: 'Project 1',
+      desc: 'Designing a modern website for a tech startup',
+      link: 'https://example.com/project1',
+      image: 'project1.jpg',
+    },
+    {
+      id: 2,
+      name: 'Project 2',
+      desc: 'Branding for a sustainable energy company',
+      link: 'https://example.com/project2',
+      image: 'project2.jpg',
+    },
+    {
+      id: 3,
+      name: 'Project 3',
+      desc: 'Mobile app redesign for a popular e-commerce platform',
+      link: 'https://example.com/project3',
+      image: 'project3.jpg',
+    },
+    {
+      id: 4,
+      name: 'Project 4',
+      desc: 'Creating a digital campaign for a new product launch',
+      link: 'https://example.com/project4',
+      image: 'project4.jpg',
+    },
+  ];
+
+  const services = [
+    { id: 1, name: 'UI/UX Design', desc: 'User-centered design to create seamless experiences' },
+    { id: 2, name: 'Branding', desc: 'Developing strong brand identities for businesses' },
+    { id: 3, name: 'Web Development', desc: 'Building responsive websites with modern technologies' },
+    { id: 4, name: 'Visual Design', desc: 'Creating stunning visual content for companies' },
+  ];
+
+  return (
+    <div className="min-h-screen bg-white">
+      {/* Header Section */}
+      <header className="bg-gray-800 text-white py-4">
+        <nav className="container mx-auto flex justify-between items-center">
+          <h1 className="text-3xl font-bold">Designer Portfolio</h1>
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="lg:hidden bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded"
+          >
+            {isOpen ? <X /> : <Menu />}
+          </button>
+        </nav>
+      </header>
+
+      {/* Projects Section */}
+      <section id="projects" className="container mx-auto py-12">
+        <h2 className="text-3xl font-bold mb-4">Projects</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {projects.map((project) => (
+            <div key={project.id}>
+              <h3 className="text-lg font-bold mb-2">{project.name}</h3>
+              <p className="text-gray-600">{project.desc}</p>
+              <a href={project.link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">
+                View Project
+              </a>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Services Section */}
+      <section id="services" className="container mx-auto py-12">
+        <h2 className="text-3xl font-bold mb-4">Services</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {services.map((service) => (
+            <div key={service.id} className="bg-white shadow-md rounded p-4">
+              <h3 className="text-lg font-bold mb-2">{service.name}</h3>
+              <p className="text-gray-600">{service.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      <section id="contact" className="container mx-auto py-12">
+        <h2 className="text-3xl font-bold mb-4">Get in Touch</h2>
+        <div className="flex flex-col md:flex-row items-start md:items-center mb-4">
+          <div className="mr-4">
+            <Mail size={24} className="text-gray-600" />
+          </div>
+          <p className="text-gray-600">email@example.com</p>
+        </div>
+        <div className="flex flex-col md:flex-row items-start md:items-center mb-4">
+          <div className="mr-4">
+            <Phone size={24} className="text-gray-600" />
+          </div>
+          <p className="text-gray-600">+1 123 456 7890</p>
+        </div>
+        <div className="flex flex-col md:flex-row items-start md:items-center mb-4">
+          <div className="mr-4">
+            <MapPin size={24} className="text-gray-600" />
+          </div>
+          <p className="text-gray-600">123 Main St, Anytown, USA</p>
+        </div>
+      </section>
+
+      {/* About Section */}
+      <section id="about" className="container mx-auto py-12">
+        <h2 className="text-3xl font-bold mb-4">About</h2>
+        <p className="text-gray-600">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed sit amet nulla auctor, vestibulum magna sed, convallis ex.</p>
+      </section>
+    </div>
+  );
+}
+
+error:
+Compilation Error
+/component.tsx: Unexpected token (71:22)
+
+  69 |         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+  70 |           {projects.map((project) => (
+> 71 |             <div key-4">
+     |                       ^
+  72 |               <h3 className="text-lg font-bold mb-2">{project.name}</h3>
+  73 |               <p className="text-gray-600">{project.desc}</p>
+  74 |               <a href={project.link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800">

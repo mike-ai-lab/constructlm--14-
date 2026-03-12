@@ -55,6 +55,69 @@ ${c.text}
 
   const systemInstruction = `You are ConstructLM, an intelligent research assistant.
 
+# ===== CRITICAL: RESPONSE FORMAT RULES =====
+
+## COMPONENT GENERATION (HIGHEST PRIORITY)
+When users ask for ANY UI component, dashboard, portfolio, layout, or page:
+
+### DO THIS - EXACT STRUCTURE:
+1. Write 2-3 sentences describing what it does
+2. Write ONE SINGLE \`\`\`jsx code block with COMPLETE working component
+3. Optional: Add 2-3 sentences of tips (NOT in code)
+
+### NEVER DO THIS:
+- ❌ Split code across multiple blocks
+- ❌ Import from external files (./components, ./pages, etc)
+- ❌ Reference files that don't exist
+- ❌ Use incomplete snippets
+- ❌ Scatter code in explanations
+- ❌ Mix explanations with code
+
+### CODE BLOCK RULES (MANDATORY):
+✅ MUST HAVE:
+- Default export
+- Self-contained (no external imports except React, lucide-react, Tailwind)
+- All state, functions, data INSIDE the component
+- Complete and ready to render immediately
+- Production-quality HTML/JSX
+- Realistic content (not Lorem ipsum placeholders)
+
+✅ EXAMPLE - CORRECT FORMAT:
+This is a beautiful portfolio component with sections for projects, services, and contact.
+
+\`\`\`jsx
+import React, { useState } from 'react';
+import { Menu, X, Mail, Phone, MapPin } from 'lucide-react';
+
+export default function Portfolio() {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  // All data and logic inside
+  const projects = [
+    { id: 1, name: 'Project 1', desc: 'Description' },
+    // ... more projects
+  ];
+  
+  return (
+    <div className="min-h-screen bg-white">
+      {/* Complete HTML/JSX here - NO external imports */}
+    </div>
+  );
+}
+\`\`\`
+
+Tips: You can customize colors using Tailwind classes. Add more projects to the array as needed.
+
+### CRITICAL RULES FOR CODE BLOCKS:
+1. Use \`\`\`jsx with jsx identifier
+2. ALL imports on first 2 lines (React, lucide-react only)
+3. NO import from './components' or './pages'
+4. NO import from external packages except React and lucide-react
+5. Component data must be INSIDE the component function
+6. Export default the component
+7. Complete HTML structure (not snippets)
+8. No comments except essential ones (max 3 lines)
+
 CRITICAL INSTRUCTIONS FOR CITATIONS:
 1. You have been provided with ${context.length} SOURCES from DIFFERENT FILES below
 2. Each source is clearly marked with [SOURCE N - filename]
@@ -364,5 +427,97 @@ export const testConnection = async (
       success: false,
       message: `Connection error: ${error instanceof Error ? error.message : String(error)}`
     };
+  }
+};
+
+/**
+ * Fix code that has errors - minimal tokens, patch-mode only
+ */
+export const fixCodeError = async (
+  code: string,
+  errorMessage: string,
+  apiKey?: string,
+  model: string = "llama3.1:8b",
+  baseUrl: string = "http://localhost:11434",
+  isCloud: boolean = false
+): Promise<string | null> => {
+  try {
+    const url = isCloud 
+      ? "https://api.ollama.ai/v1/chat/completions"
+      : `${baseUrl}/api/chat`;
+
+    const body = isCloud
+      ? {
+          model: model,
+          messages: [
+            {
+              role: "user",
+              content: `You are a code fixer. Fix ONLY the error in this React component. Return ONLY the corrected code in a single \`\`\`jsx block.
+
+ERROR: ${errorMessage}
+
+CODE:
+\`\`\`jsx
+${code}
+\`\`\`
+
+Fix the error and return the corrected component.`
+            }
+          ],
+          max_tokens: 1000
+        }
+      : {
+          model: model,
+          messages: [
+            {
+              role: "user",
+              content: `You are a code fixer. Fix ONLY the error in this React component. Return ONLY the corrected code in a single \`\`\`jsx block.
+
+ERROR: ${errorMessage}
+
+CODE:
+\`\`\`jsx
+${code}
+\`\`\`
+
+Fix the error and return the corrected component.`
+            }
+          ],
+          stream: false
+        };
+
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+    };
+
+    if (isCloud && apiKey) {
+      headers.Authorization = `Bearer ${apiKey}`;
+    }
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Ollama API error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const content = isCloud
+      ? data.choices?.[0]?.message?.content || ''
+      : data.message?.content || '';
+    
+    // Extract code from response
+    const codeMatch = content.match(/```(?:jsx|tsx|js)?\n([\s\S]*?)\n```/);
+    if (codeMatch) {
+      return codeMatch[1].trim();
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('[Ollama] Error fixing code:', error);
+    throw error;
   }
 };

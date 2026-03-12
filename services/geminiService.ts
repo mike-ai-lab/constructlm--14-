@@ -251,3 +251,72 @@ export const estimateTokens = (text: string, imageBase64?: string): number => {
   
   return textTokens + imageTokens;
 };
+
+/**
+ * Fix code that has errors - minimal tokens, patch-mode only
+ */
+export const fixCodeError = async (
+  code: string,
+  errorMessage: string,
+  apiKey?: string,
+  model: string = "gemini-2.5-flash"
+): Promise<string | null> => {
+  const key = apiKey || (import.meta as any).env?.VITE_GEMINI_API_KEY;
+  
+  if (!key) {
+    throw new Error("Gemini API key not configured");
+  }
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [
+            {
+              parts: [
+                {
+                  text: `You are a code fixer. Fix ONLY the error in this React component. Return ONLY the corrected code in a single \`\`\`jsx block.
+
+ERROR: ${errorMessage}
+
+CODE:
+\`\`\`jsx
+${code}
+\`\`\`
+
+Fix the error and return the corrected component.`
+                }
+              ]
+            }
+          ],
+          generationConfig: {
+            maxOutputTokens: 1000,
+          }
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Gemini API error: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    const content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    
+    // Extract code from response
+    const codeMatch = content.match(/```(?:jsx|tsx|js)?\n([\s\S]*?)\n```/);
+    if (codeMatch) {
+      return codeMatch[1].trim();
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('[Gemini] Error fixing code:', error);
+    throw error;
+  }
+};

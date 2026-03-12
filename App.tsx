@@ -130,6 +130,8 @@ const App: React.FC = () => {
   const [canvasCode, setCanvasCode] = useState<string | null>(null);
   const [canvasFilename, setCanvasFilename] = useState<string>('component.jsx');
   const [isCanvasOpen, setIsCanvasOpen] = useState(false);
+  const [canvasError, setCanvasError] = useState<{message: string; code: string} | null>(null);
+  const [isFixingError, setIsFixingError] = useState(false);
   const isResizingRef = useRef(false);
 
   // CONSTANT: Define exact header height to sync sidebar and header
@@ -452,12 +454,105 @@ const App: React.FC = () => {
   const handleOpenCanvas = (code: string, filename: string) => {
     console.log('[handleOpenCanvas] Called with filename:', filename);
     console.log('[handleOpenCanvas] Code length:', code.length);
-    console.log('[handleOpenCanvas] Code preview:', code.substring(0, 100));
+    console.log('[handleOpenCanvas] Code preview (first 200 chars):', code.substring(0, 200));
+    console.log('[handleOpenCanvas] Code preview (around line 67):', code.substring(code.indexOf('</section>'), code.indexOf('</section>') + 100));
     setCanvasCode(code);
     setCanvasFilename(filename);
     setIsCanvasOpen(true);
     setIsMobileSidebarOpen(false);
+    setCanvasError(null);
     console.log('[handleOpenCanvas] Canvas state updated, isCanvasOpen should be true');
+  };
+
+  const handleCanvasError = async (errorMessage: string, code: string) => {
+    console.log('[handleCanvasError] Error detected:', errorMessage);
+    // Only set error if it's for the current code being displayed
+    setCanvasError({ message: errorMessage, code });
+    setIsFixingError(false);
+  };
+
+  const handleFixCanvasError = async (code: string) => {
+    // Prevent multiple simultaneous fix requests
+    if (isFixingError) {
+      console.log('[handleFixCanvasError] Already fixing error, ignoring request');
+      return;
+    }
+
+    console.log('[handleFixCanvasError] Attempting to fix error');
+    setIsFixingError(true);
+    
+    try {
+      const apiKey = 
+        aiModel === 'gemini' ? geminiApiKey :
+        aiModel === 'cerebras' ? cerebrasApiKey :
+        aiModel === 'groq' ? groqApiKey :
+        aiModel === 'openrouter' ? openrouterApiKey :
+        ollamaApiKey;
+
+      if (!apiKey) {
+        console.error('[handleFixCanvasError] No API key available');
+        alert('API key not configured for ' + aiModel);
+        setIsFixingError(false);
+        return;
+      }
+
+      const errorMsg = canvasError?.message || 'Unknown error';
+      
+      console.log('[handleFixCanvasError] Calling AI service to fix code');
+      // Don't clear error yet - keep it visible while fixing
+      
+      // Create a timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Fix timeout - request took too long')), 30000)
+      );
+
+      let fixedCode: string | null = null;
+
+      try {
+        if (aiModel === 'ollama') {
+          const OllamaService = await import('./services/ollamaService');
+          fixedCode = await Promise.race([
+            OllamaService.fixCodeError(code, errorMsg, apiKey, selectedModel, ollamaBaseUrl, ollamaMode === 'cloud'),
+            timeoutPromise
+          ]) as string | null;
+        } else if (aiModel === 'gemini') {
+          fixedCode = await Promise.race([
+            GeminiService.fixCodeError(code, errorMsg, apiKey, selectedOpenRouterModel),
+            timeoutPromise
+          ]) as string | null;
+        } else if (aiModel === 'cerebras') {
+          fixedCode = await Promise.race([
+            CerebrasService.fixCodeError(code, errorMsg, apiKey, selectedModel),
+            timeoutPromise
+          ]) as string | null;
+        } else if (aiModel === 'groq') {
+          fixedCode = await Promise.race([
+            GroqService.fixCodeError(code, errorMsg, apiKey, selectedModel),
+            timeoutPromise
+          ]) as string | null;
+        } else if (aiModel === 'openrouter') {
+          fixedCode = await Promise.race([
+            OpenRouterService.fixCodeError(code, errorMsg, apiKey, selectedOpenRouterModel),
+            timeoutPromise
+          ]) as string | null;
+        }
+      } catch (raceError) {
+        throw raceError;
+      }
+
+      if (fixedCode) {
+        console.log('[handleFixCanvasError] Fixed code received, clearing error and updating canvas');
+        // Clear error AFTER we have the fixed code
+        setCanvasError(null);
+        // Update code will trigger Canvas to re-render
+        setCanvasCode(fixedCode);
+      }
+    } catch (error) {
+      console.error('[handleFixCanvasError] Error fixing code:', error);
+      alert('Failed to fix code: ' + (error instanceof Error ? error.message : 'Unknown error'));
+    } finally {
+      setIsFixingError(false);
+    }
   };
 
   const handleSendMessage = async (text: string, imageBase64?: string) => {
@@ -509,6 +604,9 @@ const App: React.FC = () => {
     console.log('[RAG Query]', text);
 
     try {
+      // Add initialization delay to ensure API state is ready (fixes first request timing issue)
+      await new Promise(resolve => setTimeout(resolve, 100));
+
       // 1. RAG Search - get more chunks to ensure coverage
       const citations = await VectorDB.searchVectors(text, 8);
       
@@ -529,9 +627,11 @@ const App: React.FC = () => {
         citations: citations
       }]);
 
-      // 3. Stream Response
+      // 3. Stream Response with smooth output
       let accumulatedText = '';
       let accumulatedReasoning = '';
+      let hasCode = false;
+      let codeDetectionTimeout: NodeJS.Timeout | null = null;
       
       const streamService = 
         aiModel === 'gemini' ? GeminiService :
@@ -563,6 +663,25 @@ const App: React.FC = () => {
               ));
             } else {
               accumulatedText += chunk;
+              
+              // Detect if code is present (with intelligent delay to avoid premature opening)
+              if (!hasCode && accumulatedText.includes('```')) {
+                hasCode = true;
+                // Clear any existing timeout
+                if (codeDetectionTimeout) clearTimeout(codeDetectionTimeout);
+                // Wait 800ms before auto-opening canvas to let full content stream in
+                codeDetectionTimeout = setTimeout(() => {
+                  // Extract code from accumulated text
+                  const codeRegex = /```(?:jsx|tsx|jsx?|js|typescript)?\s*\n([\s\S]*?)```/;
+                  const codeMatch = accumulatedText.match(codeRegex);
+                  if (codeMatch) {
+                    const code = codeMatch[1].trim();
+                    console.log('[Auto-Open Canvas] Code detected, opening canvas with', code.length, 'chars');
+                    handleOpenCanvas(code, 'component.jsx');
+                  }
+                }, 800);
+              }
+              
               setMessages(prev => prev.map(msg => 
                 msg.id === modelMsgId 
                   ? { ...msg, content: accumulatedText }
@@ -591,6 +710,25 @@ const App: React.FC = () => {
               ));
             } else {
               accumulatedText += chunk;
+              
+              // Detect if code is present (with intelligent delay to avoid premature opening)
+              if (!hasCode && accumulatedText.includes('```')) {
+                hasCode = true;
+                // Clear any existing timeout
+                if (codeDetectionTimeout) clearTimeout(codeDetectionTimeout);
+                // Wait 800ms before auto-opening canvas to let full content stream in
+                codeDetectionTimeout = setTimeout(() => {
+                  // Extract code from accumulated text
+                  const codeRegex = /```(?:jsx|tsx|jsx?|js|typescript)?\s*\n([\s\S]*?)```/;
+                  const codeMatch = accumulatedText.match(codeRegex);
+                  if (codeMatch) {
+                    const code = codeMatch[1].trim();
+                    console.log('[Auto-Open Canvas] Code detected, opening canvas with', code.length, 'chars');
+                    handleOpenCanvas(code, 'component.jsx');
+                  }
+                }, 800);
+              }
+              
               setMessages(prev => prev.map(msg => 
                 msg.id === modelMsgId 
                   ? { ...msg, content: accumulatedText }
@@ -603,6 +741,9 @@ const App: React.FC = () => {
           imageBase64
         );
       }
+
+      // Clean up timeout if still pending
+      if (codeDetectionTimeout) clearTimeout(codeDetectionTimeout);
 
       // 4. Finalize with token count
       const outputTokens = GeminiService.estimateTokens(accumulatedText);
@@ -682,32 +823,32 @@ const App: React.FC = () => {
       {/* Mobile Header - Always visible on mobile */}
       <header 
         className="block md:hidden p-3 border-b border-slate-200 dark:border-white/5 flex justify-between items-center bg-white/80 dark:bg-[#0a0a0b]/80 glass z-50 flex-shrink-0 sticky top-0"
-        style={{ height: MOBILE_HEADER_HEIGHT_WITH_SAFE_AREA, paddingTop: 'env(safe-area-inset-top)' }}
+        style={{ height: MOBILE_HEADER_HEIGHT_WITH_SAFE_AREA, paddingTop: 'calc(env(safe-area-inset-top) + 7px)' }}
       >
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <button
             onClick={() => window.open('/docs/index.html', '_blank')}
-            className="hover:bg-slate-100 dark:hover:bg-white/5 px-2 py-1 rounded transition-colors"
+            className="hover:bg-slate-100 dark:hover:bg-white/5 p-1.5 rounded transition-colors"
             title="Documentation"
           >
-            <BookOpen size={18} />
+            <BookOpen size={16} />
           </button>
           <button
             onClick={() => setIsSettingsOpen(true)}
-            className="hover:bg-slate-100 dark:hover:bg-white/5 px-2 py-1 rounded transition-colors"
+            className="hover:bg-slate-100 dark:hover:bg-white/5 p-1.5 rounded transition-colors"
             title="Settings"
           >
-            <Settings size={18} />
+            <Settings size={16} />
           </button>
           <button 
             onClick={() => setIsMobileSidebarOpen(true)}
-            className="font-sans font-bold text-xs hover:bg-slate-100 dark:hover:bg-white/5 px-2 py-1 flex items-center gap-2 uppercase tracking-tight transition-colors"
+            className="font-sans font-bold text-[10px] hover:bg-slate-100 dark:hover:bg-white/5 px-2 py-1 flex items-center gap-1 uppercase tracking-tight transition-colors"
           >
             ConstructLM
           </button>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="text-[9px] font-bold uppercase tracking-wider opacity-60">{files.length} Files</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[8px] font-bold uppercase tracking-wider opacity-60 whitespace-nowrap">{files.length} Files</span>
           <select 
             value={aiModel}
             onChange={(e) => {
@@ -978,6 +1119,11 @@ const App: React.FC = () => {
                   filename={canvasFilename}
                   isOpen={isCanvasOpen}
                   onClose={() => setIsCanvasOpen(false)}
+                  error={canvasError}
+                  onError={handleCanvasError}
+                  onFixError={handleFixCanvasError}
+                  aiModel={aiModel}
+                  isFixingError={isFixingError}
                 />
               </Suspense>
             </div>

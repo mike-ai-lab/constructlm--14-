@@ -6,6 +6,11 @@ interface CanvasProps {
   filename: string;
   isOpen: boolean;
   onClose: () => void;
+  error?: {message: string; code: string} | null;
+  onError?: (errorMessage: string, code: string) => void;
+  onFixError?: (code: string) => void;
+  aiModel?: 'gemini' | 'cerebras' | 'groq' | 'openrouter' | 'ollama';
+  isFixingError?: boolean;
 }
 
 interface CodeVersion {
@@ -19,7 +24,7 @@ declare global {
   }
 }
 
-export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose }) => {
+export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose, error, onError, onFixError, aiModel, isFixingError }) => {
   const [showCode, setShowCode] = useState(false);
   const [editCode, setEditCode] = useState(code);
   const [isRendering, setIsRendering] = useState(false);
@@ -55,12 +60,28 @@ export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose 
       }
     };
 
+    // Listen for errors from iframe
+    const handleIframeError = (event: any) => {
+      console.log('[Canvas] Iframe error event:', event.data);
+      if (event.data?.type === 'renderer-error' && editCode) {
+        onError?.(event.data.message, editCode);
+      }
+    };
+
+    window.addEventListener('message', handleIframeError);
     initRenderer();
-  }, []);
+    
+    return () => {
+      window.removeEventListener('message', handleIframeError);
+    };
+  }, [editCode, onError]);
 
   // Update initial state when code changes
   useEffect(() => {
     if (isOpen && code && rendererRef.current) {
+      console.log('[Canvas] New code received, clearing error state and rendering');
+      // Always clear error when new code arrives
+      // (This handles both AI-fixed code and user edits)
       setEditCode(code);
       setVersions([{ code, timestamp: Date.now() }]);
       setCurrentVersionIndex(0);
@@ -81,17 +102,28 @@ export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose 
       await rendererRef.current.renderToIframe(iframeRef.current, codeToRender);
       console.log('[Canvas] Render complete');
     } catch (error) {
-      console.error('[Canvas] Render error:', error);
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      console.error('[Canvas] Render error:', errorMsg);
+      onError?.(errorMsg, codeToRender);
     } finally {
       setIsRendering(false);
     }
   };
 
-  const handleSwitchToPreview = () => {
-    console.log('[Canvas] Switching to preview, rendering code');
+  const handleSwitchToPreview = async () => {
+    console.log('[Canvas] Switching to preview, rendering edited code');
+    // First render the code, THEN switch to preview
+    if (rendererRef.current && iframeRef.current) {
+      try {
+        await rendererRef.current.renderToIframe(iframeRef.current, editCode);
+        console.log('[Canvas] Manual render complete');
+      } catch (error) {
+        const errorMsg = error instanceof Error ? error.message : String(error);
+        console.error('[Canvas] Manual render error:', errorMsg);
+        onError?.(errorMsg, editCode);
+      }
+    }
     setShowCode(false);
-    // Auto-render when switching to preview
-    handleRender(editCode);
   };
 
   const handleRefreshRender = () => {
@@ -290,9 +322,18 @@ export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose 
               spellCheck="false"
             />
 
-            {/* Save Version Hint */}
-            <div className="border-t border-white/5 px-6 py-3 bg-black/50 text-[9px] text-gray-500 font-bold uppercase tracking-[0.2em]">
-              Switch to Preview to render and save version
+            {/* Footer with instructions and render button */}
+            <div className="border-t border-white/5 px-6 py-3 bg-black/50 flex items-center justify-between">
+              <div className="text-[9px] text-gray-500 font-bold uppercase tracking-[0.2em]">
+                💡 Edit code and render to see changes
+              </div>
+              <button
+                onClick={handleSwitchToPreview}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[9px] font-bold uppercase tracking-wider rounded transition-colors"
+                title="Render your edited code"
+              >
+                ▶ Render & Preview
+              </button>
             </div>
           </div>
         ) : (
@@ -308,11 +349,93 @@ export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose 
                 </div>
               </div>
             )}
+
+            {/* Error Overlay */}
+            {error && (
+              <div className="absolute inset-0 bg-black/90 flex items-center justify-center z-20 backdrop-blur-sm">
+                <div className="max-w-[500px] bg-red-950/40 border border-red-500/30 rounded-lg p-6 space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-red-500/20 rounded-full flex items-center justify-center flex-shrink-0 mt-1">
+                      <div className="w-2 h-2 bg-red-500 rounded-full" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[12px] font-bold text-red-400 uppercase tracking-wider mb-2">
+                        Rendering Error
+                      </div>
+                      <div className="text-[11px] text-gray-300 leading-relaxed font-mono whitespace-pre-wrap break-words">
+                        {error.message}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <button
+                      onClick={() => onFixError?.(error.code)}
+                      disabled={isFixingError}
+                      className={`flex-1 px-4 py-2 text-white text-[10px] font-bold uppercase tracking-wider rounded transition-colors ${
+                        isFixingError
+                          ? 'bg-gray-600 cursor-not-allowed opacity-50'
+                          : 'bg-blue-600 hover:bg-blue-700'
+                      }`}
+                    >
+                      {isFixingError ? '⏳ Fixing...' : '🔧 Fix Error'}
+                    </button>
+                    <button
+                      onClick={() => setShowCode(true)}
+                      disabled={isFixingError}
+                      className={`flex-1 px-4 py-2 text-gray-300 text-[10px] font-bold uppercase tracking-wider rounded border transition-colors ${
+                        isFixingError
+                          ? 'bg-white/5 border-white/5 cursor-not-allowed opacity-50'
+                          : 'bg-white/5 hover:bg-white/10 border-white/10'
+                      }`}
+                    >
+                      View Code
+                    </button>
+                    <button
+                      onClick={() => setShowCode(false)}
+                      disabled={isFixingError}
+                      className={`px-4 py-2 text-gray-400 text-[10px] font-bold uppercase tracking-wider rounded border transition-colors ${
+                        isFixingError
+                          ? 'bg-white/5 border-white/5 cursor-not-allowed opacity-50'
+                          : 'bg-white/5 hover:bg-white/10 border-white/10'
+                      }`}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
             <iframe
               ref={iframeRef}
               className="w-full h-full border-0"
               sandbox="allow-scripts allow-same-origin"
               title="Canvas Preview"
+              onLoad={() => {
+                // Prevent nested app loading - intercept link clicks and button navigation
+                try {
+                  const iframeDoc = iframeRef.current?.contentDocument;
+                  if (iframeDoc) {
+                    // Prevent all navigation
+                    iframeDoc.addEventListener('click', (e: any) => {
+                      if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.warn('[Canvas] Prevented nested navigation - click blocked');
+                      }
+                    }, true);
+                    
+                    // Also disable form submissions
+                    iframeDoc.addEventListener('submit', (e: any) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.warn('[Canvas] Prevented form submission in iframe');
+                    }, true);
+                  }
+                } catch (err) {
+                  console.log('[Canvas] Cross-origin iframe - native sandbox is handling security');
+                }
+              }}
             />
           </div>
         )}

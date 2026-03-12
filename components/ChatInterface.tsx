@@ -76,32 +76,102 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     setSelectedImages(prev => prev.filter((_, i) => i !== index));
   };
 
-  // Extract code blocks from message content
+  // Extract code blocks from message content (updated for markdown format)
   const extractCodeBlocks = (content: string) => {
-    console.log('[extractCodeBlocks] Input content length:', content.length);
-    console.log('[extractCodeBlocks] Content preview:', content.substring(0, 200));
-    
-    const codeBlockRegex = /```(?:jsx?|tsx?|html|css|javascript|typescript)?\n([\s\S]*?)```/g;
+    // Match ``` blocks with language identifier
+    const codeBlockRegex = /```(?:jsx|tsx|jsx?|js|typescript)?\s*\n([\s\S]*?)```/g;
     const blocks: Array<{type: string, code: string}> = [];
     let match;
     
     while ((match = codeBlockRegex.exec(content)) !== null) {
       const code = match[1].trim();
-      console.log('[extractCodeBlocks] Found code block, length:', code.length);
-      console.log('[extractCodeBlocks] Code preview:', code.substring(0, 100));
-      blocks.push({
-        type: 'code',
-        code: code
-      });
+      if (code.length > 0) {
+        blocks.push({
+          type: 'code',
+          code: code
+        });
+      }
     }
     
-    console.log('[extractCodeBlocks] Total blocks found:', blocks.length);
     return blocks;
   };
 
-  // Remove code blocks from message content for display
+  // Get message content without code blocks (for display as markdown)
   const getMessageContentWithoutCode = (content: string) => {
-    return content.replace(/```(?:jsx?|tsx?|html|css|javascript|typescript)?\n[\s\S]*?```/g, '').trim();
+    // Remove code blocks but keep the rest as markdown
+    return content
+      .replace(/```(?:jsx|tsx|jsx?|js|typescript)?\s*\n[\s\S]*?```\n?/g, '')
+      .replace(/<think>[\s\S]*?<\/think>/g, '')
+      .trim();
+  };
+
+  // Extract thinking blocks from message content
+  const extractThinkingBlock = (content: string) => {
+    const thinkRegex = /<think>([\s\S]*?)<\/think>/;
+    const match = content.match(thinkRegex);
+    return match ? match[1].trim() : null;
+  };
+
+  // Fix common AI code generation errors
+  const fixCodeErrors = (code: string): string => {
+    console.log('[fixCodeErrors] Input code length:', code.length);
+    let fixed = code;
+    
+    // Fix malformed key props: key-X or key=X without braces
+    fixed = fixed.replace(/\skey[=\-][^=\s{][^\s>]*/g, (match) => {
+      console.log('[fixCodeErrors] Fixed key prop:', match);
+      return ' key={project.id}';
+    });
+    
+    // Fix broken closing tags like </services"
+    fixed = fixed.replace(/<\/\w+[^>]*"/g, (match) => {
+      const tagName = match.match(/<\/(\w+)/)?.[1];
+      console.log('[fixCodeErrors] Fixed closing tag:', match, '→', `</${tagName}>`);
+      return tagName ? `</${tagName}>` : match;
+    });
+    
+    // Fix duplicate section tags - remove malformed ones
+    fixed = fixed.replace(/<section[^>]*\s+<section/g, (match) => {
+      console.log('[fixCodeErrors] Fixed duplicate section tags');
+      return '<section';
+    });
+    
+    // Fix orphaned closing section tags before opening tags
+    fixed = fixed.replace(/<\/section>\s*(?=\s*<section)/g, (match) => {
+      console.log('[fixCodeErrors] Removed orphaned section closing tag');
+      return '';
+    });
+    
+    // Fix broken section declarations mixed with services text
+    fixed = fixed.replace(/\/section>\s*services"\s*className/g, (match) => {
+      console.log('[fixCodeErrors] Fixed broken services section');
+      return '/section>\n\n      {/* Services Section */}\n      <section id="services" className';
+    });
+    
+    // Ensure proper spacing and formatting for section tags
+    fixed = fixed.replace(/<\/section>\s*{\/\*\s*Services/g, (match) => {
+      console.log('[fixCodeErrors] Fixed spacing around Services section');
+      return '</section>\n\n      {/* Services';
+    });
+    
+    // Remove any stray text between section tags
+    fixed = fixed.replace(/<\/section>\s+[a-zA-Z]+"\s*className/g, (match) => {
+      console.log('[fixCodeErrors] Removed stray text between sections');
+      return '</section>\n\n      <section';
+    });
+    
+    // Fix missing div closing tags (common issue)
+    const divCount = (fixed.match(/<div/g) || []).length;
+    const divCloseCount = (fixed.match(/<\/div>/g) || []).length;
+    if (divCount > divCloseCount) {
+      console.log('[fixCodeErrors] Found mismatched divs. Opening:', divCount, 'Closing:', divCloseCount);
+      // Add missing closing divs before closing the main container
+      const closingDivs = Array(divCount - divCloseCount).fill('      </div>').join('\n');
+      fixed = fixed.replace(/(\n    <\/div>\n  \);?\n\})/g, `\n    </div>\n${closingDivs}\n  );\n}`);
+    }
+    
+    console.log('[fixCodeErrors] Output code length:', fixed.length);
+    return fixed;
   };
 
   return (
@@ -145,15 +215,64 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   </div>
 
                   <div className="flex-1 space-y-4">
-                    {/* Main Message Content */}
+                    {/* Main Message Content - Rendered as Markdown Text */}
                     {getMessageContentWithoutCode(msg.content) && (
-                      <div className="text-gray-300 leading-relaxed text-base whitespace-pre-wrap">
-                        {getMessageContentWithoutCode(msg.content)}
+                      <div className="text-gray-300 leading-relaxed text-sm space-y-3">
+                        {getMessageContentWithoutCode(msg.content).split('\n').map((line, idx) => {
+                          // Handle markdown headers
+                          if (line.startsWith('### ')) {
+                            return (
+                              <h3 key={idx} className="text-base font-bold text-blue-400 mt-4 mb-2">
+                                {line.replace('### ', '').trim()}
+                              </h3>
+                            );
+                          }
+                          if (line.startsWith('## ')) {
+                            return (
+                              <h3 key={idx} className="text-lg font-bold text-blue-400 mt-4 mb-2">
+                                {line.replace('## ', '').trim()}
+                              </h3>
+                            );
+                          }
+                          if (line.startsWith('# ')) {
+                            return (
+                              <h2 key={idx} className="text-2xl font-bold text-white mt-6 mb-3">
+                                {line.replace('# ', '').trim()}
+                              </h2>
+                            );
+                          }
+                          // Handle lists
+                          if (line.startsWith('- ') || line.startsWith('* ')) {
+                            return (
+                              <li key={idx} className="ml-6 text-gray-300">
+                                {line.replace(/^[-*]\s/, '').trim()}
+                              </li>
+                            );
+                          }
+                          // Handle bold and italic text
+                          const parts = line.split(/(\*\*.*?\*\*|\*.*?\*)/);
+                          if (line.trim()) {
+                            return (
+                              <p key={idx} className="text-gray-300">
+                                {parts.map((part, i) => {
+                                  if (part.startsWith('**') && part.endsWith('**')) {
+                                    return <strong key={i} className="text-white font-semibold">{part.slice(2, -2)}</strong>;
+                                  }
+                                  if (part.startsWith('*') && part.endsWith('*')) {
+                                    return <em key={i} className="italic">{part.slice(1, -1)}</em>;
+                                  }
+                                  return part;
+                                })}
+                              </p>
+                            );
+                          }
+                          return null;
+                        }).filter(Boolean)}
                       </div>
                     )}
 
                     {/* Reasoning/Thinking Block */}
-                    {msg.reasoning && (
+                    {(msg.reasoning || extractThinkingBlock(msg.content)) && (
                       <details 
                         className="group cursor-pointer"
                         open={expandedReasoning === msg.id}
@@ -164,13 +283,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                           Thinking Process
                         </summary>
                         <div className="mt-3 p-3 bg-white/5 border border-white/10 rounded text-[12px] text-gray-400 leading-relaxed whitespace-pre-wrap">
-                          {msg.reasoning}
+                          {msg.reasoning || extractThinkingBlock(msg.content)}
                         </div>
                       </details>
                     )}
 
                     {/* Code Artifact Cards */}
-                    {extractCodeBlocks(msg.content).map((block, idx) => (
+                    {extractCodeBlocks(msg.content).map((block, idx) => {
+                      return (
                       <div 
                         key={idx}
                         onClick={() => {
@@ -201,7 +321,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                           </div>
                         </div>
                       </div>
-                    ))}
+                      );
+                    })}
 
                     {/* Citations */}
                     {msg.citations && msg.citations.length > 0 && (
