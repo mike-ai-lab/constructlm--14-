@@ -272,9 +272,19 @@ export const Canvas: React.FC<CanvasProps> = ({
   const canGoNext = currentVersionIndex < versions.length - 1;
 
   return (
-    <div className="w-full h-full min-h-screen md:min-h-0 bg-black md:border-l border-white/5 flex flex-col z-40 md:rounded-2xl overflow-hidden">
-      {/* Canvas Header */}
-      <div className="h-[60px] md:h-[72px] border-b border-white/5 flex items-center justify-between md:justify-end px-3 md:px-4 flex-shrink-0 overflow-x-auto bg-black">
+    <div 
+      className="w-full h-full min-h-screen md:min-h-0 bg-black md:border-l border-white/5 flex flex-col z-40 md:rounded-2xl overflow-hidden"
+      style={{
+        minHeight: 'calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom))'
+      }}
+    >
+      {/* Canvas Header - Safe area top */}
+      <div 
+        className="h-[60px] md:h-[72px] border-b border-white/5 flex items-center justify-between md:justify-end px-3 md:px-4 flex-shrink-0 overflow-x-auto bg-black"
+        style={{
+          paddingTop: 'max(0.75rem, env(safe-area-inset-top))'
+        }}
+      >
         {/* Mobile: Back button */}
         <button
           onClick={onClose}
@@ -398,8 +408,13 @@ export const Canvas: React.FC<CanvasProps> = ({
               spellCheck="false"
             />
 
-            {/* Footer with instructions and buttons */}
-            <div className="border-t border-white/5 px-3 md:px-6 py-3 bg-black/50 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2">
+            {/* Footer with instructions and buttons - Safe area bottom */}
+            <div 
+              className="border-t border-white/5 px-3 md:px-6 py-3 bg-black/50 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2"
+              style={{
+                paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))'
+              }}
+            >
               <div className="text-[9px] text-gray-500 font-bold uppercase tracking-[0.2em] hidden md:block">
                 💡 Edit code and render to see changes
               </div>
@@ -505,7 +520,10 @@ export const Canvas: React.FC<CanvasProps> = ({
             )}
             <iframe
               ref={iframeRef}
-              className="w-full h-full min-h-[calc(100vh-60px)] md:min-h-0 border-0 bg-white"
+              className="w-full h-full border-0 bg-white"
+              style={{
+                minHeight: 'calc(100vh - 60px - env(safe-area-inset-top) - env(safe-area-inset-bottom))'
+              }}
               sandbox="allow-scripts allow-same-origin"
               title="Canvas Preview"
               onLoad={() => {
