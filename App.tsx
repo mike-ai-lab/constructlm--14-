@@ -478,6 +478,12 @@ const App: React.FC = () => {
     resetFabInactivityTimer();
     fabDragging.current = true;
     fabHasMoved.current = false;
+    
+    // Disable transitions during drag for immediate response
+    if (fabElementRef.current) {
+      fabElementRef.current.style.transition = 'none';
+    }
+    
     const rect = e.currentTarget.getBoundingClientRect();
     fabOffset.current = {
       x: e.clientX - rect.left,
@@ -513,6 +519,13 @@ const App: React.FC = () => {
 
   const handleFabPointerUp = () => {
     fabDragging.current = false;
+    
+    // Restore smooth transitions for state-based changes (like minimizing)
+    if (fabElementRef.current) {
+      fabElementRef.current.style.transition = 'width 0.3s, height 0.3s, border-radius 0.3s, opacity 0.3s, background-color 0.3s';
+    }
+    
+    // Sync React state once dragging ends
     setFabPosition(fabPosRef.current);
   };
 
@@ -1351,12 +1364,13 @@ Respond: "Fixed [description]" + patches.`;
             onPointerUp={handleFabPointerUp}
             onPointerCancel={handleFabPointerUp}
             onClick={handleFabClick}
-            className={`md:hidden fixed bottom-0 left-0 z-[60] flex items-center justify-center bg-blue-600 text-white shadow-xl cursor-grab active:cursor-grabbing hover:bg-blue-700 pointer-events-auto select-none touch-none transition-all duration-300 ${
+            className={`md:hidden fixed bottom-0 left-0 z-[60] flex items-center justify-center bg-blue-600 text-white shadow-xl cursor-grab active:cursor-grabbing hover:bg-blue-700 pointer-events-auto select-none touch-none ${
               fabMinimized ? 'w-10 h-10 opacity-60' : 'w-14 h-14'
             } rounded-full`}
             style={{
               transform: `translate3d(${fabPosition.x}px, -${fabPosition.y}px, 0)`,
               willChange: 'transform',
+              transition: 'width 0.3s, height 0.3s, border-radius 0.3s, opacity 0.3s, background-color 0.3s',
               boxShadow: '0 4px 20px rgba(59, 130, 246, 0.4)'
             }}
           >
