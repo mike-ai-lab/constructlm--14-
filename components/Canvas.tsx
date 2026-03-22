@@ -273,17 +273,15 @@ export const Canvas: React.FC<CanvasProps> = ({
 
   return (
     <div 
-      className="w-full h-full min-h-screen md:min-h-0 bg-black md:border-l border-white/5 flex flex-col z-40 md:rounded-2xl overflow-hidden"
+      className="w-full h-full bg-black md:border-l border-white/5 flex flex-col z-40 md:rounded-2xl overflow-hidden shadow-2xl"
       style={{
-        minHeight: 'calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom))'
+        maxHeight: 'calc(100vh - 16px)',
+        height: '100%'
       }}
     >
-      {/* Canvas Header - Safe area top */}
+      {/* Canvas Header */}
       <div 
         className="h-[60px] md:h-[72px] border-b border-white/5 flex items-center justify-between md:justify-end px-3 md:px-4 flex-shrink-0 overflow-x-auto bg-black"
-        style={{
-          paddingTop: 'max(0.75rem, env(safe-area-inset-top))'
-        }}
       >
         {/* Mobile: Back button */}
         <button
@@ -408,12 +406,9 @@ export const Canvas: React.FC<CanvasProps> = ({
               spellCheck="false"
             />
 
-            {/* Footer with instructions and buttons - Safe area bottom */}
+            {/* Footer with instructions and buttons */}
             <div 
               className="border-t border-white/5 px-3 md:px-6 py-3 bg-black/50 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2"
-              style={{
-                paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))'
-              }}
             >
               <div className="text-[9px] text-gray-500 font-bold uppercase tracking-[0.2em] hidden md:block">
                 💡 Edit code and render to see changes
@@ -521,9 +516,6 @@ export const Canvas: React.FC<CanvasProps> = ({
             <iframe
               ref={iframeRef}
               className="w-full h-full border-0 bg-white"
-              style={{
-                minHeight: 'calc(100vh - 60px - env(safe-area-inset-top) - env(safe-area-inset-bottom))'
-              }}
               sandbox="allow-scripts allow-same-origin"
               title="Canvas Preview"
               onLoad={() => {
