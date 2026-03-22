@@ -77,6 +77,22 @@ export const Canvas: React.FC<CanvasProps> = ({
     const initRenderer = async () => {
       setRendererError('Loading renderer...');
       if (!window.ReactComponentRenderer) {
+        // Check if script is already in DOM
+        const existingScript = document.querySelector('script[src="/ReactComponentRenderer.enhanced.js"]');
+        if (existingScript) {
+          // Script is loading, wait for it
+          existingScript.addEventListener('load', () => {
+            rendererRef.current = new window.ReactComponentRenderer();
+            setRendererLoaded(true);
+            setRendererError('');
+            if (isOpen && code && code !== lastRenderedCodeRef.current) {
+              lastRenderedCodeRef.current = code;
+              handleRender(code);
+            }
+          });
+          return;
+        }
+        
         const script = document.createElement('script');
         script.src = '/ReactComponentRenderer.enhanced.js';
         script.onload = () => {
@@ -211,13 +227,9 @@ export const Canvas: React.FC<CanvasProps> = ({
   const handleSelectAll = () => {
     const textarea = document.querySelector('.canvas-code-editor') as HTMLTextAreaElement;
     if (textarea) {
+      textarea.focus();
       textarea.select();
       textarea.setSelectionRange(0, textarea.value.length);
-      // Also copy to clipboard for convenience
-      navigator.clipboard.writeText(editCode).then(() => {
-        setCopyFeedback(true);
-        setTimeout(() => setCopyFeedback(false), 2000);
-      });
     }
   };
 
@@ -361,32 +373,40 @@ export const Canvas: React.FC<CanvasProps> = ({
           {/* Divider */}
           <div className="w-px h-6 bg-white/10 mx-1" />
 
-          {/* Preview/Code Toggle */}
+          {/* Preview/Code Toggle - Simplified equal size buttons */}
           <button
             onClick={handleSwitchToPreview}
-            className={`h-10 px-4 text-[8px] font-bold uppercase tracking-[0.3em] border rounded-lg transition-all ${
+            className={`h-10 w-10 md:h-10 md:w-10 flex items-center justify-center rounded-lg border transition-all touch-manipulation ${
               !showCode
-                ? 'bg-blue-600 text-white border-blue-600 shadow-[0_0_20px_rgba(59,130,246,0.2)]'
+                ? 'bg-blue-600 text-white border-blue-600'
                 : 'bg-transparent text-gray-500 border-white/5 hover:bg-white/5'
             }`}
+            title="Preview"
           >
-            ▶ PREVIEW
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
           </button>
 
           <button
             onClick={() => setShowCode(true)}
-            className={`h-10 px-4 text-[8px] font-bold uppercase tracking-[0.3em] border rounded-lg transition-all ${
+            className={`h-10 w-10 md:h-10 md:w-10 flex items-center justify-center rounded-lg border transition-all touch-manipulation ${
               showCode
-                ? 'bg-blue-600 text-white border-blue-600 shadow-[0_0_20px_rgba(59,130,246,0.2)]'
+                ? 'bg-blue-600 text-white border-blue-600'
                 : 'bg-transparent text-gray-500 border-white/5 hover:bg-white/5'
             }`}
+            title="Code"
           >
-            {'{ } CODE'}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="16 18 22 12 16 6"/>
+              <polyline points="8 6 2 12 8 18"/>
+            </svg>
           </button>
 
           <button
             onClick={onClose}
-            className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-red-500/20 text-gray-500 hover:text-red-400 transition-all border border-white/5"
+            className="w-10 h-10 flex items-center justify-center rounded-lg hover:bg-red-500/20 text-gray-500 hover:text-red-400 transition-all border border-white/5 touch-manipulation"
+            title="Close"
           >
             <X size={18} />
           </button>
