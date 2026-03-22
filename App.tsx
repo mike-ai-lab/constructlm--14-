@@ -428,7 +428,7 @@ const App: React.FC = () => {
 
   const handleButtonTouchMove = (e: React.TouchEvent) => {
     if (!isDraggingButton) return;
-    e.preventDefault();
+    // Don't preventDefault here - it causes the warning
     const touch = e.touches[0];
     const newX = Math.max(0, Math.min(window.innerWidth - 56, touch.clientX - dragStart.x));
     const newY = Math.max(0, Math.min(window.innerHeight - 56, touch.clientY - dragStart.y));
@@ -437,11 +437,15 @@ const App: React.FC = () => {
     localStorage.setItem('floating_button_pos', JSON.stringify(newPos));
   };
 
-  const handleButtonTouchEnd = () => {
+  const handleButtonTouchEnd = (e: React.TouchEvent) => {
+    if (isDraggingButton) {
+      e.preventDefault(); // Prevent click event after drag
+      e.stopPropagation();
+    }
     setIsDraggingButton(false);
   };
 
-  const handleButtonClick = () => {
+  const handleButtonClick = (e: React.MouseEvent) => {
     if (!isDraggingButton) {
       setIsMobileSidebarOpen(true);
     }
@@ -1272,12 +1276,13 @@ Respond: "Fixed [description]" + patches.`;
             onTouchMove={handleButtonTouchMove}
             onTouchEnd={handleButtonTouchEnd}
             onClick={handleButtonClick}
-            className="md:hidden fixed z-30 w-14 h-14 bg-blue-600 hover:bg-blue-700 rounded-full shadow-lg flex items-center justify-center text-white transition-all touch-manipulation active:scale-95"
+            className="md:hidden fixed z-30 w-14 h-14 bg-blue-600 hover:bg-blue-700 rounded-full shadow-lg flex items-center justify-center text-white transition-all active:scale-95"
             style={{
               left: `${floatingButtonPos.x}px`,
               bottom: `${floatingButtonPos.y}px`,
               boxShadow: '0 4px 20px rgba(59, 130, 246, 0.4)',
-              cursor: isDraggingButton ? 'grabbing' : 'grab'
+              cursor: isDraggingButton ? 'grabbing' : 'grab',
+              touchAction: 'none' // Prevents scrolling while dragging
             }}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
