@@ -132,10 +132,20 @@ const App: React.FC = () => {
   const isResizingRef = useRef(false);
 
   // Draggable floating button state
-  const [fabPosition, setFabPosition] = useState({ x: 20, y: 20 });
+  const [fabPosition, setFabPosition] = useState(() => {
+    const saved = localStorage.getItem('fab_position');
+    return saved ? JSON.parse(saved) : { x: 20, y: window.innerHeight - 76 };
+  });
   const fabDragging = useRef(false);
   const fabHasMoved = useRef(false);
   const fabOffset = useRef({ x: 0, y: 0 });
+
+  // Save FAB position when it changes
+  useEffect(() => {
+    if (!fabDragging.current) {
+      localStorage.setItem('fab_position', JSON.stringify(fabPosition));
+    }
+  }, [fabPosition]);
 
   // CONSTANT: Define exact header height to sync sidebar and header
   const MOBILE_HEADER_HEIGHT = '60px';
@@ -433,10 +443,15 @@ const App: React.FC = () => {
     const vWidth = window.innerWidth;
     const vHeight = window.innerHeight;
     const size = 56;
+    
+    // Calculate position from bottom-left
     let newX = e.clientX - fabOffset.current.x;
-    let newY = e.clientY - fabOffset.current.y;
+    let newYFromTop = e.clientY - fabOffset.current.y;
+    let newY = vHeight - newYFromTop - size;
+    
     newX = Math.max(0, Math.min(newX, vWidth - size));
     newY = Math.max(0, Math.min(newY, vHeight - size));
+    
     if (Math.abs(newX - fabPosition.x) > 5 || Math.abs(newY - fabPosition.y) > 5) {
       fabHasMoved.current = true;
     }
@@ -1278,7 +1293,7 @@ Respond: "Fixed [description]" + patches.`;
             className="md:hidden fixed z-[60] flex items-center justify-center w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg cursor-grab active:cursor-grabbing hover:bg-blue-700 transition-colors pointer-events-auto select-none touch-none"
             style={{
               left: `${fabPosition.x}px`,
-              top: `${fabPosition.y}px`,
+              bottom: `${fabPosition.y}px`,
               boxShadow: '0 4px 20px rgba(59, 130, 246, 0.4)'
             }}
           >
