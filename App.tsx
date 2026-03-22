@@ -128,8 +128,6 @@ const App: React.FC = () => {
     const saved = localStorage.getItem('floating_button_pos');
     return saved ? JSON.parse(saved) : { x: 16, y: 128 };
   });
-  const [isDraggingButton, setIsDraggingButton] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [canvasCode, setCanvasCode] = useState<string | null>(null);
   const [canvasFilename, setCanvasFilename] = useState<string>('component.jsx');
   const [isCanvasOpen, setIsCanvasOpen] = useState(false);
@@ -419,10 +417,15 @@ const App: React.FC = () => {
   // Swipe gesture handling for mobile
   const minSwipeDistance = 50;
 
-  // Floating button drag handlers
+  // Floating button drag handlers - CLEAN IMPLEMENTATION
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const isDraggingRef = useRef(false);
-  const dragStartRef = useRef({ x: 0, y: 0 });
+  const dragStateRef = useRef({
+    isDragging: false,
+    startX: 0,
+    startY: 0,
+    initialButtonX: 0,
+    initialButtonY: 0
+  });
 
   useEffect(() => {
     const button = buttonRef.current;
@@ -430,25 +433,38 @@ const App: React.FC = () => {
 
     const handleTouchStart = (e: TouchEvent) => {
       const touch = e.touches[0];
-      isDraggingRef.current = true;
-      setIsDraggingButton(true);
-      dragStartRef.current = { x: touch.clientX - floatingButtonPos.x, y: touch.clientY - floatingButtonPos.y };
+      dragStateRef.current = {
+        isDragging: false,
+        startX: touch.clientX,
+        startY: touch.clientY,
+        initialButtonX: floatingButtonPos.x,
+        initialButtonY: floatingButtonPos.y
+      };
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      if (!isDraggingRef.current) return;
       e.preventDefault();
       const touch = e.touches[0];
-      const newX = Math.max(0, Math.min(window.innerWidth - 56, touch.clientX - dragStartRef.current.x));
-      const newY = Math.max(0, Math.min(window.innerHeight - 56, touch.clientY - dragStartRef.current.y));
-      const newPos = { x: newX, y: newY };
-      setFloatingButtonPos(newPos);
-      localStorage.setItem('floating_button_pos', JSON.stringify(newPos));
+      
+      const deltaX = touch.clientX - dragStateRef.current.startX;
+      const deltaY = touch.clientY - dragStateRef.current.startY;
+      
+      // Mark as dragging if moved more than 5px
+      if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+        dragStateRef.current.isDragging = true;
+      }
+      
+      const newX = Math.max(0, Math.min(window.innerWidth - 56, dragStateRef.current.initialButtonX + deltaX));
+      const newY = Math.max(0, Math.min(window.innerHeight - 56, dragStateRef.current.initialButtonY + deltaY));
+      
+      setFloatingButtonPos({ x: newX, y: newY });
     };
 
     const handleTouchEnd = () => {
-      isDraggingRef.current = false;
-      setIsDraggingButton(false);
+      if (dragStateRef.current.isDragging) {
+        localStorage.setItem('floating_button_pos', JSON.stringify(floatingButtonPos));
+      }
+      dragStateRef.current.isDragging = false;
     };
 
     button.addEventListener('touchstart', handleTouchStart, { passive: true });
@@ -463,7 +479,7 @@ const App: React.FC = () => {
   }, [floatingButtonPos]);
 
   const handleButtonClick = () => {
-    if (!isDraggingButton) {
+    if (!dragStateRef.current.isDragging) {
       setIsMobileSidebarOpen(true);
     }
   };
@@ -1293,7 +1309,7 @@ Respond: "Fixed [description]" + patches.`;
               left: `${floatingButtonPos.x}px`,
               bottom: `${floatingButtonPos.y}px`,
               boxShadow: '0 4px 20px rgba(59, 130, 246, 0.4)',
-              cursor: isDraggingButton ? 'grabbing' : 'grab'
+              touchAction: 'none'
             }}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
