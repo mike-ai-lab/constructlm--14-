@@ -18,6 +18,7 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({ file, onClos
   const [pdfScale, setPdfScale] = useState(1.0);
   const [loading, setLoading] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const renderTaskRef = useRef<any>(null);
 
   const isPdf = file?.type === 'application/pdf';
   const isMarkdown = file?.name.endsWith('.md');
@@ -69,8 +70,15 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({ file, onClos
 
   useEffect(() => {
     if (!pdfDocument || !canvasRef.current) return;
+    
     const renderPage = async () => {
       try {
+        // Cancel any ongoing render task
+        if (renderTaskRef.current) {
+          renderTaskRef.current.cancel();
+          renderTaskRef.current = null;
+        }
+        
         setLoading(true);
         const page = await pdfDocument.getPage(pageNumber);
         
@@ -86,18 +94,36 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({ file, onClos
         canvas.style.width = Math.floor(viewport.width) + 'px';
         canvas.style.height = Math.floor(viewport.height) + 'px';
         
-        await page.render({ 
+        const renderTask = page.render({ 
           canvasContext: context, 
           viewport: viewport, 
           transform: outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null 
-        }).promise;
+        });
+        
+        renderTaskRef.current = renderTask;
+        
+        await renderTask.promise;
+        renderTaskRef.current = null;
         setLoading(false);
-      } catch (error) { 
-        console.error('PDF render error:', error);
+      } catch (error: any) { 
+        if (error?.name === 'RenderingCancelledException') {
+          console.log('PDF render cancelled (expected during zoom/page change)');
+        } else {
+          console.error('PDF render error:', error);
+        }
         setLoading(false); 
       }
     };
+    
     renderPage();
+    
+    // Cleanup function to cancel render on unmount or re-render
+    return () => {
+      if (renderTaskRef.current) {
+        renderTaskRef.current.cancel();
+        renderTaskRef.current = null;
+      }
+    };
   }, [pdfDocument, pageNumber, pdfScale]);
 
   if (!file) return null;
@@ -151,7 +177,7 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({ file, onClos
                 {loading && <div className="absolute inset-0 flex items-center justify-center bg-white/40 dark:bg-black/40 text-[10px] uppercase tracking-widest font-bold z-10">Rendering...</div>}
                 <canvas 
                   ref={canvasRef} 
-                  className="shadow-lg rounded-sm border border-slate-200 dark:border-transparent max-w-full h-auto" 
+                  className="shadow-lg rounded-sm border border-slate-200 dark:border-transparent" 
                 />
               </div>
             ) : (
