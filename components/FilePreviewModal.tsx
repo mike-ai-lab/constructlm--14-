@@ -64,22 +64,36 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({ file, onClos
       try {
         setLoading(true);
         const page = await pdfDocument.getPage(pageNumber);
-        const viewport = page.getViewport({ scale: pdfScale });
+        
+        // Get container width for responsive scaling
+        const container = canvasRef.current?.parentElement;
+        const containerWidth = container ? container.clientWidth - 32 : window.innerWidth - 32; // Account for padding
+        
+        // Calculate scale to fit container
+        const baseViewport = page.getViewport({ scale: 1.0 });
+        const scale = Math.min(pdfScale, containerWidth / baseViewport.width);
+        
+        const viewport = page.getViewport({ scale });
         const canvas = canvasRef.current;
         const context = canvas?.getContext('2d');
         if (!canvas || !context) return;
+        
         const outputScale = window.devicePixelRatio || 1;
         canvas.width = Math.floor(viewport.width * outputScale);
         canvas.height = Math.floor(viewport.height * outputScale);
         canvas.style.width = Math.floor(viewport.width) + 'px';
         canvas.style.height = Math.floor(viewport.height) + 'px';
+        
         await page.render({ 
           canvasContext: context, 
           viewport: viewport, 
           transform: outputScale !== 1 ? [outputScale, 0, 0, outputScale, 0, 0] : null 
         }).promise;
         setLoading(false);
-      } catch (error) { setLoading(false); }
+      } catch (error) { 
+        console.error('PDF render error:', error);
+        setLoading(false); 
+      }
     };
     renderPage();
   }, [pdfDocument, pageNumber, pdfScale]);
@@ -92,57 +106,66 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({ file, onClos
       <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-50 animate-fadeIn" onClick={onClose} />
       
       {/* Modal Container */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 pointer-events-none">
         <div 
-          className="bg-white dark:bg-[#1a1a1d] rounded-xl shadow-2xl flex flex-col pointer-events-auto animate-slideUp overflow-hidden max-h-[92vh] w-auto max-w-[95vw] border border-slate-200 dark:border-white/5"
+          className="bg-white dark:bg-[#1a1a1d] rounded-xl shadow-2xl flex flex-col pointer-events-auto animate-slideUp overflow-hidden w-full h-full sm:h-auto sm:max-h-[92vh] sm:w-auto sm:max-w-[95vw] border border-slate-200 dark:border-white/5"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Minimalist One-Line Header */}
-          <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100 dark:border-white/5 gap-6">
-            <div className="flex items-center gap-3 min-w-0">
-              <h2 className="text-xs font-semibold text-gray-800 dark:text-gray-200 truncate max-w-[180px]">
+          <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100 dark:border-white/5 gap-2 sm:gap-6 shrink-0">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+              <h2 className="text-[10px] sm:text-xs font-semibold text-gray-800 dark:text-gray-200 truncate max-w-[120px] sm:max-w-[180px]">
                 {file.name}
               </h2>
               {isPdf && numPages > 0 && (
-                <span className="text-[10px] bg-slate-100 dark:bg-white/10 px-1.5 py-0.5 rounded text-gray-500 font-medium">
+                <span className="text-[9px] sm:text-[10px] bg-slate-100 dark:bg-white/10 px-1.5 py-0.5 rounded text-gray-500 font-medium whitespace-nowrap">
                   {pageNumber} / {numPages}
                 </span>
               )}
             </div>
 
             {/* Combined Controls & Actions */}
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
               {isPdf && numPages > 1 && (
-                <div className="flex items-center mr-1 bg-slate-50 dark:bg-white/5 rounded-md p-0.5">
-                  <button onClick={() => setPageNumber(p => Math.max(1, p - 1))} disabled={pageNumber <= 1} className="p-1 hover:bg-white dark:hover:bg-white/10 rounded disabled:opacity-20 transition-all"><ChevronLeft size={14}/></button>
-                  <button onClick={() => setPageNumber(p => Math.min(numPages, p + 1))} disabled={pageNumber >= numPages} className="p-1 hover:bg-white dark:hover:bg-white/10 rounded disabled:opacity-20 transition-all"><ChevronRight size={14}/></button>
+                <div className="flex items-center mr-0.5 sm:mr-1 bg-slate-50 dark:bg-white/5 rounded-md p-0.5">
+                  <button onClick={() => setPageNumber(p => Math.max(1, p - 1))} disabled={pageNumber <= 1} className="p-1 hover:bg-white dark:hover:bg-white/10 rounded disabled:opacity-20 transition-all touch-manipulation"><ChevronLeft size={13} className="sm:w-[14px] sm:h-[14px]"/></button>
+                  <button onClick={() => setPageNumber(p => Math.min(numPages, p + 1))} disabled={pageNumber >= numPages} className="p-1 hover:bg-white dark:hover:bg-white/10 rounded disabled:opacity-20 transition-all touch-manipulation"><ChevronRight size={13} className="sm:w-[14px] sm:h-[14px]"/></button>
                 </div>
               )}
-              <button onClick={handleZoomOut} className="p-1.5 hover:bg-slate-100 dark:hover:bg-white/10 rounded-md transition-colors" title="Zoom Out"><ZoomOut size={14}/></button>
-              <button onClick={handleZoomIn} className="p-1.5 hover:bg-slate-100 dark:hover:bg-white/10 rounded-md transition-colors" title="Zoom In"><ZoomIn size={14}/></button>
+              <button onClick={handleZoomOut} className="p-1 sm:p-1.5 hover:bg-slate-100 dark:hover:bg-white/10 rounded-md transition-colors touch-manipulation" title="Zoom Out"><ZoomOut size={13} className="sm:w-[14px] sm:h-[14px]"/></button>
+              <button onClick={handleZoomIn} className="p-1 sm:p-1.5 hover:bg-slate-100 dark:hover:bg-white/10 rounded-md transition-colors touch-manipulation" title="Zoom In"><ZoomIn size={13} className="sm:w-[14px] sm:h-[14px]"/></button>
               
-              <div className="w-px h-4 bg-slate-200 dark:bg-white/10 mx-1" />
+              <div className="w-px h-3 sm:h-4 bg-slate-200 dark:bg-white/10 mx-0.5 sm:mx-1" />
               
-              <button onClick={handleDownload} className="p-1.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-md transition-colors" title="Download File"><Download size={15}/></button>
-              <button onClick={onClose} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors" title="Close"><X size={16}/></button>
+              <button onClick={handleDownload} className="p-1 sm:p-1.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-md transition-colors touch-manipulation" title="Download File"><Download size={14} className="sm:w-[15px] sm:h-[15px]"/></button>
+              <button onClick={onClose} className="p-1 sm:p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors touch-manipulation" title="Close"><X size={15} className="sm:w-4 sm:h-4"/></button>
             </div>
           </div>
 
           {/* Adaptive Content Area */}
           <div className="flex-1 overflow-auto bg-gray-50/30 dark:bg-[#0d0d0f]">
             {isPdf && file.fileData ? (
-              <div className="flex justify-center p-4">
+              <div className="flex justify-center items-start p-2 sm:p-4 min-h-full">
                 {loading && <div className="absolute inset-0 flex items-center justify-center bg-white/40 dark:bg-black/40 text-[10px] uppercase tracking-widest font-bold">Rendering...</div>}
-                <canvas ref={canvasRef} className="shadow-lg rounded-sm border border-slate-200 dark:border-transparent" style={{ maxWidth: '100%', height: 'auto' }} />
+                <canvas 
+                  ref={canvasRef} 
+                  className="shadow-lg rounded-sm border border-slate-200 dark:border-transparent max-w-full" 
+                  style={{ 
+                    width: '100%',
+                    maxWidth: '100%',
+                    height: 'auto',
+                    display: 'block'
+                  }} 
+                />
               </div>
             ) : (
-              <div className="p-6 min-w-[320px] sm:min-w-[600px] max-w-4xl mx-auto">
+              <div className="p-4 sm:p-6 min-w-0 max-w-full sm:min-w-[600px] sm:max-w-4xl mx-auto">
                 {isMarkdown && file.content ? (
                   <div className="prose prose-sm dark:prose-invert max-w-none" style={{ fontSize: `${textScale}rem` }}>
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{file.content}</ReactMarkdown>
                   </div>
                 ) : (
-                  <pre className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap font-mono text-[11px] leading-relaxed" style={{ fontSize: `${textScale}rem` }}>
+                  <pre className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap font-mono text-[10px] sm:text-[11px] leading-relaxed overflow-x-auto" style={{ fontSize: `${textScale}rem` }}>
                     {file.content || "No content available for preview."}
                   </pre>
                 )}
