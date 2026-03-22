@@ -1197,10 +1197,7 @@ Respond: "Fixed [description]" + patches.`;
                     {aiModel === 'ollama' ? `Ollama ${ollamaMode === 'cloud' ? '(Cloud)' : '(Local)'}` : aiModel}
                   </span>
                   <span className="text-[9px]">
-                    {(() => {
-                      console.log('[Header] Rendering model name:', selectedModel, 'aiModel:', aiModel);
-                      return selectedModel;
-                    })()}
+                    {selectedModel}
                   </span>
                 </div>
                 <span className="text-[8px]">▼</span>
