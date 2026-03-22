@@ -338,7 +338,6 @@ const App: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm("Remove this source from index?")) return;
     await VectorDB.deleteFile(id);
     setFiles(prev => prev.filter(f => f.id !== id));
   };

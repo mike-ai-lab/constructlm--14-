@@ -280,7 +280,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                     <div className="flex-1 min-w-0 mt-2">
                       <div className="flex justify-between items-start mb-1">
-                        <div className="font-semibold text-[10px] truncate uppercase max-w-[120px] text-gray-900 dark:text-white" title={file.name}>
+                        <div className="font-semibold text-[10px] truncate uppercase max-w-[100px] sm:max-w-[120px] text-gray-900 dark:text-white" title={file.name}>
                           {file.name}
                         </div>
                         <div className="flex gap-1">
@@ -290,7 +290,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                                 e.stopPropagation();
                                 onPreviewFile(file);
                               }}
-                              className="opacity-0 group-hover:opacity-100 text-[10px] hover:bg-slate-200 dark:hover:bg-white/10 p-1 rounded transition-all text-gray-600 dark:text-gray-400 min-h-[32px] min-w-[32px] touch-manipulation"
+                              className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 text-[10px] hover:bg-slate-200 dark:hover:bg-white/10 p-1 rounded transition-all text-blue-600 dark:text-blue-400 min-h-[32px] min-w-[32px] touch-manipulation"
                               title="Preview"
                             >
                               <Eye size={12} />
@@ -301,7 +301,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                               e.stopPropagation();
                               onDelete(file.id);
                             }}
-                            className="opacity-0 group-hover:opacity-100 text-[10px] text-red-500 hover:text-red-400 px-1 min-h-[32px] touch-manipulation"
+                            className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 text-[10px] text-red-500 hover:text-red-400 px-1 min-h-[32px] touch-manipulation"
                           >
                             Del
                           </button>
