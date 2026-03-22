@@ -182,6 +182,12 @@ export const Canvas: React.FC<CanvasProps> = ({
   };
 
   const handleSwitchToPreview = async () => {
+    // If already in preview mode, just refresh render
+    if (!showCode) {
+      handleRender(editCode);
+      return;
+    }
+    
     // Save as new version if code has changed
     const currentVersionCode = versions[currentVersionIndex]?.code || '';
     if (editCode !== currentVersionCode) {
@@ -192,7 +198,10 @@ export const Canvas: React.FC<CanvasProps> = ({
       setCurrentVersionIndex(newVersions.length - 1);
     }
     
-    // First render the code, THEN switch to preview
+    // Switch to preview immediately
+    setShowCode(false);
+    
+    // Then render the code
     if (rendererRef.current && iframeRef.current) {
       try {
         await rendererRef.current.renderToIframe(iframeRef.current, editCode);
@@ -208,7 +217,6 @@ export const Canvas: React.FC<CanvasProps> = ({
         hadErrorRef.current = true;
       }
     }
-    setShowCode(false);
   };
 
   const handleRefreshRender = () => {
@@ -342,16 +350,14 @@ export const Canvas: React.FC<CanvasProps> = ({
 
           {/* Action Buttons */}
           <button
-            onClick={handleRefreshRender}
-            disabled={isRendering}
-            className={`h-11 w-11 md:h-10 md:w-10 flex items-center justify-center rounded-lg border transition-all touch-manipulation ${
-              isRendering
-                ? 'border-white/5 text-gray-700 cursor-not-allowed opacity-50'
-                : 'border-white/5 text-gray-500 hover:bg-white/5 hover:text-white'
-            }`}
-            title="Refresh render"
+            onClick={handleSelectAll}
+            className="h-11 w-11 md:h-10 md:w-10 flex items-center justify-center rounded-lg border border-white/5 text-gray-500 hover:bg-white/5 hover:text-white transition-all touch-manipulation"
+            title="Select all code"
           >
-            <RotateCcw size={18} className="md:w-4 md:h-4" />
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="md:w-4 md:h-4">
+              <path d="M9 11l3 3L22 4"/>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+            </svg>
           </button>
 
           <button
@@ -368,6 +374,19 @@ export const Canvas: React.FC<CanvasProps> = ({
             title="Download code"
           >
             <Download size={18} className="md:w-4 md:h-4" />
+          </button>
+
+          <button
+            onClick={handleRefreshRender}
+            disabled={isRendering}
+            className={`h-11 w-11 md:h-10 md:w-10 flex items-center justify-center rounded-lg border transition-all touch-manipulation ${
+              isRendering
+                ? 'border-white/5 text-gray-700 cursor-not-allowed opacity-50'
+                : 'border-white/5 text-gray-500 hover:bg-white/5 hover:text-white'
+            }`}
+            title="Refresh render"
+          >
+            <RotateCcw size={18} className="md:w-4 md:h-4" />
           </button>
 
           {/* Divider */}
@@ -416,46 +435,19 @@ export const Canvas: React.FC<CanvasProps> = ({
       {/* Canvas Content */}
       <div className="flex-1 overflow-hidden flex flex-col">
         {showCode ? (
-          // Code Editor View
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <textarea
-              value={editCode}
-              onChange={(e) => setEditCode(e.target.value)}
-              className="canvas-code-editor flex-1 bg-[#0a0a0c] text-gray-300 font-mono text-[13px] p-6 resize-none focus:outline-none border-none overflow-y-auto"
-              placeholder="Edit your code here..."
-              spellCheck="false"
-            />
-
-            {/* Footer with instructions and buttons */}
-            <div 
-              className="border-t border-white/5 px-3 md:px-6 py-3 bg-black/50 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2"
-            >
-              <div className="text-[9px] text-gray-500 font-bold uppercase tracking-[0.2em] hidden md:block">
-                💡 Edit code and render to see changes
-              </div>
-              <div className="flex gap-2 flex-1 md:flex-initial">
-                <button
-                  onClick={handleSelectAll}
-                  className="flex-1 md:flex-initial px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-[9px] font-bold uppercase tracking-wider rounded transition-colors touch-manipulation"
-                  title="Select all code and copy to clipboard"
-                >
-                  Select All
-                </button>
-                <button
-                  onClick={handleSwitchToPreview}
-                  className="flex-1 md:flex-initial px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[9px] font-bold uppercase tracking-wider rounded transition-colors touch-manipulation"
-                  title="Render your edited code"
-                >
-                  ▶ Render & Preview
-                </button>
-              </div>
-            </div>
-          </div>
+          // Code Editor View - No footer, just the textarea
+          <textarea
+            value={editCode}
+            onChange={(e) => setEditCode(e.target.value)}
+            className="canvas-code-editor flex-1 bg-[#0a0a0c] text-gray-300 font-mono text-[13px] p-6 resize-none focus:outline-none border-none overflow-y-auto"
+            placeholder="Edit your code here..."
+            spellCheck="false"
+          />
         ) : (
           // Preview View
           <div className="flex-1 overflow-hidden relative">
-            {/* Renderer Error - Visible on screen */}
-            {rendererError && (
+            {/* Renderer Error - Only show actual errors, not loading state */}
+            {rendererError && !rendererError.includes('Loading') && (
               <div className="absolute inset-0 bg-red-900 flex items-center justify-center z-50 p-4">
                 <div className="text-white text-center">
                   <div className="text-2xl mb-4">⚠️</div>
