@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useRef, lazy, Suspense } from 'react';
+﻿import React, { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { ChatInterface } from './components/ChatInterface';
 import { SettingsModal } from './components/SettingsModal';
@@ -131,16 +131,23 @@ const App: React.FC = () => {
   const [isFixingError, setIsFixingError] = useState(false);
   const isResizingRef = useRef(false);
 
-  // Draggable floating button state
+  // Draggable floating button state - HIGH PERFORMANCE VERSION
+  const fabPosRef = useRef({ x: 20, y: 20 });
   const [fabPosition, setFabPosition] = useState(() => {
     const saved = localStorage.getItem('fab_position');
-    return saved ? JSON.parse(saved) : { x: 20, y: window.innerHeight - 76 };
+    if (saved) {
+      const pos = JSON.parse(saved);
+      fabPosRef.current = pos;
+      return pos;
+    }
+    return { x: 20, y: 20 };
   });
   const [fabMinimized, setFabMinimized] = useState(false);
   const fabDragging = useRef(false);
   const fabHasMoved = useRef(false);
   const fabOffset = useRef({ x: 0, y: 0 });
   const fabInactivityTimer = useRef<NodeJS.Timeout | null>(null);
+  const fabElementRef = useRef<HTMLDivElement>(null);
 
   // Save FAB position when it changes
   useEffect(() => {
@@ -150,15 +157,15 @@ const App: React.FC = () => {
   }, [fabPosition]);
 
   // Auto-minimize FAB after 1 minute of inactivity
-  const resetFabInactivityTimer = () => {
+  const resetFabInactivityTimer = useCallback(() => {
     setFabMinimized(false);
     if (fabInactivityTimer.current) {
       clearTimeout(fabInactivityTimer.current);
     }
     fabInactivityTimer.current = setTimeout(() => {
       setFabMinimized(true);
-    }, 60000); // 1 minute
-  };
+    }, 60000);
+  }, []);
 
   // Start inactivity timer on mount
   useEffect(() => {
@@ -168,7 +175,7 @@ const App: React.FC = () => {
         clearTimeout(fabInactivityTimer.current);
       }
     };
-  }, []);
+  }, [resetFabInactivityTimer]);
 
   // Reset timer on any user interaction
   useEffect(() => {
@@ -185,7 +192,7 @@ const App: React.FC = () => {
       window.removeEventListener('mousedown', handleUserActivity);
       window.removeEventListener('keydown', handleUserActivity);
     };
-  }, []);
+  }, [resetFabInactivityTimer]);
 
   // CONSTANT: Define exact header height to sync sidebar and header
   const MOBILE_HEADER_HEIGHT = '60px';
@@ -466,46 +473,57 @@ const App: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  // Draggable FAB handlers
+  // Draggable FAB handlers - HIGH PERFORMANCE VERSION
   const handleFabPointerDown = (e: React.PointerEvent) => {
+    resetFabInactivityTimer();
     fabDragging.current = true;
     fabHasMoved.current = false;
     const rect = e.currentTarget.getBoundingClientRect();
     fabOffset.current = {
       x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
+      y: window.innerHeight - e.clientY - (window.innerHeight - rect.bottom),
     };
     e.currentTarget.setPointerCapture(e.pointerId);
   };
 
   const handleFabPointerMove = (e: React.PointerEvent) => {
     if (!fabDragging.current) return;
+    resetFabInactivityTimer();
     const vWidth = window.innerWidth;
     const vHeight = window.innerHeight;
     const size = fabMinimized ? 40 : 56;
     
-    // Calculate position from bottom-left
     let newX = e.clientX - fabOffset.current.x;
-    let newYFromTop = e.clientY - fabOffset.current.y;
-    let newY = vHeight - newYFromTop - size;
+    let newYFromBottom = vHeight - e.clientY - fabOffset.current.y;
     
     newX = Math.max(0, Math.min(newX, vWidth - size));
-    newY = Math.max(0, Math.min(newY, vHeight - size));
+    newYFromBottom = Math.max(0, Math.min(newYFromBottom, vHeight - size));
     
-    if (Math.abs(newX - fabPosition.x) > 5 || Math.abs(newY - fabPosition.y) > 5) {
+    if (Math.abs(newX - fabPosRef.current.x) > 2 || Math.abs(newYFromBottom - fabPosRef.current.y) > 2) {
       fabHasMoved.current = true;
     }
-    setFabPosition({ x: newX, y: newY });
+    
+    fabPosRef.current = { x: newX, y: newYFromBottom };
+    
+    // Direct DOM manipulation for lag-free dragging
+    if (fabElementRef.current) {
+      fabElementRef.current.style.transform = `translate3d(${newX}px, -${newYFromBottom}px, 0)`;
+    }
   };
 
   const handleFabPointerUp = () => {
     fabDragging.current = false;
+    setFabPosition(fabPosRef.current);
   };
 
   const handleFabClick = () => {
+    resetFabInactivityTimer();
     if (!fabHasMoved.current) {
-      setIsMobileSidebarOpen(true);
-      resetFabInactivityTimer();
+      if (fabMinimized) {
+        setFabMinimized(false);
+      } else {
+        setIsMobileSidebarOpen(true);
+      }
     }
   };
 
@@ -1327,16 +1345,17 @@ Respond: "Fixed [description]" + patches.`;
         {/* Draggable Floating Action Button - Mobile Only */}
         {!isMobileSidebarOpen && !isCanvasOpen && (
           <div
+            ref={fabElementRef}
             onPointerDown={handleFabPointerDown}
             onPointerMove={handleFabPointerMove}
             onPointerUp={handleFabPointerUp}
             onClick={handleFabClick}
-            className={`md:hidden fixed z-[60] flex items-center justify-center bg-blue-600 text-white rounded-full shadow-lg cursor-grab active:cursor-grabbing hover:bg-blue-700 pointer-events-auto select-none touch-none transition-all duration-300 ${
-              fabMinimized ? 'w-10 h-10' : 'w-14 h-14'
-            }`}
+            className={`md:hidden fixed bottom-0 left-0 z-[60] flex items-center justify-center bg-blue-600 text-white shadow-xl cursor-grab active:cursor-grabbing hover:bg-blue-700 pointer-events-auto select-none touch-none transition-all duration-300 ${
+              fabMinimized ? 'w-10 h-10 opacity-60' : 'w-14 h-14'
+            } rounded-full`}
             style={{
-              left: `${fabPosition.x}px`,
-              bottom: `${fabPosition.y}px`,
+              transform: `translate3d(${fabPosition.x}px, -${fabPosition.y}px, 0)`,
+              willChange: 'transform',
               boxShadow: '0 4px 20px rgba(59, 130, 246, 0.4)'
             }}
           >
