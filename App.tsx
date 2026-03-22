@@ -136,9 +136,11 @@ const App: React.FC = () => {
     const saved = localStorage.getItem('fab_position');
     return saved ? JSON.parse(saved) : { x: 20, y: window.innerHeight - 76 };
   });
+  const [fabMinimized, setFabMinimized] = useState(false);
   const fabDragging = useRef(false);
   const fabHasMoved = useRef(false);
   const fabOffset = useRef({ x: 0, y: 0 });
+  const fabInactivityTimer = useRef<NodeJS.Timeout | null>(null);
 
   // Save FAB position when it changes
   useEffect(() => {
@@ -146,6 +148,44 @@ const App: React.FC = () => {
       localStorage.setItem('fab_position', JSON.stringify(fabPosition));
     }
   }, [fabPosition]);
+
+  // Auto-minimize FAB after 1 minute of inactivity
+  const resetFabInactivityTimer = () => {
+    setFabMinimized(false);
+    if (fabInactivityTimer.current) {
+      clearTimeout(fabInactivityTimer.current);
+    }
+    fabInactivityTimer.current = setTimeout(() => {
+      setFabMinimized(true);
+    }, 60000); // 1 minute
+  };
+
+  // Start inactivity timer on mount
+  useEffect(() => {
+    resetFabInactivityTimer();
+    return () => {
+      if (fabInactivityTimer.current) {
+        clearTimeout(fabInactivityTimer.current);
+      }
+    };
+  }, []);
+
+  // Reset timer on any user interaction
+  useEffect(() => {
+    const handleUserActivity = () => {
+      resetFabInactivityTimer();
+    };
+    
+    window.addEventListener('touchstart', handleUserActivity);
+    window.addEventListener('mousedown', handleUserActivity);
+    window.addEventListener('keydown', handleUserActivity);
+    
+    return () => {
+      window.removeEventListener('touchstart', handleUserActivity);
+      window.removeEventListener('mousedown', handleUserActivity);
+      window.removeEventListener('keydown', handleUserActivity);
+    };
+  }, []);
 
   // CONSTANT: Define exact header height to sync sidebar and header
   const MOBILE_HEADER_HEIGHT = '60px';
@@ -465,6 +505,7 @@ const App: React.FC = () => {
   const handleFabClick = () => {
     if (!fabHasMoved.current) {
       setIsMobileSidebarOpen(true);
+      resetFabInactivityTimer();
     }
   };
 
@@ -1290,14 +1331,24 @@ Respond: "Fixed [description]" + patches.`;
             onPointerMove={handleFabPointerMove}
             onPointerUp={handleFabPointerUp}
             onClick={handleFabClick}
-            className="md:hidden fixed z-[60] flex items-center justify-center w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg cursor-grab active:cursor-grabbing hover:bg-blue-700 transition-colors pointer-events-auto select-none touch-none"
+            className={`md:hidden fixed z-[60] flex items-center justify-center bg-blue-600 text-white rounded-full shadow-lg cursor-grab active:cursor-grabbing hover:bg-blue-700 pointer-events-auto select-none touch-none transition-all duration-300 ${
+              fabMinimized ? 'w-10 h-10' : 'w-14 h-14'
+            }`}
             style={{
               left: `${fabPosition.x}px`,
               bottom: `${fabPosition.y}px`,
               boxShadow: '0 4px 20px rgba(59, 130, 246, 0.4)'
             }}
           >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg 
+              width={fabMinimized ? "16" : "24"} 
+              height={fabMinimized ? "16" : "24"} 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="2"
+              className="transition-all duration-300"
+            >
               <line x1="3" y1="12" x2="21" y2="12"/>
               <line x1="3" y1="6" x2="21" y2="6"/>
               <line x1="3" y1="18" x2="21" y2="18"/>
