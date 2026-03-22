@@ -421,6 +421,8 @@ const App: React.FC = () => {
 
   // Floating button drag handlers
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const isDraggingRef = useRef(false);
+  const dragStartRef = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     const button = buttonRef.current;
@@ -428,22 +430,24 @@ const App: React.FC = () => {
 
     const handleTouchStart = (e: TouchEvent) => {
       const touch = e.touches[0];
+      isDraggingRef.current = true;
       setIsDraggingButton(true);
-      setDragStart({ x: touch.clientX - floatingButtonPos.x, y: touch.clientY - floatingButtonPos.y });
+      dragStartRef.current = { x: touch.clientX - floatingButtonPos.x, y: touch.clientY - floatingButtonPos.y };
     };
 
     const handleTouchMove = (e: TouchEvent) => {
-      if (!isDraggingButton) return;
+      if (!isDraggingRef.current) return;
       e.preventDefault();
       const touch = e.touches[0];
-      const newX = Math.max(0, Math.min(window.innerWidth - 56, touch.clientX - dragStart.x));
-      const newY = Math.max(0, Math.min(window.innerHeight - 56, touch.clientY - dragStart.y));
+      const newX = Math.max(0, Math.min(window.innerWidth - 56, touch.clientX - dragStartRef.current.x));
+      const newY = Math.max(0, Math.min(window.innerHeight - 56, touch.clientY - dragStartRef.current.y));
       const newPos = { x: newX, y: newY };
       setFloatingButtonPos(newPos);
       localStorage.setItem('floating_button_pos', JSON.stringify(newPos));
     };
 
     const handleTouchEnd = () => {
+      isDraggingRef.current = false;
       setIsDraggingButton(false);
     };
 
@@ -456,7 +460,7 @@ const App: React.FC = () => {
       button.removeEventListener('touchmove', handleTouchMove);
       button.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [isDraggingButton, floatingButtonPos, dragStart]);
+  }, [floatingButtonPos]);
 
   const handleButtonClick = () => {
     if (!isDraggingButton) {
