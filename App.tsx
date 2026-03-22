@@ -124,6 +124,12 @@ const App: React.FC = () => {
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
+  const [floatingButtonPos, setFloatingButtonPos] = useState(() => {
+    const saved = localStorage.getItem('floating_button_pos');
+    return saved ? JSON.parse(saved) : { x: 16, y: 128 };
+  });
+  const [isDraggingButton, setIsDraggingButton] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [canvasCode, setCanvasCode] = useState<string | null>(null);
   const [canvasFilename, setCanvasFilename] = useState<string>('component.jsx');
   const [isCanvasOpen, setIsCanvasOpen] = useState(false);
@@ -412,6 +418,34 @@ const App: React.FC = () => {
 
   // Swipe gesture handling for mobile
   const minSwipeDistance = 50;
+
+  // Floating button drag handlers
+  const handleButtonTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    setIsDraggingButton(true);
+    setDragStart({ x: touch.clientX - floatingButtonPos.x, y: touch.clientY - floatingButtonPos.y });
+  };
+
+  const handleButtonTouchMove = (e: React.TouchEvent) => {
+    if (!isDraggingButton) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    const newX = Math.max(0, Math.min(window.innerWidth - 56, touch.clientX - dragStart.x));
+    const newY = Math.max(0, Math.min(window.innerHeight - 56, touch.clientY - dragStart.y));
+    const newPos = { x: newX, y: newY };
+    setFloatingButtonPos(newPos);
+    localStorage.setItem('floating_button_pos', JSON.stringify(newPos));
+  };
+
+  const handleButtonTouchEnd = () => {
+    setIsDraggingButton(false);
+  };
+
+  const handleButtonClick = () => {
+    if (!isDraggingButton) {
+      setIsMobileSidebarOpen(true);
+    }
+  };
 
   const handleOpenCanvas = (code: string, filename: string) => {
     setCanvasCode(code);
@@ -1053,7 +1087,7 @@ Respond: "Fixed [description]" + patches.`;
       
       {/* SIDEBAR */}
       <aside 
-        className={`bg-white dark:bg-[#0f0f11] shrink-0 flex flex-col border-r border-slate-200 dark:border-white/5 shadow-lg fixed md:relative left-0 z-50 transition-transform duration-300 ease-out ${
+        className={`bg-white dark:bg-[#0f0f11] shrink-0 flex flex-col border-r border-slate-200 dark:border-white/5 shadow-lg fixed md:relative left-0 z-50 md:z-auto transition-transform duration-300 ease-out ${
           isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
         }`}
         style={{ 
@@ -1231,13 +1265,19 @@ Respond: "Fixed [description]" + patches.`;
           </div>
         </header>
         
-        {/* Floating Sidebar Toggle Button - Mobile Only */}
+        {/* Floating Sidebar Toggle Button - Mobile Only - DRAGGABLE */}
         {!isMobileSidebarOpen && !isCanvasOpen && (
           <button
-            onClick={() => setIsMobileSidebarOpen(true)}
-            className="md:hidden fixed left-4 bottom-32 z-30 w-14 h-14 bg-blue-600 hover:bg-blue-700 rounded-full shadow-lg flex items-center justify-center text-white transition-all touch-manipulation"
+            onTouchStart={handleButtonTouchStart}
+            onTouchMove={handleButtonTouchMove}
+            onTouchEnd={handleButtonTouchEnd}
+            onClick={handleButtonClick}
+            className="md:hidden fixed z-30 w-14 h-14 bg-blue-600 hover:bg-blue-700 rounded-full shadow-lg flex items-center justify-center text-white transition-all touch-manipulation active:scale-95"
             style={{
-              boxShadow: '0 4px 20px rgba(59, 130, 246, 0.4)'
+              left: `${floatingButtonPos.x}px`,
+              bottom: `${floatingButtonPos.y}px`,
+              boxShadow: '0 4px 20px rgba(59, 130, 246, 0.4)',
+              cursor: isDraggingButton ? 'grabbing' : 'grab'
             }}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
