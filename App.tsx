@@ -131,6 +131,12 @@ const App: React.FC = () => {
   const [isFixingError, setIsFixingError] = useState(false);
   const isResizingRef = useRef(false);
 
+  // Draggable floating button state
+  const [fabPosition, setFabPosition] = useState({ x: 20, y: 20 });
+  const fabDragging = useRef(false);
+  const fabHasMoved = useRef(false);
+  const fabOffset = useRef({ x: 0, y: 0 });
+
   // CONSTANT: Define exact header height to sync sidebar and header
   const MOBILE_HEADER_HEIGHT = '60px';
   const MOBILE_HEADER_HEIGHT_WITH_SAFE_AREA = `calc(${MOBILE_HEADER_HEIGHT} + env(safe-area-inset-top))`;
@@ -410,9 +416,41 @@ const App: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  // Simple floating button - no drag, just click to open
-  const handleFloatingButtonClick = () => {
-    setIsMobileSidebarOpen(true);
+  // Draggable FAB handlers
+  const handleFabPointerDown = (e: React.PointerEvent) => {
+    fabDragging.current = true;
+    fabHasMoved.current = false;
+    const rect = e.currentTarget.getBoundingClientRect();
+    fabOffset.current = {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const handleFabPointerMove = (e: React.PointerEvent) => {
+    if (!fabDragging.current) return;
+    const vWidth = window.innerWidth;
+    const vHeight = window.innerHeight;
+    const size = 56;
+    let newX = e.clientX - fabOffset.current.x;
+    let newY = e.clientY - fabOffset.current.y;
+    newX = Math.max(0, Math.min(newX, vWidth - size));
+    newY = Math.max(0, Math.min(newY, vHeight - size));
+    if (Math.abs(newX - fabPosition.x) > 5 || Math.abs(newY - fabPosition.y) > 5) {
+      fabHasMoved.current = true;
+    }
+    setFabPosition({ x: newX, y: newY });
+  };
+
+  const handleFabPointerUp = () => {
+    fabDragging.current = false;
+  };
+
+  const handleFabClick = () => {
+    if (!fabHasMoved.current) {
+      setIsMobileSidebarOpen(true);
+    }
   };
 
   const handleOpenCanvas = (code: string, filename: string) => {
@@ -1230,12 +1268,17 @@ Respond: "Fixed [description]" + patches.`;
           </div>
         </header>
         
-        {/* Floating Sidebar Toggle Button - Mobile Only */}
+        {/* Draggable Floating Action Button - Mobile Only */}
         {!isMobileSidebarOpen && !isCanvasOpen && (
-          <button
-            onClick={handleFloatingButtonClick}
-            className="md:hidden fixed bottom-4 left-4 z-30 w-14 h-14 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-full shadow-lg flex items-center justify-center text-white transition-all touch-manipulation active:scale-95"
+          <div
+            onPointerDown={handleFabPointerDown}
+            onPointerMove={handleFabPointerMove}
+            onPointerUp={handleFabPointerUp}
+            onClick={handleFabClick}
+            className="md:hidden fixed z-[60] flex items-center justify-center w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg cursor-grab active:cursor-grabbing hover:bg-blue-700 transition-colors pointer-events-auto select-none touch-none"
             style={{
+              left: `${fabPosition.x}px`,
+              top: `${fabPosition.y}px`,
               boxShadow: '0 4px 20px rgba(59, 130, 246, 0.4)'
             }}
           >
@@ -1244,7 +1287,7 @@ Respond: "Fixed [description]" + patches.`;
               <line x1="3" y1="6" x2="21" y2="6"/>
               <line x1="3" y1="18" x2="21" y2="18"/>
             </svg>
-          </button>
+          </div>
         )}
         
         {/* Content Wrapper - Chat + Canvas */}
