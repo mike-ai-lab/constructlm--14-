@@ -11,6 +11,9 @@ interface CanvasProps {
   onFixError?: (code: string) => void;
   aiModel?: 'gemini' | 'cerebras' | 'groq' | 'openrouter' | 'ollama';
   isFixingError?: boolean;
+  initialVersions?: Array<{ code: string; timestamp: number }>;
+  initialVersionIndex?: number;
+  onVersionsChange?: (versions: Array<{ code: string; timestamp: number }>, currentIndex: number) => void;
 }
 
 interface CodeVersion {
@@ -24,14 +27,33 @@ declare global {
   }
 }
 
-export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose, error, onError, onFixError, aiModel, isFixingError }) => {
+export const Canvas: React.FC<CanvasProps> = ({ 
+  code, 
+  filename, 
+  isOpen, 
+  onClose, 
+  error, 
+  onError, 
+  onFixError, 
+  aiModel, 
+  isFixingError,
+  initialVersions,
+  initialVersionIndex,
+  onVersionsChange
+}) => {
   const [showCode, setShowCode] = useState(false);
   const [editCode, setEditCode] = useState(code);
   const [isRendering, setIsRendering] = useState(false);
   const [rendererLoaded, setRendererLoaded] = useState(false);
   const [rendererError, setRendererError] = useState<string>('');
-  const [versions, setVersions] = useState<CodeVersion[]>([{ code, timestamp: Date.now() }]);
-  const [currentVersionIndex, setCurrentVersionIndex] = useState(0);
+  const [versions, setVersions] = useState<CodeVersion[]>(
+    initialVersions && initialVersions.length > 0 
+      ? initialVersions 
+      : [{ code, timestamp: Date.now() }]
+  );
+  const [currentVersionIndex, setCurrentVersionIndex] = useState(
+    initialVersionIndex !== undefined ? initialVersionIndex : 0
+  );
   const [copyFeedback, setCopyFeedback] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const rendererRef = useRef<any>(null);
@@ -42,6 +64,13 @@ export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose,
   useEffect(() => {
     hadErrorRef.current = !!error;
   }, [error]);
+
+  // Notify parent of version changes
+  useEffect(() => {
+    if (onVersionsChange) {
+      onVersionsChange(versions, currentVersionIndex);
+    }
+  }, [versions, currentVersionIndex]);
 
   // Initialize renderer on mount
   useEffect(() => {
@@ -93,10 +122,21 @@ export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose,
   useEffect(() => {
     if (isOpen && code && rendererRef.current && code !== lastRenderedCodeRef.current) {
       lastRenderedCodeRef.current = code;
-      setEditCode(code);
-      setVersions([{ code, timestamp: Date.now() }]);
-      setCurrentVersionIndex(0);
-      handleRender(code);
+      
+      // Check if we have saved versions
+      if (initialVersions && initialVersions.length > 0) {
+        // Use saved versions - don't reset
+        const currentCode = versions[currentVersionIndex]?.code || code;
+        setEditCode(currentCode);
+        handleRender(currentCode);
+      } else {
+        // New code from AI - create first version
+        setEditCode(code);
+        const newVersion: CodeVersion = { code, timestamp: Date.now() };
+        setVersions([newVersion]);
+        setCurrentVersionIndex(0);
+        handleRender(code);
+      }
     }
   }, [code, isOpen]);
 
@@ -126,6 +166,16 @@ export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose,
   };
 
   const handleSwitchToPreview = async () => {
+    // Save as new version if code has changed
+    const currentVersionCode = versions[currentVersionIndex]?.code || '';
+    if (editCode !== currentVersionCode) {
+      const newVersion: CodeVersion = { code: editCode, timestamp: Date.now() };
+      const newVersions = versions.slice(0, currentVersionIndex + 1);
+      newVersions.push(newVersion);
+      setVersions(newVersions);
+      setCurrentVersionIndex(newVersions.length - 1);
+    }
+    
     // First render the code, THEN switch to preview
     if (rendererRef.current && iframeRef.current) {
       try {
@@ -156,6 +206,19 @@ export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose,
     }).catch(err => {
       console.error('[Canvas] Failed to copy:', err);
     });
+  };
+
+  const handleSelectAll = () => {
+    const textarea = document.querySelector('.canvas-code-editor') as HTMLTextAreaElement;
+    if (textarea) {
+      textarea.select();
+      textarea.setSelectionRange(0, textarea.value.length);
+      // Also copy to clipboard for convenience
+      navigator.clipboard.writeText(editCode).then(() => {
+        setCopyFeedback(true);
+        setTimeout(() => setCopyFeedback(false), 2000);
+      });
+    }
   };
 
   const handleDownloadCode = () => {
@@ -201,14 +264,6 @@ export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose,
         handleRender(versionCode);
       }
     }
-  };
-
-  const handleSaveVersion = () => {
-    const newVersion: CodeVersion = { code: editCode, timestamp: Date.now() };
-    const newVersions = versions.slice(0, currentVersionIndex + 1);
-    newVersions.push(newVersion);
-    setVersions(newVersions);
-    setCurrentVersionIndex(newVersions.length - 1);
   };
 
   if (!isOpen) return null;
@@ -338,23 +393,32 @@ export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose,
             <textarea
               value={editCode}
               onChange={(e) => setEditCode(e.target.value)}
-              className="flex-1 bg-[#0a0a0c] text-gray-300 font-mono text-[13px] p-6 resize-none focus:outline-none border-none overflow-y-auto"
+              className="canvas-code-editor flex-1 bg-[#0a0a0c] text-gray-300 font-mono text-[13px] p-6 resize-none focus:outline-none border-none overflow-y-auto"
               placeholder="Edit your code here..."
               spellCheck="false"
             />
 
-            {/* Footer with instructions and render button */}
-            <div className="border-t border-white/5 px-6 py-3 bg-black/50 flex items-center justify-between">
-              <div className="text-[9px] text-gray-500 font-bold uppercase tracking-[0.2em]">
+            {/* Footer with instructions and buttons */}
+            <div className="border-t border-white/5 px-3 md:px-6 py-3 bg-black/50 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2">
+              <div className="text-[9px] text-gray-500 font-bold uppercase tracking-[0.2em] hidden md:block">
                 💡 Edit code and render to see changes
               </div>
-              <button
-                onClick={handleSwitchToPreview}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[9px] font-bold uppercase tracking-wider rounded transition-colors"
-                title="Render your edited code"
-              >
-                ▶ Render & Preview
-              </button>
+              <div className="flex gap-2 flex-1 md:flex-initial">
+                <button
+                  onClick={handleSelectAll}
+                  className="flex-1 md:flex-initial px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-[9px] font-bold uppercase tracking-wider rounded transition-colors touch-manipulation"
+                  title="Select all code and copy to clipboard"
+                >
+                  Select All
+                </button>
+                <button
+                  onClick={handleSwitchToPreview}
+                  className="flex-1 md:flex-initial px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-[9px] font-bold uppercase tracking-wider rounded transition-colors touch-manipulation"
+                  title="Render your edited code"
+                >
+                  ▶ Render & Preview
+                </button>
+              </div>
             </div>
           </div>
         ) : (

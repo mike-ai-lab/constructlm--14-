@@ -130,6 +130,8 @@ const App: React.FC = () => {
   const [canvasFilename, setCanvasFilename] = useState<string>('component.jsx');
   const [isCanvasOpen, setIsCanvasOpen] = useState(false);
   const [canvasError, setCanvasError] = useState<{message: string; code: string} | null>(null);
+  const [canvasVersions, setCanvasVersions] = useState<Array<{ code: string; timestamp: number }>>([]);
+  const [canvasVersionIndex, setCanvasVersionIndex] = useState<number>(0);
   const [isFixingError, setIsFixingError] = useState(false);
   const [modelStatus, setModelStatus] = useState<ModelStatus>('not-loaded');
   const [previewFile, setPreviewFile] = useState<FileDocument | null>(null);
@@ -270,6 +272,19 @@ const App: React.FC = () => {
       const lastSession = sessions[0];
       setCurrentChatId(lastSession.id);
       setMessages(lastSession.messages);
+      
+      // Restore canvas state if available
+      if (lastSession.canvasState) {
+        console.log('[App] Restoring canvas state on mount:', {
+          versionsCount: lastSession.canvasState.versions?.length || 0,
+          currentIndex: lastSession.canvasState.currentVersionIndex || 0
+        });
+        setCanvasCode(lastSession.canvasState.content?.code || null);
+        setIsCanvasOpen(lastSession.canvasState.isOpen);
+        setCanvasVersions(lastSession.canvasState.versions || []);
+        setCanvasVersionIndex(lastSession.canvasState.currentVersionIndex || 0);
+      }
+      
       // Don't override user's saved preferences with session data
       // setAiModel(lastSession.aiModel);
     } else {
@@ -375,8 +390,27 @@ const App: React.FC = () => {
       messages: messages,
       createdAt: 0, // Will be set by storage service
       updatedAt: 0, // Will be set by storage service
-      aiModel: aiModel
+      aiModel: aiModel,
+      canvasState: isCanvasOpen || canvasVersions.length > 0 ? {
+        isOpen: isCanvasOpen,
+        content: canvasCode ? {
+          html: '',
+          code: canvasCode,
+          language: 'jsx',
+          blockId: ''
+        } : null,
+        showCode: false,
+        editedCode: canvasCode || '',
+        versions: canvasVersions,
+        currentVersionIndex: canvasVersionIndex
+      } : undefined
     };
+    
+    console.log('[App] Saving chat with canvas state:', {
+      hasCanvasState: !!session.canvasState,
+      versionsCount: canvasVersions.length,
+      currentIndex: canvasVersionIndex
+    });
     
     ChatStorage.saveChatSession(session);
     
@@ -410,6 +444,23 @@ const App: React.FC = () => {
     if (session) {
       setCurrentChatId(id);
       setMessages(session.messages);
+      // Restore canvas state if available
+      if (session.canvasState) {
+        console.log('[App] Restoring canvas state on chat switch:', {
+          versionsCount: session.canvasState.versions?.length || 0,
+          currentIndex: session.canvasState.currentVersionIndex || 0
+        });
+        setCanvasCode(session.canvasState.content?.code || null);
+        setIsCanvasOpen(session.canvasState.isOpen);
+        setCanvasVersions(session.canvasState.versions || []);
+        setCanvasVersionIndex(session.canvasState.currentVersionIndex || 0);
+      } else {
+        // Reset canvas state
+        setCanvasCode(null);
+        setIsCanvasOpen(false);
+        setCanvasVersions([]);
+        setCanvasVersionIndex(0);
+      }
       // Don't override user's current model selection when loading chat
       // setAiModel(session.aiModel);
     }
@@ -559,6 +610,16 @@ const App: React.FC = () => {
     setIsCanvasOpen(true);
     setIsMobileSidebarOpen(false);
     setCanvasError(null);
+  };
+
+  const handleCanvasVersionsChange = (versions: Array<{ code: string; timestamp: number }>, currentIndex: number) => {
+    console.log('[App] Canvas versions changed:', versions.length, 'versions, current index:', currentIndex);
+    setCanvasVersions(versions);
+    setCanvasVersionIndex(currentIndex);
+    // Auto-save when versions change
+    if (currentChatId && messages.length > 0) {
+      setTimeout(() => saveCurrentChat(), 100);
+    }
   };
 
   const handleCanvasError = async (errorMessage: string | null, code: string) => {
@@ -1426,12 +1487,18 @@ Respond: "Fixed [description]" + patches.`;
                   code={canvasCode || ''}
                   filename={canvasFilename}
                   isOpen={isCanvasOpen}
-                  onClose={() => setIsCanvasOpen(false)}
+                  onClose={() => {
+                    setIsCanvasOpen(false);
+                    saveCurrentChat();
+                  }}
                   error={canvasError}
                   onError={handleCanvasError}
                   onFixError={handleFixCanvasError}
                   aiModel={aiModel}
                   isFixingError={isFixingError}
+                  initialVersions={canvasVersions.length > 0 ? canvasVersions : undefined}
+                  initialVersionIndex={canvasVersionIndex}
+                  onVersionsChange={handleCanvasVersionsChange}
                 />
               </Suspense>
             </div>

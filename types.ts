@@ -57,6 +57,8 @@ export interface ChatSession {
     } | null;
     showCode: boolean;
     editedCode: string;
+    versions?: Array<{ code: string; timestamp: number }>;
+    currentVersionIndex?: number;
   };
 }
 
