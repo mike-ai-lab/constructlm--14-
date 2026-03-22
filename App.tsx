@@ -1349,6 +1349,7 @@ Respond: "Fixed [description]" + patches.`;
             onPointerDown={handleFabPointerDown}
             onPointerMove={handleFabPointerMove}
             onPointerUp={handleFabPointerUp}
+            onPointerCancel={handleFabPointerUp}
             onClick={handleFabClick}
             className={`md:hidden fixed bottom-0 left-0 z-[60] flex items-center justify-center bg-blue-600 text-white shadow-xl cursor-grab active:cursor-grabbing hover:bg-blue-700 pointer-events-auto select-none touch-none transition-all duration-300 ${
               fabMinimized ? 'w-10 h-10 opacity-60' : 'w-14 h-14'
