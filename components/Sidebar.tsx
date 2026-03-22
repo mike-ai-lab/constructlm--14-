@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import { Plus, Download, X } from 'lucide-react';
-import { FileDocument, ChatSession } from '../types';
+import { Plus, Download, X, Eye } from 'lucide-react';
+import { FileDocument, ChatSession, ModelStatus } from '../types';
 
 interface SidebarProps {
   files: FileDocument[];
@@ -19,6 +19,8 @@ interface SidebarProps {
   onDeleteChat: (id: string) => void;
   onExportChat: (id: string) => void;
   isCollapsed?: boolean;
+  modelStatus?: ModelStatus;
+  onPreviewFile?: (file: FileDocument) => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ 
@@ -36,7 +38,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onNewChat,
   onDeleteChat,
   onExportChat,
-  isCollapsed = false
+  isCollapsed = false,
+  modelStatus = 'not-loaded',
+  onPreviewFile
 }) => {
   const [activeTab, setActiveTab] = useState<'chats' | 'sources'>('sources');
   const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -226,8 +230,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </label>
             
             {isUploading && (
-              <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[9px] truncate rounded border border-blue-200 dark:border-blue-500/20">
-                {uploadStatus}
+              <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] rounded border border-blue-200 dark:border-blue-500/20">
+                <div className="font-semibold mb-1">Processing...</div>
+                <div className="break-words">{uploadStatus}</div>
               </div>
             )}
             
@@ -242,7 +247,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <div 
                   key={file.id}
                   onClick={() => onToggleFile(file.id, !(file.isEnabled !== false))}
-                  className={`p-3 cursor-pointer transition-all rounded-lg touch-manipulation min-h-[60px] ${
+                  className={`group p-3 cursor-pointer transition-all rounded-lg touch-manipulation min-h-[60px] ${
                     file.isEnabled !== false
                     ? 'bg-blue-50 dark:bg-white/5 border border-blue-200 dark:border-blue-500/30' 
                     : 'bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 opacity-60 hover:opacity-100'
@@ -275,18 +280,32 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
                     <div className="flex-1 min-w-0 mt-2">
                       <div className="flex justify-between items-start mb-1">
-                        <div className="font-semibold text-[10px] truncate uppercase max-w-[150px] text-gray-900 dark:text-white" title={file.name}>
+                        <div className="font-semibold text-[10px] truncate uppercase max-w-[120px] text-gray-900 dark:text-white" title={file.name}>
                           {file.name}
                         </div>
-                        <button 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onDelete(file.id);
-                          }}
-                          className="opacity-0 group-hover:opacity-100 text-[10px] text-red-500 hover:text-red-400 ml-2 px-1 min-h-[32px] touch-manipulation"
-                        >
-                          Del
-                        </button>
+                        <div className="flex gap-1">
+                          {onPreviewFile && (
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onPreviewFile(file);
+                              }}
+                              className="opacity-0 group-hover:opacity-100 text-[10px] hover:bg-slate-200 dark:hover:bg-white/10 p-1 rounded transition-all text-gray-600 dark:text-gray-400 min-h-[32px] min-w-[32px] touch-manipulation"
+                              title="Preview"
+                            >
+                              <Eye size={12} />
+                            </button>
+                          )}
+                          <button 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDelete(file.id);
+                            }}
+                            className="opacity-0 group-hover:opacity-100 text-[10px] text-red-500 hover:text-red-400 px-1 min-h-[32px] touch-manipulation"
+                          >
+                            Del
+                          </button>
+                        </div>
                       </div>
                       <div className="text-[8px] mt-1 text-gray-500 dark:text-gray-600 font-semibold">
                         ~{Math.round(file.tokenCount || 0)} tokens
@@ -301,6 +320,40 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       <div className="h-20 p-4 border-t border-white/5 bg-white dark:bg-[#0f0f11] flex flex-col justify-center flex-shrink-0">
+        <div className="flex items-center gap-2 mb-3">
+          <svg 
+            width="12" 
+            height="12" 
+            viewBox="0 0 12 12" 
+            className="flex-shrink-0"
+          >
+            {modelStatus === 'ready' && (
+              <circle cx="6" cy="6" r="5" fill="#10b981" stroke="#059669" strokeWidth="1" />
+            )}
+            {modelStatus === 'downloading' && (
+              <>
+                <circle cx="6" cy="6" r="5" fill="#f59e0b" stroke="#d97706" strokeWidth="1" />
+                <animateTransform
+                  attributeName="transform"
+                  type="rotate"
+                  from="0 6 6"
+                  to="360 6 6"
+                  dur="1s"
+                  repeatCount="indefinite"
+                />
+              </>
+            )}
+            {modelStatus === 'not-loaded' && (
+              <circle cx="6" cy="6" r="5" fill="#ef4444" stroke="#dc2626" strokeWidth="1" />
+            )}
+          </svg>
+          <span className="text-[9px] text-gray-600 dark:text-gray-500 font-semibold">
+            {modelStatus === 'ready' && 'Embedding model available'}
+            {modelStatus === 'downloading' && 'Downloading model...'}
+            {modelStatus === 'not-loaded' && 'Model not loaded'}
+          </span>
+        </div>
+        
         <div className="flex justify-between items-center text-[9px] mb-2 font-semibold">
           <span className="text-gray-600 dark:text-gray-500">Context Usage</span>
           <span className={totalTokens > 30000 ? "text-red-500 font-bold" : "text-gray-600 dark:text-gray-500"}>

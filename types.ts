@@ -7,7 +7,11 @@ export interface FileDocument {
   status: 'processing' | 'ready' | 'error';
   tokenCount?: number;
   isEnabled?: boolean; // Default true - controls if file is included in RAG search
+  content?: string; // Original file content for preview (text/markdown)
+  fileData?: string; // Base64 encoded file data for binary files (PDF, images, etc.)
 }
+
+export type ModelStatus = 'not-loaded' | 'downloading' | 'ready';
 
 export interface TextChunk {
   id: string;

@@ -67,17 +67,30 @@ export const processFile = async (
   onProgress: (status: string) => void
 ): Promise<FileDocument> => {
   const fileId = crypto.randomUUID();
+  const shortName = file.name.length > 25 ? file.name.substring(0, 22) + '...' : file.name;
 
   return new Promise(async (resolve, reject) => {
     try {
       let text: string;
+      let fileData: string | undefined;
       
       // Handle different file types
       if (file.type === 'application/pdf') {
-        onProgress("Parsing PDF...");
+        onProgress(`Parsing ${shortName}...`);
         text = await parsePDF(file);
+        // Store original PDF as base64 for preview
+        const reader = new FileReader();
+        fileData = await new Promise<string>((resolveData, rejectData) => {
+          reader.onload = (e) => {
+            const base64 = (e.target?.result as string).split(',')[1];
+            resolveData(base64);
+          };
+          reader.onerror = () => rejectData(new Error('Failed to read PDF'));
+          reader.readAsDataURL(file);
+        });
       } else {
         // Handle text-based files
+        onProgress(`Reading ${shortName}...`);
         const reader = new FileReader();
         text = await new Promise<string>((resolveText, rejectText) => {
           reader.onload = (e) => resolveText(e.target?.result as string);
@@ -86,12 +99,12 @@ export const processFile = async (
         });
       }
       
-      onProgress("Chunking content...");
+      onProgress(`Chunking ${shortName}...`);
       const rawChunks = chunkText(text);
       
-      onProgress(`Embedding ${rawChunks.length} chunks...`);
+      onProgress(`Embedding ${shortName} (${rawChunks.length} chunks)...`);
       const vectors = await embeddingService.getEmbeddings(rawChunks, (current, total) => {
-        onProgress(`Embedding chunk ${current}/${total}...`);
+        onProgress(`Embedding ${shortName}: ${current}/${total}`);
       });
       
       const chunks: TextChunk[] = rawChunks.map((chunk, i) => ({
@@ -103,7 +116,7 @@ export const processFile = async (
         endIndex: i * (CHUNK_SIZE - OVERLAP) + chunk.length
       }));
 
-      onProgress("Indexing...");
+      onProgress(`Indexing ${shortName}...`);
       const db = await openDB();
       const tx = db.transaction(['files', 'chunks'], 'readwrite');
       
@@ -115,7 +128,9 @@ export const processFile = async (
         uploadDate: Date.now(),
         status: 'ready',
         tokenCount: text.length / 4, // Rough estimate
-        isEnabled: true // Default to enabled
+        isEnabled: true, // Default to enabled
+        content: file.type !== 'application/pdf' ? text : undefined, // Store text content for text files
+        fileData: fileData // Store base64 for PDFs
       };
 
       tx.objectStore('files').add(docData);

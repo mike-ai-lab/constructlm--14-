@@ -2,9 +2,10 @@
 import { Sidebar } from './components/Sidebar';
 import { ChatInterface } from './components/ChatInterface';
 import { SettingsModal } from './components/SettingsModal';
+import { FilePreviewModal } from './components/FilePreviewModal';
 
 const Canvas = lazy(() => import('./components/Canvas').then(m => ({ default: m.Canvas })));
-import { FileDocument, ChatMessage, ChatSession } from './types';
+import { FileDocument, ChatMessage, ChatSession, ModelStatus } from './types';
 import * as VectorDB from './services/vectorDb';
 import * as GeminiService from './services/geminiService';
 import * as CerebrasService from './services/cerebrasService';
@@ -12,6 +13,7 @@ import * as GroqService from './services/groqService';
 import * as OpenRouterService from './services/openrouterService';
 import * as OllamaService from './services/ollamaService';
 import * as ChatStorage from './services/chatStorage';
+import { embeddingService } from './services/embeddingService';
 import { Settings, ChevronLeft, ChevronRight, BookOpen, ChevronDown } from 'lucide-react';
 
 // Expandable Model Provider Section Component
@@ -129,6 +131,8 @@ const App: React.FC = () => {
   const [isCanvasOpen, setIsCanvasOpen] = useState(false);
   const [canvasError, setCanvasError] = useState<{message: string; code: string} | null>(null);
   const [isFixingError, setIsFixingError] = useState(false);
+  const [modelStatus, setModelStatus] = useState<ModelStatus>('not-loaded');
+  const [previewFile, setPreviewFile] = useState<FileDocument | null>(null);
   const isResizingRef = useRef(false);
 
   // Draggable floating button state - HIGH PERFORMANCE VERSION
@@ -207,6 +211,15 @@ const App: React.FC = () => {
       saveCurrentChat();
     }
   }, [messages, isStreaming]);
+
+  // Track embedding model status
+  useEffect(() => {
+    setModelStatus(embeddingService.getStatus());
+    const unsubscribe = embeddingService.onStatusChange((status) => {
+      setModelStatus(status);
+    });
+    return unsubscribe;
+  }, []);
 
   // Load files and API keys on mount
   useEffect(() => {
@@ -304,11 +317,12 @@ const App: React.FC = () => {
     // Process sequentially to avoid overwhelming browser/api
     for (let i = 0; i < fileList.length; i++) {
       const file = fileList[i];
-      setUploadStatus(`Processing ${i + 1}/${fileList.length}: ${file.name}`);
+      const fileName = file.name.length > 30 ? file.name.substring(0, 27) + '...' : file.name;
+      setUploadStatus(`Processing ${i + 1}/${fileList.length}: ${fileName}`);
       
       try {
         const doc = await VectorDB.processFile(file, (status) => {
-           setUploadStatus(`${file.name}: ${status}`);
+           setUploadStatus(`[${i + 1}/${fileList.length}] ${status}`);
         });
         setFiles(prev => [...prev, doc]);
         console.log(`✅ Successfully processed: ${file.name}`);
@@ -1216,6 +1230,8 @@ Respond: "Fixed [description]" + patches.`;
             onDeleteChat={handleDeleteChat}
             onExportChat={handleExportChat}
             isCollapsed={isSidebarCollapsed}
+            modelStatus={modelStatus}
+            onPreviewFile={setPreviewFile}
           />
         </div>
 
@@ -1436,6 +1452,12 @@ Respond: "Fixed [description]" + patches.`;
         ollamaBaseUrl={ollamaBaseUrl}
         ollamaMode={ollamaMode}
         onSaveKeys={handleSaveKeys}
+      />
+
+      {/* File Preview Modal */}
+      <FilePreviewModal
+        file={previewFile}
+        onClose={() => setPreviewFile(null)}
       />
       </div>
     </div>
