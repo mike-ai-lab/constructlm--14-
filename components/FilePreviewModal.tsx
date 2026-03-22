@@ -54,12 +54,14 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({ file, onClos
         setPdfDocument(pdf);
         setNumPages(pdf.numPages);
         
-        // Set initial scale to fit viewport
+        // Set initial scale to fit viewport - mobile needs smaller scale
         const page = await pdf.getPage(1);
         const viewport = page.getViewport({ scale: 1.0 });
-        const containerWidth = window.innerWidth < 640 ? window.innerWidth - 32 : Math.min(window.innerWidth * 0.9, 1200);
-        const initialScale = Math.min(1.5, containerWidth / viewport.width);
-        setPdfScale(initialScale);
+        const isMobile = window.innerWidth < 640;
+        const containerWidth = isMobile ? window.innerWidth - 16 : Math.min(window.innerWidth * 0.9, 1200);
+        const initialScale = containerWidth / viewport.width;
+        // On mobile, ensure it fits; on desktop, cap at 1.5x
+        setPdfScale(isMobile ? Math.min(initialScale, 1.0) : Math.min(initialScale, 1.5));
       } catch (error) { console.error("PDF Load Error:", error); }
     };
     loadPdf();
@@ -145,14 +147,12 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({ file, onClos
           {/* Adaptive Content Area - FIXED SCROLLABLE CONTAINER */}
           <div className="flex-1 overflow-auto bg-gray-50/30 dark:bg-[#0d0d0f] relative">
             {isPdf && file.fileData ? (
-              <div className="p-2 sm:p-4 inline-block min-w-full">
+              <div className="p-2 sm:p-4 flex justify-center items-start min-h-full">
                 {loading && <div className="absolute inset-0 flex items-center justify-center bg-white/40 dark:bg-black/40 text-[10px] uppercase tracking-widest font-bold z-10">Rendering...</div>}
-                <div className="inline-block">
-                  <canvas 
-                    ref={canvasRef} 
-                    className="shadow-lg rounded-sm border border-slate-200 dark:border-transparent block" 
-                  />
-                </div>
+                <canvas 
+                  ref={canvasRef} 
+                  className="shadow-lg rounded-sm border border-slate-200 dark:border-transparent max-w-full h-auto" 
+                />
               </div>
             ) : (
               <div className="p-4 sm:p-6">

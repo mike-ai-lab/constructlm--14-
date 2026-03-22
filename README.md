@@ -11,15 +11,21 @@ A privacy-first, browser-based RAG (Retrieval-Augmented Generation) workspace fo
 
 ### 🤖 Multi-Model AI Support
 - **Gemini 2.5 Flash/Pro**: Google's latest models with vision and multimodal support
-- **Cerebras Llama 3.1**: Ultra-fast inference for text-only queries
+- **Cerebras Llama 3.1/3.3**: Ultra-fast inference for text-only queries
+- **Groq**: High-speed inference with vision models (Llama 3.2)
+- **OpenRouter**: Access to 15+ free models including reasoning and vision models
+- **Ollama**: Local and cloud deployment options
 - **Model switching**: Toggle between providers in real-time
-- **Vision support**: Upload images for analysis (Gemini only)
+- **Vision support**: Upload images for analysis (Gemini, Groq, OpenRouter select models)
 
 ### 📚 Document Management
 - **Supported formats**: TXT, MD, CSV, JSON, PDF
 - **Smart chunking**: 1000-character chunks with 200-character overlap
 - **Selective indexing**: Enable/disable sources per query
 - **Token tracking**: Real-time context usage monitoring (up to 1M tokens)
+- **File preview**: View document contents with PDF rendering, markdown formatting, and text display
+- **Download**: Export files directly from preview modal
+- **Persistent storage**: Model files cached in IndexedDB, survives cache clearing
 
 ### 💬 Advanced Chat Interface
 - **Session management**: Create, save, and switch between multiple chat sessions
@@ -27,6 +33,8 @@ A privacy-first, browser-based RAG (Retrieval-Augmented Generation) workspace fo
 - **Export chats**: Download sessions as formatted Markdown
 - **Streaming responses**: Real-time token-by-token output
 - **Token estimation**: Preview input/output token usage
+- **Reasoning display**: Shows thinking process for reasoning models (Cerebras, DeepSeek-R1)
+- **Progress feedback**: Detailed status updates during document processing with chunk progress
 
 ### 🎨 Interactive Code Canvas (Production-Grade Runtime Bundler)
 - **Robust import handling**: Handles malformed imports, missing commas, syntax errors gracefully
@@ -52,10 +60,12 @@ A privacy-first, browser-based RAG (Retrieval-Augmented Generation) workspace fo
 - **Multi-source synthesis**: AI combines information from multiple documents
 
 ### 📱 Responsive Design
-- **Mobile-optimized**: Touch gestures, swipe navigation
+- **Mobile-optimized**: Touch gestures, swipe navigation, always-visible controls
 - **Collapsible sidebar**: Maximize chat space on desktop
 - **Resizable panels**: Drag to adjust sidebar width
-- **Safe area support**: iOS notch/island compatibility
+- **Safe area support**: iOS notch/island compatibility with proper insets
+- **Adaptive modals**: Full-screen on mobile, windowed on desktop
+- **Touch-friendly**: Large tap targets, no confirmation dialogs on mobile
 
 ## Tech Stack
 
