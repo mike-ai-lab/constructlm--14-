@@ -53,6 +53,13 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({ file, onClos
         const pdf = await (window as any).pdfjsLib.getDocument({ data: pdfArray }).promise;
         setPdfDocument(pdf);
         setNumPages(pdf.numPages);
+        
+        // Set initial scale to fit viewport
+        const page = await pdf.getPage(1);
+        const viewport = page.getViewport({ scale: 1.0 });
+        const containerWidth = window.innerWidth < 640 ? window.innerWidth - 32 : Math.min(window.innerWidth * 0.9, 1200);
+        const initialScale = Math.min(1.5, containerWidth / viewport.width);
+        setPdfScale(initialScale);
       } catch (error) { console.error("PDF Load Error:", error); }
     };
     loadPdf();
@@ -65,15 +72,8 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({ file, onClos
         setLoading(true);
         const page = await pdfDocument.getPage(pageNumber);
         
-        // Get container width for responsive scaling
-        const container = canvasRef.current?.parentElement;
-        const containerWidth = container ? container.clientWidth - 32 : window.innerWidth - 32; // Account for padding
-        
-        // Calculate scale to fit container
-        const baseViewport = page.getViewport({ scale: 1.0 });
-        const scale = Math.min(pdfScale, containerWidth / baseViewport.width);
-        
-        const viewport = page.getViewport({ scale });
+        // Use pdfScale directly for zooming - don't constrain it
+        const viewport = page.getViewport({ scale: pdfScale });
         const canvas = canvasRef.current;
         const context = canvas?.getContext('2d');
         if (!canvas || !context) return;
@@ -142,30 +142,26 @@ export const FilePreviewModal: React.FC<FilePreviewModalProps> = ({ file, onClos
             </div>
           </div>
 
-          {/* Adaptive Content Area */}
-          <div className="flex-1 overflow-auto bg-gray-50/30 dark:bg-[#0d0d0f]">
+          {/* Adaptive Content Area - FIXED SCROLLABLE CONTAINER */}
+          <div className="flex-1 overflow-auto bg-gray-50/30 dark:bg-[#0d0d0f] relative">
             {isPdf && file.fileData ? (
-              <div className="flex justify-center items-start p-2 sm:p-4 min-h-full">
-                {loading && <div className="absolute inset-0 flex items-center justify-center bg-white/40 dark:bg-black/40 text-[10px] uppercase tracking-widest font-bold">Rendering...</div>}
-                <canvas 
-                  ref={canvasRef} 
-                  className="shadow-lg rounded-sm border border-slate-200 dark:border-transparent max-w-full" 
-                  style={{ 
-                    width: '100%',
-                    maxWidth: '100%',
-                    height: 'auto',
-                    display: 'block'
-                  }} 
-                />
+              <div className="p-2 sm:p-4 inline-block min-w-full">
+                {loading && <div className="absolute inset-0 flex items-center justify-center bg-white/40 dark:bg-black/40 text-[10px] uppercase tracking-widest font-bold z-10">Rendering...</div>}
+                <div className="inline-block">
+                  <canvas 
+                    ref={canvasRef} 
+                    className="shadow-lg rounded-sm border border-slate-200 dark:border-transparent block" 
+                  />
+                </div>
               </div>
             ) : (
-              <div className="p-4 sm:p-6 min-w-0 max-w-full sm:min-w-[600px] sm:max-w-4xl mx-auto">
+              <div className="p-4 sm:p-6">
                 {isMarkdown && file.content ? (
                   <div className="prose prose-sm dark:prose-invert max-w-none" style={{ fontSize: `${textScale}rem` }}>
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>{file.content}</ReactMarkdown>
                   </div>
                 ) : (
-                  <pre className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap font-mono text-[10px] sm:text-[11px] leading-relaxed overflow-x-auto" style={{ fontSize: `${textScale}rem` }}>
+                  <pre className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap font-mono text-[10px] sm:text-[11px] leading-relaxed" style={{ fontSize: `${textScale}rem` }}>
                     {file.content || "No content available for preview."}
                   </pre>
                 )}
