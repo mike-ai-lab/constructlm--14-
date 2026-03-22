@@ -49,7 +49,7 @@ export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose,
       setRendererError('Loading renderer...');
       if (!window.ReactComponentRenderer) {
         const script = document.createElement('script');
-        script.src = '/user/standalone_tools/ReactComponentRenderer.enhanced.js';
+        script.src = '/ReactComponentRenderer.enhanced.js';
         script.onload = () => {
           rendererRef.current = new window.ReactComponentRenderer();
           setRendererLoaded(true);
@@ -60,7 +60,7 @@ export const Canvas: React.FC<CanvasProps> = ({ code, filename, isOpen, onClose,
           }
         };
         script.onerror = () => {
-          setRendererError('FAILED TO LOAD RENDERER SCRIPT! Path: /user/standalone_tools/ReactComponentRenderer.enhanced.js');
+          setRendererError('FAILED TO LOAD RENDERER SCRIPT! Path: /ReactComponentRenderer.enhanced.js');
         };
         document.head.appendChild(script);
       } else {

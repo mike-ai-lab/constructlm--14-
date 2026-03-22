@@ -23,9 +23,12 @@ A privacy-first, browser-based RAG (Retrieval-Augmented Generation) workspace fo
 - **Smart chunking**: 1000-character chunks with 200-character overlap
 - **Selective indexing**: Enable/disable sources per query
 - **Token tracking**: Real-time context usage monitoring (up to 1M tokens)
-- **File preview**: View document contents with PDF rendering, markdown formatting, and text display
+- **File preview**: View document contents with PDF.js rendering, markdown formatting, and text display
+- **Zoom controls**: Zoom in/out for PDFs and text files with proper scaling
+- **Page navigation**: Browse multi-page PDFs with previous/next controls
 - **Download**: Export files directly from preview modal
 - **Persistent storage**: Model files cached in IndexedDB, survives cache clearing
+- **Model status indicator**: Visual feedback showing embedding model availability
 
 ### 💬 Advanced Chat Interface
 - **Session management**: Create, save, and switch between multiple chat sessions
@@ -77,14 +80,15 @@ A privacy-first, browser-based RAG (Retrieval-Augmented Generation) workspace fo
 - **Framer Motion** for animations
 
 ### AI & ML
-- **@xenova/transformers**: Local browser-based embeddings (25MB model, cached)
+- **@xenova/transformers**: Local browser-based embeddings (90MB model, cached in IndexedDB)
 - **@google/genai**: Google Gemini API integration
 - **Cerebras API**: Fast inference for text generation
+- **Web Workers**: Non-blocking embedding generation in background thread
 
 ### Data & Storage
-- **IndexedDB**: Document and vector storage
+- **IndexedDB**: Document and vector storage, persistent model files
 - **localStorage**: API keys and chat sessions
-- **pdfjs-dist**: PDF parsing and text extraction
+- **pdfjs-dist**: PDF parsing, text extraction, and canvas rendering
 
 ### Rendering & Markdown
 - **react-markdown**: GitHub Flavored Markdown support
@@ -100,10 +104,12 @@ constructlm/
 │   ├── ChatInterface.tsx      # Main chat UI with canvas
 │   ├── Sidebar.tsx             # File/chat session management
 │   ├── SettingsModal.tsx       # API key configuration
+│   ├── FilePreviewModal.tsx    # Document preview with PDF rendering
 │   └── ui/
 │       └── Button.tsx          # Reusable button component
 ├── services/
 │   ├── embeddingService.ts     # Local Transformers.js embeddings
+│   ├── embeddingWorker.ts      # Web Worker for non-blocking embeddings
 │   ├── vectorDb.ts             # IndexedDB vector operations
 │   ├── geminiService.ts        # Gemini API integration
 │   ├── cerebrasService.ts      # Cerebras API integration
@@ -272,7 +278,9 @@ Models:
 - **Chunk caching**: Embeddings persist in IndexedDB
 - **Streaming**: Token-by-token rendering for perceived speed
 - **Code splitting**: PDF.js in separate chunk
-- **Worker threads**: Transformers.js runs in Web Worker
+- **Web Workers**: Embedding generation runs in background thread, UI stays responsive
+- **Persistent model cache**: 90MB embedding model stored in IndexedDB, survives cache clearing
+- **Render task cancellation**: PDF rendering properly cancelled during zoom/page changes
 
 ## Browser Compatibility
 
@@ -283,7 +291,7 @@ Models:
 | Firefox 88+ | ✅ Full | IndexedDB support |
 | Safari 15+ | ✅ Full | iOS 15+ required |
 
-First-time load: ~25MB model download (cached for offline use)
+First-time load: ~90MB model download (cached in IndexedDB for offline use)
 
 ## Security Considerations
 
@@ -359,8 +367,9 @@ Key parameters in `vectorDb.ts`:
 
 ### Model fails to load
 - Check browser console for CORS errors
-- Ensure 25MB+ available storage
-- Try clearing IndexedDB cache
+- Ensure 100MB+ available storage for model files
+- Model is cached in IndexedDB and persists across sessions
+- Try clearing IndexedDB cache if corruption suspected
 
 ### API errors
 - Verify API keys in Settings
@@ -371,11 +380,19 @@ Key parameters in `vectorDb.ts`:
 - Lower `RELEVANCE_THRESHOLD` in `vectorDb.ts`
 - Increase `limit` for more context
 - Adjust `CHUNK_SIZE` for your content
-
+⚠️
+RENDERER ERROR
+Loading renderer...
 ### Canvas rendering issues
 - Check browser console for compilation errors
 - Ensure code has valid React component structure
 - Verify `export default` or `const Component` pattern
+
+### PDF preview issues
+- Ensure PDF files are re-uploaded after preview feature was added
+- Check that file has `fileData` stored in IndexedDB
+- Verify PDF.js is properly loaded (check console)
+- Try zooming out if content appears clipped on mobile
 
 ## Contributing
 
