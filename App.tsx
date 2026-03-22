@@ -420,32 +420,45 @@ const App: React.FC = () => {
   const minSwipeDistance = 50;
 
   // Floating button drag handlers
-  const handleButtonTouchStart = (e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    setIsDraggingButton(true);
-    setDragStart({ x: touch.clientX - floatingButtonPos.x, y: touch.clientY - floatingButtonPos.y });
-  };
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
-  const handleButtonTouchMove = (e: React.TouchEvent) => {
-    if (!isDraggingButton) return;
-    // Don't preventDefault here - it causes the warning
-    const touch = e.touches[0];
-    const newX = Math.max(0, Math.min(window.innerWidth - 56, touch.clientX - dragStart.x));
-    const newY = Math.max(0, Math.min(window.innerHeight - 56, touch.clientY - dragStart.y));
-    const newPos = { x: newX, y: newY };
-    setFloatingButtonPos(newPos);
-    localStorage.setItem('floating_button_pos', JSON.stringify(newPos));
-  };
+  useEffect(() => {
+    const button = buttonRef.current;
+    if (!button) return;
 
-  const handleButtonTouchEnd = (e: React.TouchEvent) => {
-    if (isDraggingButton) {
-      e.preventDefault(); // Prevent click event after drag
-      e.stopPropagation();
-    }
-    setIsDraggingButton(false);
-  };
+    const handleTouchStart = (e: TouchEvent) => {
+      const touch = e.touches[0];
+      setIsDraggingButton(true);
+      setDragStart({ x: touch.clientX - floatingButtonPos.x, y: touch.clientY - floatingButtonPos.y });
+    };
 
-  const handleButtonClick = (e: React.MouseEvent) => {
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isDraggingButton) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      const newX = Math.max(0, Math.min(window.innerWidth - 56, touch.clientX - dragStart.x));
+      const newY = Math.max(0, Math.min(window.innerHeight - 56, touch.clientY - dragStart.y));
+      const newPos = { x: newX, y: newY };
+      setFloatingButtonPos(newPos);
+      localStorage.setItem('floating_button_pos', JSON.stringify(newPos));
+    };
+
+    const handleTouchEnd = () => {
+      setIsDraggingButton(false);
+    };
+
+    button.addEventListener('touchstart', handleTouchStart, { passive: true });
+    button.addEventListener('touchmove', handleTouchMove, { passive: false });
+    button.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+    return () => {
+      button.removeEventListener('touchstart', handleTouchStart);
+      button.removeEventListener('touchmove', handleTouchMove);
+      button.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [isDraggingButton, floatingButtonPos, dragStart]);
+
+  const handleButtonClick = () => {
     if (!isDraggingButton) {
       setIsMobileSidebarOpen(true);
     }
@@ -1272,17 +1285,14 @@ Respond: "Fixed [description]" + patches.`;
         {/* Floating Sidebar Toggle Button - Mobile Only - DRAGGABLE */}
         {!isMobileSidebarOpen && !isCanvasOpen && (
           <button
-            onTouchStart={handleButtonTouchStart}
-            onTouchMove={handleButtonTouchMove}
-            onTouchEnd={handleButtonTouchEnd}
+            ref={buttonRef}
             onClick={handleButtonClick}
-            className="md:hidden fixed z-30 w-14 h-14 bg-blue-600 hover:bg-blue-700 rounded-full shadow-lg flex items-center justify-center text-white transition-all active:scale-95"
+            className="md:hidden fixed z-30 w-14 h-14 bg-blue-600 hover:bg-blue-700 rounded-full shadow-lg flex items-center justify-center text-white transition-all touch-manipulation active:scale-95"
             style={{
               left: `${floatingButtonPos.x}px`,
               bottom: `${floatingButtonPos.y}px`,
               boxShadow: '0 4px 20px rgba(59, 130, 246, 0.4)',
-              cursor: isDraggingButton ? 'grabbing' : 'grab',
-              touchAction: 'none' // Prevents scrolling while dragging
+              cursor: isDraggingButton ? 'grabbing' : 'grab'
             }}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
