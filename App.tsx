@@ -124,10 +124,6 @@ const App: React.FC = () => {
   const [chatSessions, setChatSessions] = useState<ChatSession[]>([]);
   const [currentChatId, setCurrentChatId] = useState<string | null>(null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
-  const [floatingButtonPos, setFloatingButtonPos] = useState(() => {
-    const saved = localStorage.getItem('floating_button_pos');
-    return saved ? JSON.parse(saved) : { x: 16, y: 128 };
-  });
   const [canvasCode, setCanvasCode] = useState<string | null>(null);
   const [canvasFilename, setCanvasFilename] = useState<string>('component.jsx');
   const [isCanvasOpen, setIsCanvasOpen] = useState(false);
@@ -414,74 +410,9 @@ const App: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
-  // Swipe gesture handling for mobile
-  const minSwipeDistance = 50;
-
-  // Floating button drag handlers - CLEAN IMPLEMENTATION
-  const buttonRef = useRef<HTMLButtonElement>(null);
-  const dragStateRef = useRef({
-    isDragging: false,
-    startX: 0,
-    startY: 0,
-    initialButtonX: 0,
-    initialButtonY: 0
-  });
-
-  useEffect(() => {
-    const button = buttonRef.current;
-    if (!button) return;
-
-    const handleTouchStart = (e: TouchEvent) => {
-      const touch = e.touches[0];
-      dragStateRef.current = {
-        isDragging: false,
-        startX: touch.clientX,
-        startY: touch.clientY,
-        initialButtonX: floatingButtonPos.x,
-        initialButtonY: floatingButtonPos.y
-      };
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      e.preventDefault();
-      const touch = e.touches[0];
-      
-      const deltaX = touch.clientX - dragStateRef.current.startX;
-      const deltaY = touch.clientY - dragStateRef.current.startY;
-      
-      // Mark as dragging if moved more than 5px
-      if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
-        dragStateRef.current.isDragging = true;
-      }
-      
-      const newX = Math.max(0, Math.min(window.innerWidth - 56, dragStateRef.current.initialButtonX + deltaX));
-      const newY = Math.max(0, Math.min(window.innerHeight - 56, dragStateRef.current.initialButtonY + deltaY));
-      
-      setFloatingButtonPos({ x: newX, y: newY });
-    };
-
-    const handleTouchEnd = () => {
-      if (dragStateRef.current.isDragging) {
-        localStorage.setItem('floating_button_pos', JSON.stringify(floatingButtonPos));
-      }
-      dragStateRef.current.isDragging = false;
-    };
-
-    button.addEventListener('touchstart', handleTouchStart, { passive: true });
-    button.addEventListener('touchmove', handleTouchMove, { passive: false });
-    button.addEventListener('touchend', handleTouchEnd, { passive: true });
-
-    return () => {
-      button.removeEventListener('touchstart', handleTouchStart);
-      button.removeEventListener('touchmove', handleTouchMove);
-      button.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, [floatingButtonPos]);
-
-  const handleButtonClick = () => {
-    if (!dragStateRef.current.isDragging) {
-      setIsMobileSidebarOpen(true);
-    }
+  // Simple floating button - no drag, just click to open
+  const handleFloatingButtonClick = () => {
+    setIsMobileSidebarOpen(true);
   };
 
   const handleOpenCanvas = (code: string, filename: string) => {
@@ -1299,17 +1230,13 @@ Respond: "Fixed [description]" + patches.`;
           </div>
         </header>
         
-        {/* Floating Sidebar Toggle Button - Mobile Only - DRAGGABLE */}
+        {/* Floating Sidebar Toggle Button - Mobile Only */}
         {!isMobileSidebarOpen && !isCanvasOpen && (
           <button
-            ref={buttonRef}
-            onClick={handleButtonClick}
-            className="md:hidden fixed z-30 w-14 h-14 bg-blue-600 hover:bg-blue-700 rounded-full shadow-lg flex items-center justify-center text-white transition-all touch-manipulation active:scale-95"
+            onClick={handleFloatingButtonClick}
+            className="md:hidden fixed bottom-4 left-4 z-30 w-14 h-14 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-full shadow-lg flex items-center justify-center text-white transition-all touch-manipulation active:scale-95"
             style={{
-              left: `${floatingButtonPos.x}px`,
-              bottom: `${floatingButtonPos.y}px`,
-              boxShadow: '0 4px 20px rgba(59, 130, 246, 0.4)',
-              touchAction: 'none'
+              boxShadow: '0 4px 20px rgba(59, 130, 246, 0.4)'
             }}
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
