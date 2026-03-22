@@ -164,7 +164,7 @@ const App: React.FC = () => {
     }
     fabInactivityTimer.current = setTimeout(() => {
       setFabMinimized(true);
-    }, 60000);
+    }, 30000);
   }, []);
 
   // Start inactivity timer on mount
