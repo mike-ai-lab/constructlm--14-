@@ -482,7 +482,7 @@ const App: React.FC = () => {
     if (!fabDragging.current) return;
     const vWidth = window.innerWidth;
     const vHeight = window.innerHeight;
-    const size = 56;
+    const size = fabMinimized ? 40 : 56;
     
     // Calculate position from bottom-left
     let newX = e.clientX - fabOffset.current.x;
