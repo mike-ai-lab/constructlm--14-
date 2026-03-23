@@ -1,0 +1,12 @@
+{
+  "name": "ai-code-fix-tool",
+  "version": "3.0.0",
+  "description": "AI-powered code error detection and fixing tool",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.3"
+  }
+}

@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI Code Fix - Production Ready</title>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/diff_match_patch/20121119/diff_match_patch.js"></script>
+<style>
+* { box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  margin: 0;
+  padding: 20px;
+  background: #f5f5f5;
+}
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.panel {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  padding: 20px;
+}
+.full-width {
+  grid-column: 1 / -1;
+}
+h2 {
+  margin: 0 0 20px 0;
+  font-size: 24px;
+  color: #333;
+}
+h3 {
+  margin: 0 0 15px 0;
+  font-size: 16px;
+  color: #666;
+  font-weight: 600;
+}
+.code-editor {
+  position: relative;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.line-numbers {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 50px;
+  background: #f8f8f8;
+  border-right: 1px solid #ddd;
+  padding: 12px 8px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 20px;
+  color: #999;
+  text-align: right;
+  user-select: none;
+  overflow: hidden;
+}
+textarea {
+  width: 100%;
+  height: 400px;
+  padding: 12px 12px 12px 60px;
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 20px;
+  border: none;
+  resize: vertical;
+  outline: none;
+}
+.diff-view {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 20px;
+  max-height: 400px;
+  overflow: auto;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fafafa;
+}
+.diff-line {
+  padding: 2px 8px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.diff-line.unchanged {
+  background: white;
+  color: #666;
+}
+.diff-line.added {
+  background: #e6ffed;
+  color: #22863a;
+}
+.diff-line.removed {
+  background: #ffeef0;
+  color: #cb2431;
+  text-decoration: line-through;
+}
+.diff-line.added::before {
+  content: '+ ';
+  font-weight: bold;
+}
+.diff-line.removed::before {
+  content: '- ';
+  font-weight: bold;
+}
+.diff-line.unchanged::before {
+  content: '  ';
+}
+.error-item {
+  background: #fff3cd;
+  border-left: 4px solid #ffc107;
+  padding: 12px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 13px;
+}
+.error-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.error-line-number {
+  background: #ffc107;
+  color: #333;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-weight: bold;
+  font-size: 11px;
+}
+.error-message {
+  color: #856404;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.error-summary {
+  background: #dc3545;
+  color: white;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  font-weight: 600;
+  font-size: 14px;
+}
+.success-box {
+  background: #d4edda;
+  border: 1px solid #28a745;
+  border-radius: 6px;
+  padding: 12px;
+  margin: 10px 0;
+  color: #155724;
+  font-size: 14px;
+}
+.info-box {
+  background: #d1ecf1;
+  border: 1px solid #17a2b8;
+  border-radius: 6px;
+  padding: 12px;
+  margin: 10px 0;
+  color: #0c5460;
+  font-size: 13px;
+}
+button {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-right: 10px;
+  transition: background 0.2s;
+}
+button:hover {
+  background: #0056b3;
+}
+button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+button.secondary {
+  background: #6c757d;
+}
+button.secondary:hover {
+  background: #545b62;
+}
+button.success {
+  background: #28a745;
+}
+button.success:hover {
+  background: #218838;
+}
+.log {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 12px;
+  height: 200px;
+  overflow: auto;
+  font-size: 12px;
+  font-family: monospace;
+  color: #495057;
+}
+.log-entry {
+  padding: 2px 0;
+  border-bottom: 1px solid #e9ecef;
+}
+.log-time {
+  color: #6c757d;
+  margin-right: 8px;
+}
+.controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+}
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-left: 10px;
+}
+.badge.error {
+  background: #dc3545;
+  color: white;
+}
+.badge.success {
+  background: #28a745;
+  color: white;
+}
+.badge.processing {
+  background: #ffc107;
+  color: #333;
+}
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+.patch-item {
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+.patch-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.patch-title {
+  font-weight: 600;
+  color: #333;
+}
+.patch-stats {
+  font-size: 12px;
+  color: #6c757d;
+}
+.patch-preview {
+  font-family: monospace;
+  font-size: 12px;
+  background: white;
+  padding: 8px;
+  border-radius: 4px;
+  max-height: 100px;
+  overflow: auto;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="panel full-width">
+    <h2>
+      AI Code Fix - Production Ready
+      <span id="status-badge"></span>
+    </h2>
+    <div class="controls">
+      <button onclick="detectErrors()">1. Detect Errors</button>
+      <button onclick="callAI()" id="fix-btn" disabled>2. AI Fix</button>
+      <button onclick="applyAllPatches()" id="apply-btn" class="success" disabled>3. Apply All Fixes</button>
+      <button onclick="resetAll()" class="secondary">Reset</button>
+      <label style="margin-left: 20px; display: inline-flex; align-items: center; cursor: pointer;">
+        <input type="checkbox" id="auto-fix-toggle" checked style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;">
+        <span style="font-size: 14px; color: #495057;">Auto-fix common issues (like Gemini)</span>
+      </label>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h3>Original Code</h3>
+    <div class="code-editor">
+      <div class="line-numbers" id="line-numbers-original"></div>
+      <textarea id="code" oninput="updateLineNumbers('original')">import React from 'react';
+export default function Test(){
+  return (
+    <div>
+      <form>
+        <div>Test</div
+      </form>
+    </div>
+  );
+}</textarea>
+    </div>
+    <div id="error-display"></div>
+  </div>
+
+  <div class="panel">
+    <h3>Fixed Code Preview</h3>
+    <div class="code-editor">
+      <div class="line-numbers" id="line-numbers-fixed"></div>
+      <textarea id="output" readonly oninput="updateLineNumbers('fixed')"></textarea>
+    </div>
+    <div id="validation-display"></div>
+  </div>
+
+  <div class="panel full-width">
+    <h3>Diff View - Line-by-Line Changes</h3>
+    <div id="diff-view" class="diff-view">
+      <div style="padding: 20px; text-align: center; color: #999;">
+        No changes to display yet
+      </div>
+    </div>
+  </div>
+
+  <div class="panel full-width">
+    <h3>Patches Queue <span id="patch-count" class="badge success" style="display:none;">0</span></h3>
+    <div id="patches-display">
+      <div class="info-box">No patches generated yet. Click "AI Fix" to generate fixes.</div>
+    </div>
+  </div>
+
+  <div class="panel full-width">
+    <h3>Activity Log</h3>
+    <div class="log" id="log"></div>
+  </div>
+</div>
+
+<script>
+// API key is loaded from localStorage - use SETUP-API-KEY.html to configure
+const GROQ_API_KEY = '';
+
+let state = {
+  originalCode: '',
+  fixedCode: '',
+  errors: [],
+  patches: [],
+  isProcessing: false,
+  apiKey: ''
+};
+
+// Load API key from localStorage
+function loadAPIKey() {
+  const key = localStorage.getItem('groq_api_key') || '';
+  if (!key) {
+    log('No API key found in localStorage', 'warning');
+    log('Please open SETUP-API-KEY.html to configure your API key', 'warning');
+  } else {
+    state.apiKey = key;
+    log('API key loaded from localStorage', 'success');
+  }
+  return key;
+}
+
+function log(msg, type = 'info') {
+  const el = document.getElementById('log');
+  const time = new Date().toLocaleTimeString();
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.innerHTML = `<span class="log-time">[${time}]</span>${msg}`;
+  el.appendChild(entry);
+  el.scrollTop = el.scrollHeight;
+}
+
+function updateStatus(status, type = 'info') {
+  const badge = document.getElementById('status-badge');
+  badge.className = `badge ${type}`;
+  badge.textContent = status;
+  badge.style.display = 'inline-block';
+}
+
+function updateLineNumbers(type) {
+  const textarea = type === 'original' 
+    ? document.getElementById('code')
+    : document.getElementById('output');
+  const lineNumbersEl = document.getElementById(`line-numbers-${type}`);
+  
+  const lines = textarea.value.split('\n').length;
+  lineNumbersEl.innerHTML = Array.from({length: lines}, (_, i) => i + 1).join('\n');
+}
+
+function detectAllErrors(code) {
+  const errors = [];
+  const seenErrorSignatures = new Set();
+  
+  // Strategy: Try to fix each error one at a time and re-validate
+  // This prevents cascading fake errors
+  
+  let workingCode = code;
+  let safetyCounter = 0;
+  const MAX_ITERATIONS = 15;
+  
+  while (safetyCounter < MAX_ITERATIONS) {
+    try {
+      Babel.transform(workingCode, { presets: ['react'] });
+      // No error - we're done
+      break;
+    } catch (e) {
+      const errorMsg = e.message;
+      const firstLine = errorMsg.split('\n')[0];
+      
+      // Extract line and column
+      const lineMatch = errorMsg.match(/\((\d+):(\d+)\)/);
+      if (!lineMatch) {
+        // Can't parse location - add generic error and stop
+        if (!seenErrorSignatures.has(firstLine)) {
+          errors.push({
+            message: errorMsg,
+            line: 0,
+            column: 0,
+            fullError: errorMsg
+          });
+        }
+        break;
+      }
+      
+      const line = parseInt(lineMatch[1]);
+      const col = parseInt(lineMatch[2]);
+      const signature = `${line}:${col}:${firstLine}`;
+      
+      // Check if we've seen this exact error before (prevents loops)
+      if (seenErrorSignatures.has(signature)) {
+        break;
+      }
+      
+      seenErrorSignatures.add(signature);
+      
+      // Store the real error
+      errors.push({
+        message: errorMsg,
+        line: line,
+        column: col,
+        fullError: errorMsg
+      });
+      
+      // Now try to minimally fix this ONE error to find the NEXT real error
+      const lines = workingCode.split('\n');
+      const errorLine = lines[line - 1];
+      
+      if (!errorLine) {
+        break;
+      }
+      
+      let fixed = false;
+      
+      // Fix TypeScript type annotations
+      if (errorMsg.includes('Unexpected token') && errorMsg.includes('expected ","')) {
+        // Remove type annotation like ': React.FormEvent'
+        lines[line - 1] = errorLine.replace(/:\s*[A-Za-z.<>[\]]+(?=\s*[)=,{])/g, '');
+        fixed = true;
+      }
+      // Fix missing JSX closing >
+      else if (errorMsg.includes('expected "jsxTagEnd"') || errorMsg.includes('expected ">"')) {
+        // Add > at the error position
+        lines[line - 1] = errorLine.substring(0, col - 1) + '>' + errorLine.substring(col - 1);
+        fixed = true;
+      }
+      // Fix wrong closing tag (> instead of />)
+      else if (errorMsg.includes('Unexpected token') && errorLine.includes('>')) {
+        // Try changing > to />
+        const pos = errorLine.lastIndexOf('>');
+        if (pos > 0 && errorLine[pos - 1] !== '/') {
+          lines[line - 1] = errorLine.substring(0, pos) + '/>' + errorLine.substring(pos + 1);
+          fixed = true;
+        }
+      }
+      
+      if (!fixed) {
+        // Can't fix this error - stop to avoid fake errors
+        break;
+      }
+      
+      workingCode = lines.join('\n');
+      safetyCounter++;
+    }
+  }
+  
+  return errors;
+}
+
+function autoFixCommonIssues(code) {
+  let fixed = code;
+  let fixes = [];
+  
+  // Fix 1: Remove trailing "return ComponentName;" outside function
+  const trailingReturnMatch = fixed.match(/}\s*return\s+\w+\s*;?\s*$/);
+  if (trailingReturnMatch) {
+    fixed = fixed.replace(/}\s*return\s+\w+\s*;?\s*$/, '}');
+    fixes.push('Removed trailing return statement outside function');
+  }
+  
+  // Fix 2: Wrap bare function in export default if no export
+  if (!fixed.includes('export') && fixed.match(/^function\s+\w+/)) {
+    fixed = 'export default ' + fixed;
+    fixes.push('Added export default');
+  }
+  
+  // Fix 3: Fix common JSX closing tag issues
+  // Missing > on self-closing tags
+  fixed = fixed.replace(/(<[a-zA-Z][^>]*[^/>])\n/g, '$1>\n');
+  
+  // Fix 4: Remove multiple consecutive returns
+  fixed = fixed.replace(/(return\s+[^;]+;)\s*return\s+\w+;/g, '$1');
+  
+  return { code: fixed, fixes };
+}
+
+function validate(code, autoFix = true) {
+  // Try original code first
+  try {
+    Babel.transform(code, { presets: ['react'] });
+    return { ok: true, errors: [], code: code, autoFixed: false };
+  } catch (e) {
+    // Detect all errors first
+    const allErrors = detectAllErrors(code);
+    
+    // If validation fails and autoFix is enabled, try auto-fixing
+    if (autoFix) {
+      const { code: fixedCode, fixes } = autoFixCommonIssues(code);
+      
+      if (fixes.length > 0) {
+        try {
+          Babel.transform(fixedCode, { presets: ['react'] });
+          return { 
+            ok: true, 
+            errors: [], 
+            code: fixedCode, 
+            autoFixed: true,
+            fixes: fixes,
+            originalErrors: allErrors
+          };
+        } catch (e2) {
+          // Auto-fix didn't work, return all detected errors
+          return { ok: false, errors: allErrors, code: code, autoFixed: false };
+        }
+      }
+    }
+    
+    return { ok: false, errors: allErrors, code: code, autoFixed: false };
+  }
+}
+
+function detectErrors() {
+  const code = document.getElementById('code').value;
+  state.originalCode = code;
+  
+  const autoFixEnabled = document.getElementById('auto-fix-toggle').checked;
+  
+  log('Detecting errors in code...');
+  updateStatus('Analyzing', 'processing');
+  
+  const result = validate(code, autoFixEnabled);
+  
+  if (result.ok) {
+    if (result.autoFixed) {
+      // Code was auto-fixed
+      let errorListHtml = '';
+      if (result.originalErrors && result.originalErrors.length > 0) {
+        errorListHtml = '<div class="error-summary">Found ' + result.originalErrors.length + ' error(s) before auto-fix:</div>';
+        errorListHtml += result.originalErrors.map((err, i) => `
+          <div class="error-item">
+            <div class="error-item-header">
+              <span>Error ${i + 1}</span>
+              ${err.line > 0 ? '<span class="error-line-number">Line ' + err.line + ':' + err.column + '</span>' : ''}
+            </div>
+            <div class="error-message">${escapeHtml(err.message)}</div>
+          </div>
+        `).join('');
+      }
+      
+      document.getElementById('error-display').innerHTML = 
+        errorListHtml +
+        '<div class="info-box"><strong>Auto-fixed common issues:</strong><br>' + 
+        result.fixes.map(f => '✓ ' + f).join('<br>') + 
+        '</div><div class="success-box">Code is now valid after auto-fix!</div>';
+      
+      // Update the code editor with fixed version
+      document.getElementById('code').value = result.code;
+      state.originalCode = result.code;
+      updateLineNumbers('original');
+      
+      state.errors = [];
+      document.getElementById('fix-btn').disabled = true;
+      updateStatus('Auto-Fixed', 'success');
+      log('Auto-fixed ' + result.originalErrors.length + ' error(s): ' + result.fixes.join(', '));
+    } else {
+      document.getElementById('error-display').innerHTML = 
+        '<div class="success-box">No errors detected - code is valid!</div>';
+      state.errors = [];
+      document.getElementById('fix-btn').disabled = true;
+      updateStatus('Valid', 'success');
+      log('No errors found - code is valid');
+    }
+  } else {
+    state.errors = result.errors;
+    
+    // Display all errors with line numbers
+    let errorHtml = '<div class="error-summary">Found ' + result.errors.length + ' error(s):</div>';
+    errorHtml += result.errors.map((err, i) => `
+      <div class="error-item">
+        <div class="error-item-header">
+          <span>Error ${i + 1}</span>
+          ${err.line > 0 ? '<span class="error-line-number">Line ' + err.line + ':' + err.column + '</span>' : ''}
+        </div>
+        <div class="error-message">${escapeHtml(err.message)}</div>
+      </div>
+    `).join('');
+    
+    document.getElementById('error-display').innerHTML = errorHtml;
+    document.getElementById('fix-btn').disabled = false;
+    updateStatus('Errors Found', 'error');
+    log(`Found ${result.errors.length} error(s) - ${autoFixEnabled ? 'could not auto-fix' : 'auto-fix disabled'}`, 'error');
+  }
+}
+
+async function callAI() {
+  if (state.errors.length === 0) {
+    alert('No errors to fix. Click "Detect Errors" first.');
+    return;
+  }
+
+  if (state.isProcessing) return;
+  
+  state.isProcessing = true;
+  document.getElementById('fix-btn').disabled = true;
+  updateStatus('AI Processing', 'processing');
+  
+  log('Calling Groq AI (llama-3.3-70b-versatile)...');
+  log('Sending ' + state.errors.length + ' error(s) to AI for fixing');
+
+  // Check API key
+  if (!state.apiKey) {
+    const key = loadAPIKey();
+    if (!key) {
+      log('API key missing', 'error');
+      alert('API key not found!\n\nPlease open SETUP-API-KEY.html to configure your Groq API key.');
+      state.isProcessing = false;
+      document.getElementById('fix-btn').disabled = false;
+      return;
+    }
+  }
+
+  // Format all errors for the AI
+  const errorsList = state.errors.map((err, i) => 
+    `Error ${i + 1} (Line ${err.line}:${err.column}):\n${err.message}`
+  ).join('\n\n');
+
+  const prompt = `Fix this React code. Return ONLY the complete fixed code with no explanations, no markdown, no code blocks.
+
+Found ${state.errors.length} error(s):
+${errorsList}
+
+Code:
+${state.originalCode}`;
+
+  try {
+    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + state.apiKey
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0,
+        max_tokens: 4000
+      })
+    });
+
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`Groq API failed: ${res.status} - ${errorText}`);
+    }
+
+    const data = await res.json();
+    let fixed = data.choices[0].message.content;
+
+    // Clean up markdown if present
+    fixed = fixed.replace(/```[a-z]*\n?/g, '').trim();
+
+    state.fixedCode = fixed;
+    document.getElementById('output').value = fixed;
+    updateLineNumbers('fixed');
+
+    // Validate fixed code
+    const validation = validate(fixed, false); // Don't auto-fix AI responses
+    if (validation.ok) {
+      document.getElementById('validation-display').innerHTML = 
+        '<div class="success-box">Fixed code is valid! All ' + state.errors.length + ' error(s) resolved.</div>';
+      log('AI fix successful - all ' + state.errors.length + ' error(s) resolved');
+      updateStatus('Fix Ready', 'success');
+      
+      // Generate patches
+      generatePatches();
+      
+      // Show diff
+      showDiff();
+      
+      document.getElementById('apply-btn').disabled = false;
+    } else {
+      document.getElementById('validation-display').innerHTML = 
+        '<div class="error-box">Fixed code still has errors:\n' + validation.errors.map(e => e.message).join('\n') + '</div>';
+      log('AI fix incomplete - validation failed', 'error');
+      updateStatus('Fix Failed', 'error');
+    }
+
+  } catch (e) {
+    log('AI call error: ' + e.message, 'error');
+    alert('AI call error: ' + e.message);
+    updateStatus('Error', 'error');
+  } finally {
+    state.isProcessing = false;
+    document.getElementById('fix-btn').disabled = false;
+  }
+}
+
+function generatePatches() {
+  const dmp = new diff_match_patch();
+  const diffs = dmp.diff_main(state.originalCode, state.fixedCode);
+  dmp.diff_cleanupSemantic(diffs);
+  
+  state.patches = dmp.patch_make(state.originalCode, diffs);
+  
+  log(`Generated ${state.patches.length} patch(es)`);
+  
+  // Display patches
+  const patchesEl = document.getElementById('patches-display');
+  const countBadge = document.getElementById('patch-count');
+  
+  if (state.patches.length === 0) {
+    patchesEl.innerHTML = '<div class="info-box">No patches needed - codes are identical</div>';
+    countBadge.style.display = 'none';
+  } else {
+    countBadge.textContent = state.patches.length;
+    countBadge.style.display = 'inline-block';
+    
+    patchesEl.innerHTML = state.patches.map((patch, i) => {
+      const addCount = patch.diffs.filter(d => d[0] === 1).length;
+      const delCount = patch.diffs.filter(d => d[0] === -1).length;
+      
+      return `
+        <div class="patch-item">
+          <div class="patch-header">
+            <div class="patch-title">Patch ${i + 1}</div>
+            <div class="patch-stats">
+              <span style="color: #28a745;">+${addCount}</span> 
+              <span style="color: #dc3545;">-${delCount}</span>
+            </div>
+          </div>
+          <div class="patch-preview">${dmp.patch_toText([patch]).substring(0, 200)}...</div>
+        </div>
+      `;
+    }).join('');
+  }
+}
+
+function showDiff() {
+  const dmp = new diff_match_patch();
+  const diffs = dmp.diff_main(state.originalCode, state.fixedCode);
+  dmp.diff_cleanupSemantic(diffs);
+  
+  const diffView = document.getElementById('diff-view');
+  
+  if (diffs.length === 1 && diffs[0][0] === 0) {
+    diffView.innerHTML = '<div style="padding: 20px; text-align: center; color: #999;">No changes detected</div>';
+    return;
+  }
+  
+  // Convert diffs to line-by-line view
+  let html = '';
+  const originalLines = state.originalCode.split('\n');
+  const fixedLines = state.fixedCode.split('\n');
+  
+  // Simple line-by-line diff
+  const maxLines = Math.max(originalLines.length, fixedLines.length);
+  
+  for (let i = 0; i < maxLines; i++) {
+    const origLine = originalLines[i] || '';
+    const fixedLine = fixedLines[i] || '';
+    
+    if (origLine === fixedLine) {
+      html += `<div class="diff-line unchanged">${escapeHtml(origLine) || ' '}</div>`;
+    } else {
+      if (origLine) {
+        html += `<div class="diff-line removed">${escapeHtml(origLine)}</div>`;
+      }
+      if (fixedLine) {
+        html += `<div class="diff-line added">${escapeHtml(fixedLine)}</div>`;
+      }
+    }
+  }
+  
+  diffView.innerHTML = html;
+  log('Diff view updated with line-by-line changes');
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function applyAllPatches() {
+  if (state.patches.length === 0) {
+    alert('No patches to apply');
+    return;
+  }
+  
+  log(`Applying ${state.patches.length} patch(es)...`);
+  updateStatus('Applying', 'processing');
+  
+  const dmp = new diff_match_patch();
+  const [patchedCode, results] = dmp.patch_apply(state.patches, state.originalCode);
+  
+  const successCount = results.filter(r => r).length;
+  const failCount = results.filter(r => !r).length;
+  
+  if (failCount === 0) {
+    document.getElementById('code').value = patchedCode;
+    state.originalCode = patchedCode;
+    updateLineNumbers('original');
+    
+    log(`All ${successCount} patch(es) applied successfully!`, 'success');
+    updateStatus('Applied', 'success');
+    
+    document.getElementById('error-display').innerHTML = 
+      '<div class="success-box">All fixes applied! Code is now valid.</div>';
+    
+    // Clear patches
+    state.patches = [];
+    document.getElementById('patches-display').innerHTML = 
+      '<div class="success-box">All patches have been applied to the original code.</div>';
+    document.getElementById('patch-count').style.display = 'none';
+    document.getElementById('apply-btn').disabled = true;
+    
+    // Clear diff
+    document.getElementById('diff-view').innerHTML = 
+      '<div style="padding: 20px; text-align: center; color: #999;">All changes applied</div>';
+    
+  } else {
+    log(`Applied ${successCount} patch(es), ${failCount} failed`, 'error');
+    updateStatus('Partial Apply', 'error');
+    alert(`${successCount} patches applied, ${failCount} failed. Check the log.`);
+  }
+}
+
+function resetAll() {
+  state = {
+    originalCode: '',
+    fixedCode: '',
+    errors: [],
+    patches: [],
+    isProcessing: false
+  };
+  
+  document.getElementById('code').value = `import React from 'react';
+export default function Test(){
+  return (
+    <div>
+      <form>
+        <div>Test</div
+      </form>
+    </div>
+  );
+}`;
+  
+  document.getElementById('output').value = '';
+  document.getElementById('error-display').innerHTML = '';
+  document.getElementById('validation-display').innerHTML = '';
+  document.getElementById('diff-view').innerHTML = 
+    '<div style="padding: 20px; text-align: center; color: #999;">No changes to display yet</div>';
+  document.getElementById('patches-display').innerHTML = 
+    '<div class="info-box">No patches generated yet. Click "AI Fix" to generate fixes.</div>';
+  document.getElementById('patch-count').style.display = 'none';
+  
+  document.getElementById('fix-btn').disabled = true;
+  document.getElementById('apply-btn').disabled = true;
+  
+  updateLineNumbers('original');
+  updateLineNumbers('fixed');
+  updateStatus('Ready', 'success');
+  
+  log('Reset complete - ready for new code');
+}
+
+// Initialize
+window.onload = () => {
+  log('AI Code Fix - Production Ready');
+  log('Using Groq API (llama-3.3-70b-versatile)');
+  
+  // Load API key
+  loadAPIKey();
+  
+  updateLineNumbers('original');
+  updateLineNumbers('fixed');
+  updateStatus('Ready', 'success');
+};
+</script>
+
+</body>
+</html>

@@ -43,6 +43,15 @@ export const streamChatResponse = async (
 ) => {
   const key = apiKey || (import.meta as any).env?.VITE_GROQ_API_KEY;
   
+  // Sync API key to localStorage for standalone tools
+  if (key && typeof window !== 'undefined') {
+    try {
+      localStorage.setItem('groq_api_key', key);
+    } catch (e) {
+      console.warn('Could not sync API key to localStorage:', e);
+    }
+  }
+  
   if (!key) {
     throw new Error("Groq API key not configured");
   }

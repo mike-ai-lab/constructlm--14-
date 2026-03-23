@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+<pre id="output"></pre>
+<script>
+const testCode = `import React, { useState } from "react";
+import { Mail, Lock, LogIn } from "lucide-react";
+
+export default function MultiErrorTest() {
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => { // TypeScript style
+    e.preventDefault();
+    console.log("Submitting:", { email, password })
+    alert("Submitting " + email)
+  }
+
+  return (
+    <div>
+      <form onSubmit={handleSubmit}>
+        <div>
+          <label htmlFor="email">Email Address</label
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            placeholder="you@example.com"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="password">Password</label>
+          <input
+            id="password"
+            type="password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            placeholder="••••••••"
+          >
+        </div>
+
+        <button type="submit">Sign In</button
+      </form>
+    </div>
+  )
+}`;
+
+function detectAllErrors(code) {
+  const errors = [];
+  let currentCode = code;
+  let attemptCount = 0;
+  const maxAttempts = 10;
+  const seenErrors = new Set();
+  
+  while (attemptCount < maxAttempts) {
+    try {
+      Babel.transform(currentCode, { presets: ['react'] });
+      break;
+    } catch (e) {
+      const errorMsg = e.message;
+      const lineMatch = errorMsg.match(/\((\d+):(\d+)\)/);
+      
+      if (lineMatch) {
+        const line = parseInt(lineMatch[1]);
+        const col = parseInt(lineMatch[2]);
+        const errorKey = `${line}:${col}:${errorMsg.split('\n')[0]}`;
+        
+        if (seenErrors.has(errorKey)) {
+          break;
+        }
+        seenErrors.add(errorKey);
+        
+        errors.push({
+          message: errorMsg.split('\n')[0],
+          line: line,
+          column: col,
+          fullError: errorMsg
+        });
+        
+        const lines = currentCode.split('\n');
+        
+        if (lines[line - 1]) {
+          const tokenMap = {
+            'jsxTagEnd': '>',
+            'jsxTagStart': '<',
+            ',': ',',
+            ';': ';',
+            ')': ')',
+            '}': '}',
+            ']': ']'
+          };
+          
+          if (errorMsg.includes('Unexpected token')) {
+            if (errorMsg.includes('expected ","')) {
+              lines[line - 1] = lines[line - 1].replace(/:\s*[A-Za-z.<>[\]]+(?=\s*[)=,])/g, '');
+            } else {
+              const expectedMatch = errorMsg.match(/expected "([^"]+)"/);
+              if (expectedMatch) {
+                const expectedToken = expectedMatch[1];
+                const actualChar = tokenMap[expectedToken] || expectedToken;
+                const lineContent = lines[line - 1];
+                lines[line - 1] = lineContent.substring(0, col - 1) + actualChar + lineContent.substring(col - 1);
+              }
+            }
+          }
+        }
+        
+        currentCode = lines.join('\n');
+      } else {
+        if (!seenErrors.has(errorMsg)) {
+          errors.push({
+            message: errorMsg,
+            line: 0,
+            column: 0,
+            fullError: errorMsg
+          });
+          seenErrors.add(errorMsg);
+        }
+        break;
+      }
+      
+      attemptCount++;
+    }
+  }
+  
+  return errors;
+}
+
+const errors = detectAllErrors(testCode);
+document.getElementById('output').textContent = 
+  'DETECTED ERRORS: ' + errors.length + '\n\n' +
+  errors.map((e, i) => 
+    `Error ${i+1} (Line ${e.line}:${e.column}):\n${e.message}\n`
+  ).join('\n');
+</script>
+</body>
+</html>

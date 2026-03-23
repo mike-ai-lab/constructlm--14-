@@ -1,0 +1,17 @@
+.error-display {
+  background: #fff3cd;
+  border-left: 4px solid #ffc107;
+  padding: 12px 16px;
+  margin: 12px 16px;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.error-item {
+  padding: 8px 0;
+  border-bottom: 1px solid #ffe69c;
+}
+
+.error-item:last-child {
+  border-bottom: none;
+}

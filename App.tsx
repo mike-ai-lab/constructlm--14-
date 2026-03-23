@@ -656,35 +656,19 @@ const App: React.FC = () => {
       return;
     }
 
-    console.log('========================================');
-    console.log('[CANVAS FIX] STARTING ERROR FIX PROCESS');
-    console.log('========================================');
-    console.log('[CANVAS FIX] Input code length:', code.length);
-    console.log('[CANVAS FIX] Input code preview:', code.substring(0, 200) + '...');
-    console.log('[CANVAS FIX] Canvas error:', canvasError);
+    console.log('[CANVAS FIX] Starting error fix process');
+    console.log('[CANVAS FIX] Error:', canvasError?.message);
 
     setIsFixingError(true);
     
     try {
       const errorMsg = canvasError?.message || 'Unknown error';
-      
-      // CRITICAL FIX: Use the ORIGINAL source code from Canvas, not the transpiled error code
       const sourceCode = code;
-      
-      console.log('[CANVAS FIX] Source code lines:', sourceCode.split('\n').length);
-      console.log('[CANVAS FIX] Error message:', errorMsg);
-      console.log('[CANVAS FIX] Full source code:');
-      console.log('--- SOURCE CODE START ---');
-      console.log(sourceCode);
-      console.log('--- SOURCE CODE END ---');
       
       // Extract error line number and type
       const lineMatch = errorMsg.match(/line (\d+)|:(\d+):\d+/i);
       const errorLine = lineMatch ? parseInt(lineMatch[1] || lineMatch[2]) : null;
       const isClosingTagError = errorMsg.includes('jsxTagEnd');
-      
-      console.log('[CANVAS FIX] Extracted error line:', errorLine);
-      console.log('[CANVAS FIX] Is closing tag error:', isClosingTagError);
       
       // Build FOCUSED context (10 lines around error) + full source
       const lines = sourceCode.split('\n');
@@ -709,85 +693,29 @@ const App: React.FC = () => {
         `  ${idx + 1} | ${line}`
       ).join('\n');
       
-      // Semantic patch prompt - WELL STRUCTURED with clear sections
-      const errorFixPrompt = `# CODE ERROR FIX REQUEST
+      // Simple, clear prompt that accepts both formats
+      const errorFixPrompt = `Fix this error:
 
-## ERROR DETAILS
-${errorMsg}
+Error: ${errorMsg}
 
-${isClosingTagError ? '**ERROR TYPE**: This error is about a missing ">" in a CLOSING JSX tag (</...>)' : ''}
-
-## FOCUSED CONTEXT (PRIORITY - FIX HERE)
-${focusedContext || 'No focused context available'}
-
-## FULL SOURCE CODE (with line numbers)
+Context (lines around error):
 ${contextLines}
 
-## CRITICAL TARGETING STEP
-1. Find the EXACT line in the source code that matches the broken syntax
-2. COPY that line EXACTLY as it appears
-3. Only fix THAT exact line
+Return patches in this format (you can use either):
 
-You MUST:
-- Match the FULL line text exactly (including </ vs <)
-- If the line starts with </ it is a CLOSING tag
-- If the line starts with < (without /) it is an OPENING tag
-- NEVER modify a different line even if similar
+Format 1 (simple):
+PATCH @@ line 133 @@
+</div
+</div>
 
-Before writing a patch:
-- Output: "FOUND LINE X: <paste exact line>"
+Format 2 (git diff):
+PATCH @@ -133,1 +133,1 @@
+-</div
++</div>
 
-If this step is wrong the patch is invalid.
+Just return the patches, nothing else.`;
 
-## INSTRUCTIONS
-The error above is from transpiled code. You need to find and fix the actual error in the SOURCE CODE above.
-
-**PRIORITY**: Fix the error inside the FOCUSED CONTEXT section above.
-
-Common issues:
-- Missing closing brackets: }, ), ], >
-- Missing opening brackets: {, (, [, <
-- Missing semicolons
-- Unclosed strings or template literals
-- Mismatched JSX tags
-
-**IMPORTANT**: If the error says "expected jsxTagEnd", look for a CLOSING tag (</...>) that is missing the final >.
-
-### PATCH FORMAT (CRITICAL - READ CAREFULLY)
-Each patch must be EXACTLY 3 lines:
-
-Line 1: PATCH @@ line X @@
-Line 2: old code (the EXACT broken line from source code - copy it EXACTLY)
-Line 3: new code (the fixed version of that line)
-
-### RULES
-1. Each patch is 3 lines - no more, no less
-2. Put your explanation BEFORE the patches
-3. Do NOT put explanation text after the new code line
-4. Use line numbers from the SOURCE CODE above (not from error message)
-5. Copy the old code EXACTLY as it appears - don't change anything except the fix
-6. Only fix the specific error - don't change other code
-
-### CORRECT EXAMPLE
-FOUND LINE 55: "      </div"
-Fixed missing closing bracket on div tag at line 55.
-
-PATCH @@ line 55 @@
-      </div
-      </div>
-
-### WRONG EXAMPLE (DO NOT DO THIS)
-PATCH @@ line 55 @@
-<div className="...">
-<div className="...">
-
-## YOUR RESPONSE
-Provide: Brief explanation with "FOUND LINE X: <exact line>", then patches in the format above.`;
-
-      console.log('[CANVAS FIX] Prompt being sent to AI:');      console.log('[CANVAS FIX] Prompt being sent to AI:');
-      console.log('--- PROMPT START ---');
-      console.log(errorFixPrompt);
-      console.log('--- PROMPT END ---');
+      console.log('[CANVAS FIX] Sending prompt to AI');
 
       // Send to chat
       const userMsg: ChatMessage = {
@@ -871,47 +799,18 @@ Provide: Brief explanation with "FOUND LINE X: <exact line>", then patches in th
         );
       }
 
-      console.log('[CANVAS FIX] AI response received:');
-      console.log('--- AI RESPONSE START ---');
-      console.log(accumulatedText);
-      console.log('--- AI RESPONSE END ---');
-      console.log('[CANVAS FIX] AI response length:', accumulatedText.length);
-
-      // Parse patches from AI response
-      console.log('[CANVAS FIX] Parsing patches from AI response...');
+      console.log('[CANVAS FIX] AI response received, parsing patches...');
       const patches = parsePatchesFromResponse(accumulatedText);
       
-      console.log('[CANVAS FIX] Patches parsed:', patches.length);
-      patches.forEach((patch, idx) => {
-        console.log(`[CANVAS FIX] Patch ${idx + 1}:`, patch);
-      });
-      
       if (patches.length > 0) {
-        console.log('[CANVAS FIX] Applying patches to source code...');
-        console.log('[CANVAS FIX] Source code before patching:');
-        console.log('--- BEFORE PATCH ---');
-        console.log(code);
-        console.log('--- BEFORE PATCH END ---');
+        console.log(`[CANVAS FIX] Applying ${patches.length} patch(es)`);
         
         // Apply patches to the SOURCE code (the original code from editor)
         const patchedCode = applyPatchesToCode(code, patches);
         
-        console.log('[CANVAS FIX] Source code after patching:');
-        console.log('--- AFTER PATCH ---');
-        console.log(patchedCode);
-        console.log('--- AFTER PATCH END ---');
-        
-        console.log(`[CANVAS FIX] Applied ${patches.length} patch(es) inline`);
-        console.log('[CANVAS FIX] Patched code preview:', patchedCode.substring(0, 200) + '...');
-        
         // Create a new version with the patched code
         const newVersion = { code: patchedCode, timestamp: Date.now() };
         const updatedVersions = [...canvasVersions.slice(0, canvasVersionIndex + 1), newVersion];
-        
-        console.log('[CANVAS FIX] Creating new version...');
-        console.log('[CANVAS FIX] Previous versions count:', canvasVersions.length);
-        console.log('[CANVAS FIX] New versions count:', updatedVersions.length);
-        console.log('[CANVAS FIX] New version index:', updatedVersions.length - 1);
         
         // Update versions and index
         setCanvasVersions(updatedVersions);
@@ -921,10 +820,7 @@ Provide: Brief explanation with "FOUND LINE X: <exact line>", then patches in th
         setCanvasCode(patchedCode);
         setCanvasError(null);
         
-        console.log('[CANVAS FIX] Canvas state updated successfully');
-        console.log('========================================');
-        console.log('[CANVAS FIX] FIX PROCESS COMPLETED');
-        console.log('========================================');
+        console.log('[CANVAS FIX] Fix applied successfully');
         
       } else {
         console.log('[CANVAS FIX] No patches found, trying fallback...');
@@ -933,11 +829,7 @@ Provide: Brief explanation with "FOUND LINE X: <exact line>", then patches in th
         if (codeMatch) {
           const fixedCode = codeMatch[1].trim();
           
-          console.log('[CANVAS FIX] Found code block in AI response');
-          console.log('[CANVAS FIX] Fixed code:');
-          console.log('--- FIXED CODE ---');
-          console.log(fixedCode);
-          console.log('--- FIXED CODE END ---');
+          console.log('[CANVAS FIX] Found code block, applying full replacement');
           
           // Create a new version with the fixed code
           const newVersion = { code: fixedCode, timestamp: Date.now() };
@@ -947,9 +839,7 @@ Provide: Brief explanation with "FOUND LINE X: <exact line>", then patches in th
           setCanvasVersionIndex(updatedVersions.length - 1);
           setCanvasCode(fixedCode);
           setCanvasError(null);
-          console.log('[CANVAS FIX] Applied full code replacement (fallback)');
-          console.log('========================================');
-          console.log('[CANVAS FIX] FIX PROCESS COMPLETED (FALLBACK)');
+          console.log('[CANVAS FIX] Full code replacement applied');
           console.log('========================================');
         } else {
           console.warn('[CANVAS FIX] No patches or code found in AI response');
@@ -985,181 +875,71 @@ Provide: Brief explanation with "FOUND LINE X: <exact line>", then patches in th
   };
 
   // Parse PATCH format from AI response
+  // Parse PATCH format from AI response - accepts BOTH simple and git diff formats
   const parsePatchesFromResponse = (response: string): Array<{line: number, oldContent: string, newContent: string}> => {
     const patches: Array<{line: number, oldContent: string, newContent: string}> = [];
     
-    console.log('========================================');
-    console.log('[PATCH PARSER] Starting patch parsing');
-    console.log('========================================');
-    console.log('[Patch Parser] Raw response length:', response.length);
-    console.log('[Patch Parser] Raw response:', response);
+    console.log('[CANVAS FIX] Parsing patches from response');
     
-    // Clean up response - remove code blocks if present
-    let cleanResponse = response.replace(/```[a-z]*\n?/gi, '').trim();
-    console.log('[Patch Parser] Cleaned response:', cleanResponse);
-    
-    // Try standard format first (with newlines) - STRICT 3-line format
-    // Match: PATCH @@ line X @@ \n old \n new
-    const standardRegex = /PATCH\s+@@\s+line\s+(\d+)\s+@@\s*\n([^\n]+)\n([^\n]+)/gi;
-    
-    console.log('[Patch Parser] Trying standard format regex...');
+    // Format 1: Simple format - PATCH @@ line X @@
+    const simpleRegex = /PATCH\s+@@\s+line\s+(\d+)\s+@@\s*\n([^\n]+)\n([^\n]+)/gi;
     let match;
-    while ((match = standardRegex.exec(cleanResponse)) !== null) {
+    
+    while ((match = simpleRegex.exec(response)) !== null) {
       const lineNum = parseInt(match[1]);
-      let oldContent = match[2].trim();
-      let newContent = match[3].trim();
+      const oldContent = match[2].trim().replace(/^[-]\s*/, '');
+      const newContent = match[3].trim().replace(/^[+]\s*/, '');
       
-      console.log('[Patch Parser] Found match:', match[0]);
-      console.log('[Patch Parser] Line number:', lineNum);
-      console.log('[Patch Parser] Old content (raw):', match[2]);
-      console.log('[Patch Parser] New content (raw):', match[3]);
-      
-      // Remove +/- prefixes and labels if present
-      oldContent = oldContent.replace(/^[-]\s*/, '').replace(/^old line content:\s*/i, '');
-      newContent = newContent.replace(/^[+]\s*/, '').replace(/^new line content:\s*/i, '');
-      
-      patches.push({
-        line: lineNum,
-        oldContent,
-        newContent
-      });
-      console.log(`[Patch Parsed] Line ${lineNum}:`);
-      console.log(`  Old: "${oldContent}"`);
-      console.log(`  New: "${newContent}"`);
+      patches.push({ line: lineNum, oldContent, newContent });
+      console.log(`[CANVAS FIX] Parsed simple format patch - Line ${lineNum}`);
     }
     
-    // If no patches found, try compact format (all on one line) - FALLBACK
+    // Format 2: Git diff format - PATCH @@ -X,Y +X,Y @@
     if (patches.length === 0) {
-      console.log('[Patch Parser] No patches found with standard format');
-      console.log('[Patch Parser] Trying compact format (fallback)...');
+      console.log('[CANVAS FIX] No simple format patches found, trying git diff format');
+      const gitDiffRegex = /PATCH\s+@@\s+-(\d+),\d+\s+\+(\d+),\d+\s+@@\s*\n-([^\n]+)\n\+([^\n]+)/gi;
       
-      // Match: PATCH @@ line X @@oldnew (everything on one line)
-      const compactRegex = /PATCH\s+@@\s+line\s+(\d+)\s+@@([^\n]+)/gi;
-      
-      while ((match = compactRegex.exec(cleanResponse)) !== null) {
-        const lineNum = parseInt(match[1]);
-        const content = match[2].trim();
+      while ((match = gitDiffRegex.exec(response)) !== null) {
+        const lineNum = parseInt(match[1]); // Use the old line number
+        const oldContent = match[3].trim();
+        const newContent = match[4].trim();
         
-        console.log('[Patch Parser] Found compact match:', match[0]);
-        console.log('[Patch Parser] Line number:', lineNum);
-        console.log('[Patch Parser] Content:', content);
-        
-        // Try to split the content - look for common patterns
-        // Pattern 1: </tag</tag> or <tag<tag>
-        const tagMatch = content.match(/^(<[^>]*)(><[^>]*>)$/);
-        if (tagMatch) {
-          const oldContent = tagMatch[1];
-          const newContent = tagMatch[1] + '>';
-          
-          patches.push({
-            line: lineNum,
-            oldContent,
-            newContent
-          });
-          console.log(`[Patch Parsed - Compact] Line ${lineNum}:`);
-          console.log(`  Old: "${oldContent}"`);
-          console.log(`  New: "${newContent}"`);
-          continue;
-        }
-        
-        // Pattern 2: Look for duplicate content (old and new are similar)
-        const halfLen = Math.floor(content.length / 2);
-        const firstHalf = content.substring(0, halfLen);
-        const secondHalf = content.substring(halfLen);
-        
-        console.log('[Patch Parser] Trying to split content in half...');
-        console.log('[Patch Parser] First half:', firstHalf);
-        console.log('[Patch Parser] Second half:', secondHalf);
-        
-        if (firstHalf.length > 0 && secondHalf.startsWith(firstHalf.substring(0, Math.min(10, firstHalf.length)))) {
-          patches.push({
-            line: lineNum,
-            oldContent: firstHalf,
-            newContent: secondHalf
-          });
-          console.log(`[Patch Parsed - Compact Split] Line ${lineNum}:`);
-          console.log(`  Old: "${firstHalf}"`);
-          console.log(`  New: "${secondHalf}"`);
-        }
+        patches.push({ line: lineNum, oldContent, newContent });
       }
     }
     
-    console.log(`[Patch Parser] Found ${patches.length} patch(es)`);
-    console.log('========================================');
-    console.log('[PATCH PARSER] Parsing complete');
-    console.log('========================================');
     return patches;
   };
 
-  // Apply patches to code inline
+  // Apply patches to code - with fuzzy matching
   const applyPatchesToCode = (code: string, patches: Array<{line: number, oldContent: string, newContent: string}>): string => {
     const lines = code.split('\n');
+
     
-    console.log(`[Patch Applier] Total lines in code: ${lines.length}`);
-    
-    // Sort patches by line number (descending) to avoid offset issues
-    const sortedPatches = [...patches].sort((a, b) => b.line - a.line);
-    
-    for (const patch of sortedPatches) {
+    for (const patch of patches) {
       const lineIndex = patch.line - 1; // Convert to 0-based index
       
-      // VALIDATION 1: Check if old content exists in source code
-      if (!code.includes(patch.oldContent.trim())) {
-        console.warn(`[REJECTED] Old content not found in source code: "${patch.oldContent}"`);
-        continue;
-      }
-      
-      // First try exact line number
       if (lineIndex >= 0 && lineIndex < lines.length) {
-        const currentLine = lines[lineIndex].trim();
-        const expectedLine = patch.oldContent.trim();
-        
-        console.log(`[Patch Applier] Line ${patch.line}:`);
-        console.log(`  Current: "${lines[lineIndex]}"`);
-        console.log(`  Expected: "${patch.oldContent}"`);
-        console.log(`  New: "${patch.newContent}"`);
-        
-        // VALIDATION 2: Check for opening/closing tag confusion
-        if (!patch.oldContent.includes('</') && lines[lineIndex].includes('</')) {
-          console.warn(`[REJECTED] AI confused opening/closing tag - patch has opening tag but line has closing tag`);
-          continue;
-        }
-        
-        if (patch.oldContent.includes('</') && lines[lineIndex].includes('<') && !lines[lineIndex].includes('</')) {
-          console.warn(`[REJECTED] AI confused opening/closing tag - patch has closing tag but line has opening tag`);
-          continue;
-        }
-        
-        // Check if line matches (trim whitespace for comparison)
-        if (currentLine === expectedLine) {
+        // Try exact match first
+        if (lines[lineIndex].trim() === patch.oldContent.trim()) {
           lines[lineIndex] = patch.newContent;
-          console.log(`[Patch Applied] Line ${patch.line} replaced (exact match)`);
-          continue;
-        }
-      }
-      
-      // If exact line doesn't match, search for the line in nearby area (±10 lines)
-      const searchStart = Math.max(0, lineIndex - 10);
-      const searchEnd = Math.min(lines.length, lineIndex + 10);
-      let found = false;
-      
-      for (let i = searchStart; i < searchEnd; i++) {
-        if (lines[i].trim() === patch.oldContent.trim()) {
-          // VALIDATION 3: Double-check opening/closing tag match
-          if (!patch.oldContent.includes('</') && lines[i].includes('</')) {
-            console.warn(`[REJECTED] Found line but tag type mismatch at ${i + 1}`);
-            continue;
+        } else {
+          // Fuzzy match - search ±2 lines
+          let found = false;
+          for (let offset = -2; offset <= 2; offset++) {
+            const idx = lineIndex + offset;
+            if (idx >= 0 && idx < lines.length && lines[idx].trim() === patch.oldContent.trim()) {
+              lines[idx] = patch.newContent;
+              found = true;
+              break;
+            }
           }
-          
-          console.log(`[Patch Applied] Found matching line at ${i + 1} (searched near ${patch.line})`);
-          lines[i] = patch.newContent;
-          found = true;
-          break;
+          if (!found) {
+            console.warn(`[CANVAS FIX] Could not find line to patch: "${patch.oldContent}"`);
+          }
         }
-      }
-      
-      if (!found) {
-        console.warn(`[Patch Skipped] Could not find line matching: "${patch.oldContent}"`);
+      } else {
+        console.warn(`[CANVAS FIX] Line ${patch.line} out of range (total lines: ${lines.length})`);
       }
     }
     

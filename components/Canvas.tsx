@@ -60,6 +60,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   const rendererRef = useRef<any>(null);
   const hadErrorRef = useRef<boolean>(false);
   const lastRenderedCodeRef = useRef<string>('');
+  const isInitializingRef = useRef<boolean>(false);
 
   // CRITICAL: Reset versions when initialVersions changes (e.g., switching chats)
   useEffect(() => {
@@ -68,6 +69,9 @@ export const Canvas: React.FC<CanvasProps> = ({
       initialVersionsCount: initialVersions?.length || 0,
       initialIndex: initialVersionIndex
     });
+    
+    // Mark as initializing BEFORE any state updates
+    isInitializingRef.current = true;
     
     if (initialVersions && initialVersions.length > 0) {
       console.log('[Canvas] Setting versions from initialVersions');
@@ -85,9 +89,21 @@ export const Canvas: React.FC<CanvasProps> = ({
     hadErrorRef.current = !!error;
   }, [error]);
 
-  // Notify parent of version changes
+  // Notify parent of version changes (but NOT during initialization from parent)
   useEffect(() => {
+    // Skip if we're initializing from parent's initialVersions
+    if (isInitializingRef.current) {
+      console.log('[Canvas] Skipping onVersionsChange - initializing from parent');
+      isInitializingRef.current = false; // Reset flag after skipping
+      return;
+    }
+    
+    // Only notify parent if versions actually changed from user action
     if (onVersionsChange) {
+      console.log('[Canvas] Notifying parent of version change:', {
+        versionsCount: versions.length,
+        currentIndex: currentVersionIndex
+      });
       onVersionsChange(versions, currentVersionIndex);
     }
   }, [versions, currentVersionIndex]);
