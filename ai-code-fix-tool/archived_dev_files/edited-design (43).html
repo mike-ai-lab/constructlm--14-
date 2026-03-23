@@ -1,0 +1,547 @@
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>AI Code Fix Tool | Professional Interface</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --accent-orange: #f97316;
+      --accent-glow: rgba(249, 115, 22, 0.5);
+      --transition-speed: 0.4s;
+      
+      --bg: #0a0a0a;
+      --text: #ffffff;
+      --text-secondary: rgba(255, 255, 255, 0.7);
+      --panel: rgba(20, 20, 20, 0.9);
+      --border: rgba(255, 255, 255, 0.12);
+      --hover: rgba(255, 255, 255, 0.05);
+      --scrollbar-track: rgba(255, 255, 255, 0.02);
+      --scrollbar-thumb: rgba(255, 255, 255, 0.1);
+    }
+
+    .light {
+      --bg: #f5f5f5;
+      --text: #0a0a0a;
+      --text-secondary: rgba(0, 0, 0, 0.7);
+      --panel: rgba(255, 255, 255, 0.95);
+      --border: rgba(0, 0, 0, 0.1);
+      --hover: rgba(0, 0, 0, 0.05);
+      --scrollbar-track: rgba(0, 0, 0, 0.02);
+      --scrollbar-thumb: rgba(0, 0, 0, 0.1);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html {
+      height: 100%;
+      width: 100%;
+      position: fixed;
+      overflow: hidden;
+      transition: background-color var(--transition-speed) ease;
+    }
+
+    body {
+      font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      height: 100%;
+      width: 100%;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      overflow: hidden;
+      background-color: var(--bg);
+      color: var(--text);
+      transition: background-color var(--transition-speed) ease, 
+                  color var(--transition-speed) ease;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .glass-panel {
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      transition: background-color var(--transition-speed) ease, 
+                  border-color var(--transition-speed) ease;
+    }
+
+    .light .glass-panel {
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+    }
+
+    .mono { 
+      font-family: 'JetBrains Mono', 'Courier New', monospace; 
+    }
+
+    /* Theme Toggle */
+    .theme-toggle-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+      border: none;
+      background: transparent;
+    }
+    
+    .theme-icon {
+      width: 20px;
+      height: 20px;
+      position: absolute;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .sun-icon { opacity: 0; transform: rotate(90deg) scale(0); }
+    .moon-icon { opacity: 1; transform: rotate(0deg) scale(1); }
+    .light .sun-icon { opacity: 1; transform: rotate(0deg) scale(1); }
+    .light .moon-icon { opacity: 0; transform: rotate(-90deg) scale(0); }
+
+    /* Mobile Panel Handling */
+    @media (max-width: 768px) {
+      .chat-panel-mobile {
+        position: fixed;
+        bottom: 0;
+        right: 0;
+        left: 0;
+        top: 45px;
+        z-index: 50;
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+        /* Account for safe area on mobile */
+        padding-bottom: env(safe-area-inset-bottom);
+      }
+      .chat-panel-mobile.open {
+        transform: translateX(0);
+      }
+    }
+
+    /* Console Height */
+    .console-panel {
+      height: 240px;
+      transition: height 0.3s ease;
+      z-index: 60;
+    }
+    .console-panel.collapsed {
+      height: 40px;
+    }
+
+    /* Debug Window */
+    .debug-window {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 90vw;
+      max-width: 425px;
+      height: 325px;
+      z-index: 1000;
+      display: none;
+      flex-direction: column;
+    }
+    .debug-window.open {
+      display: flex;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+    ::-webkit-scrollbar-thumb { 
+      background: var(--scrollbar-thumb); 
+      border-radius: 4px; 
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--accent-orange);
+    }
+
+    /* Utility Classes */
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .flex-1 { flex: 1 1 0%; }
+    .items-center { align-items: center; }
+    .items-start { align-items: flex-start; }
+    .items-end { align-items: flex-end; }
+    .justify-between { justify-content: space-between; }
+    .justify-center { justify-content: center; }
+    .gap-1 { gap: 0.25rem; }
+    .gap-2 { gap: 0.5rem; }
+    .gap-3 { gap: 0.75rem; }
+    .gap-4 { gap: 1rem; }
+    .space-y-4 > * + * { margin-top: 1rem; }
+    
+    .h-full { height: 100%; }
+    .h-10 { height: 2.5rem; }
+    .h-8 { height: 2rem; }
+    .h-4 { height: 1rem; }
+    .h-2 { height: 0.5rem; }
+    .w-full { width: 100%; }
+    .w-8 { width: 2rem; }
+    .w-4 { width: 1rem; }
+    .w-2 { width: 0.5rem; }
+    .min-w-\[20px\] { min-width: 20px; }
+    .max-w-\[90\%\] { max-width: 90%; }
+    
+    .p-1 { padding: 0.25rem; }
+    .p-2 { padding: 0.5rem; }
+    .p-3 { padding: 0.75rem; }
+    .p-4 { padding: 1rem; }
+    .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+    .px-4 { padding-left: 1rem; padding-right: 1rem; }
+    .py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+    .py-2 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+    .pb-1 { padding-bottom: 0.25rem; }
+    .pb-20 { padding-bottom: 5rem; }
+    .pl-4 { padding-left: 1rem; }
+    .mt-4 { margin-top: 1rem; }
+    
+    .text-\[9px\] { font-size: 9px; }
+    .text-\[10px\] { font-size: 10px; }
+    .text-\[11px\] { font-size: 11px; }
+    .text-\[12px\] { font-size: 12px; }
+    .text-\[13px\] { font-size: 13px; }
+    .font-medium { font-weight: 500; }
+    .font-semibold { font-weight: 600; }
+    .font-bold { font-weight: 700; }
+    .uppercase { text-transform: uppercase; }
+    .tracking-wider { letter-spacing: 0.05em; }
+    .tracking-\[0\.1em\] { letter-spacing: 0.1em; }
+    .tracking-\[0\.2em\] { letter-spacing: 0.2em; }
+    .text-right { text-align: right; }
+    
+    .rounded { border-radius: 0.25rem; }
+    .rounded-lg { border-radius: 0.5rem; }
+    .rounded-xl { border-radius: 0.75rem; }
+    .rounded-2xl { border-radius: 1rem; }
+    .rounded-full { border-radius: 9999px; }
+    .rounded-tl-none { border-top-left-radius: 0; }
+    .rounded-tr-none { border-top-right-radius: 0; }
+    
+    .border { border-width: 1px; }
+    .border-b { border-bottom-width: 1px; }
+    .border-t { border-top-width: 1px; }
+    .border-r { border-right-width: 1px; }
+    .border-l { border-left-width: 1px; }
+    .border-b-2 { border-bottom-width: 2px; }
+    .border-none { border-style: none; }
+    .border-dashed { border-style: dashed; }
+    
+    .dark .border-white\/5, .dark .dark\:border-white\/5 { border-color: rgba(255, 255, 255, 0.05); }
+    .light .border-black\/5 { border-color: rgba(0, 0, 0, 0.05); }
+    
+    .bg-orange-500 { background-color: #f97316; }
+    .bg-green-500 { background-color: #22c55e; }
+    .bg-transparent { background-color: transparent; }
+    .dark .bg-\[\#0f0f0f\], .dark .dark\:bg-\[\#0f0f0f\] { background-color: #0f0f0f; }
+    .light .bg-white { background-color: #ffffff; }
+    .dark .bg-black\/5 { background-color: rgba(0, 0, 0, 0.05); }
+    .dark .bg-black\/20 { background-color: rgba(0, 0, 0, 0.2); }
+    
+    .text-orange-500 { color: #f97316; }
+    .text-white { color: #ffffff; }
+    .dark .text-black, .dark .dark\:text-black { color: #000000; }
+    .light .text-white { color: #000000; }
+    
+    .opacity-40 { opacity: 0.4; }
+    .opacity-50 { opacity: 0.5; }
+    .opacity-60 { opacity: 0.6; }
+    .opacity-70 { opacity: 0.7; }
+    .opacity-80 { opacity: 0.8; }
+    
+    .overflow-hidden { overflow: hidden; }
+    .overflow-auto { overflow: auto; }
+    .overflow-y-auto { overflow-y: auto; }
+    
+    .relative { position: relative; }
+    .absolute { position: absolute; }
+    .fixed { position: fixed; }
+    .static { position: static; }
+    
+    .shrink-0 { flex-shrink: 0; }
+    .select-none { user-select: none; }
+    .resize-none { resize: none; }
+    .outline-none { outline: none; }
+    .cursor-pointer { cursor: pointer; }
+    
+    .shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+    .shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
+    
+    .transition-all { transition: all 0.15s; }
+    .transition-colors { transition: color 0.15s, background-color 0.15s; }
+    .transition-transform { transition: transform 0.3s; }
+    
+    .hover\:bg-orange-600:hover { background-color: #ea580c; }
+    .hover\:text-orange-500:hover { color: #f97316; }
+    .hover\:opacity-100:hover { opacity: 1; }
+    .dark .hover\:bg-white\/5:hover, .dark .dark\:hover\:bg-white\/5:hover { background-color: rgba(255, 255, 255, 0.05); }
+    .light .hover\:bg-black\/5:hover { background-color: rgba(0, 0, 0, 0.05); }
+    
+    button { 
+      border: none; 
+      background: none; 
+      cursor: pointer; 
+      color: inherit;
+      font: inherit;
+      /* Better touch handling for mobile */
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    
+    button:active {
+      opacity: 0.7;
+    }
+    
+    textarea, input {
+      font-family: inherit;
+      color: inherit;
+      background: transparent;
+    }
+    
+    textarea::placeholder, input::placeholder {
+      color: var(--text-secondary);
+      opacity: 0.5;
+    }
+    
+    .break-all { word-break: break-all; }
+    
+    /* Responsive utilities */
+    .hidden { display: none; }
+    
+    @media (min-width: 640px) {
+      .sm\:flex { display: flex; }
+      .sm\:block { display: block; }
+    }
+    
+    @media (min-width: 768px) {
+      .md\:static { position: static; }
+      .md\:hidden { display: none; }
+      .md\:block { display: block; }
+      .md\:w-\[320px\] { width: 320px; }
+      .md\:translate-x-0 { transform: translateX(0); }
+      .md\:pb-4 { padding-bottom: 1rem; }
+      .md\:bg-transparent { background-color: transparent; }
+      .md\:text-\[13px\] { font-size: 13px; }
+      .md\:text-\[12px\] { font-size: 12px; }
+      .md\:tracking-\[0\.2em\] { letter-spacing: 0.2em; }
+    }
+    
+    @media (min-width: 1024px) {
+      .lg\:w-\[380px\] { width: 380px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="h-full flex flex-col">
+    
+    <header class="glass-panel flex items-center justify-between px-4 border-b dark:border-white/5 border-black/5 shrink-0" style="height: 45px;">
+      <div class="flex items-center gap-2">
+        <div class="text-[11px] md:text-[13px] font-bold tracking-[0.1em] md:tracking-[0.2em] uppercase dark:text-white text-black">
+          AI Code Fix
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <div class="hidden sm:flex glass-panel px-3 py-1 rounded-lg items-center gap-2">
+          <div class="w-2 h-2 rounded-full bg-green-500"></div>
+          <span class="text-[9px] font-medium opacity-70 uppercase">API</span>
+        </div>
+
+        <button onclick="toggleDebug()" class="glass-panel p-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/5">
+          <svg class="w-4 h-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+          </svg>
+        </button>
+
+        <button class="theme-toggle-btn glass-panel" onclick="toggleTheme()">
+          <svg class="theme-icon sun-icon text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" stroke-width="2"></circle><path stroke-linecap="round" stroke-width="2" d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41M2 12h2m16 0h2"></path></svg>
+          <svg class="theme-icon moon-icon opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+        </button>
+
+        <button onclick="toggleChat()" class="md:hidden glass-panel p-2 rounded-lg text-orange-500">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="flex-1 flex overflow-hidden relative">
+      
+      <div class="flex-1 flex flex-col border-r dark:border-white/5 border-black/5">
+        <div class="glass-panel h-10 flex items-center justify-between px-4 border-b dark:border-white/5 border-black/5">
+          <div class="text-[10px] font-semibold opacity-60 tracking-wider uppercase">Editor</div>
+          <div class="flex gap-2">
+            <button onclick="detectErrors()" class="hidden sm:block text-[10px] font-medium opacity-80 hover:text-orange-500 uppercase">Detect</button>
+            <button onclick="aiFix()" class="px-3 py-1 bg-orange-500 text-white text-[10px] font-semibold rounded hover:bg-orange-600 uppercase transition-all shadow-lg">AI Fix</button>
+          </div>
+        </div>
+
+        <div class="flex-1 overflow-auto p-4 mono text-[12px] md:text-[13px] dark:bg-[#0f0f0f] bg-white">
+          <div class="flex gap-3">
+            <div class="opacity-40 select-none text-right font-medium min-w-[20px]">
+              <div>1</div><div>2</div><div>3</div><div>4</div>
+            </div>
+            <div class="flex-1 font-medium break-all">
+              <div>function example() {</div>
+              <div class="pl-4">const greeting = "Hello World";</div>
+              <div class="pl-4">console.log(greeting);</div>
+              <div>}</div>
+              <div class="mt-4 opacity-50">// Missing closing parenthesis</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <aside id="chatPanel" class="chat-panel-mobile md:static md:translate-x-0 w-full md:w-[320px] lg:w-[380px] flex flex-col glass-panel border-l dark:border-white/5">
+        <div class="h-10 flex items-center justify-between px-4 border-b dark:border-white/5 border-black/5 bg-black/5 md:bg-transparent">
+          <div class="text-[10px] font-semibold opacity-60 tracking-wider uppercase">AI Assistant</div>
+          <button onclick="toggleChat()" class="md:hidden text-[10px] font-bold text-orange-500">CLOSE</button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-4 space-y-4 pb-20 md:pb-4">
+          <div class="flex flex-col items-end gap-1">
+            <div class="glass-panel px-3 py-2 rounded-xl rounded-tr-none max-w-[90%] text-[13px]">
+              Can you help me fix this?
+            </div>
+          </div>
+          <div class="flex flex-col items-start gap-1">
+            <div class="glass-panel px-3 py-2 rounded-xl rounded-tl-none max-w-[90%] text-[13px] border-none">
+              I've found 2 errors. Click "AI Fix" to resolve them.
+            </div>
+          </div>
+        </div>
+
+        <div class="p-3 border-t dark:border-white/5 bg-inherit">
+          <div class="glass-panel rounded-xl p-2 flex gap-2 border-dashed">
+            <textarea class="flex-1 bg-transparent border-none outline-none resize-none text-[13px] p-1" rows="1" placeholder="Ask help..."></textarea>
+            <button class="shrink-0 w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center text-white">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path></svg>
+            </button>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="console-panel glass-panel border-t dark:border-white/5 flex flex-col collapsed">
+      <div class="h-10 flex items-center justify-between px-4 border-b dark:border-white/5 shrink-0">
+        <div class="flex gap-4">
+          <button class="text-[10px] font-bold text-orange-500 border-b-2 border-orange-500 pb-1">CONSOLE</button>
+          <button class="text-[10px] opacity-60">PROBLEMS</button>
+        </div>
+        <button onclick="toggleConsole()" class="p-1">
+          <svg id="consoleArrow" class="w-4 h-4 opacity-60 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-2 mono text-[11px] md:text-[12px]">
+        <div class="flex gap-2 p-2 rounded hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+          <span class="text-orange-500">●</span>
+          <div>
+            <div class="font-medium text-orange-500">Missing closing parenthesis</div>
+            <div class="opacity-50 text-[10px]">Line 8, Col 23</div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+  </div>
+
+  <div id="debugWindow" class="debug-window flex-col glass-panel rounded-2xl overflow-hidden shadow-2xl">
+    <div class="h-10 flex items-center justify-between px-4 border-b dark:border-white/5 shrink-0 bg-black/20">
+      <span class="text-[10px] font-bold opacity-60 uppercase">Debug Log</span>
+      <button onclick="toggleDebug()" class="p-1 opacity-60 hover:opacity-100">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"></path></svg>
+      </button>
+    </div>
+    <div class="flex-1 overflow-y-auto p-4 mono text-[10px] opacity-80 space-y-3">
+      <div class="border-b dark:border-white/5 pb-2">
+        <span class="opacity-40 mr-2">08:45:23</span> Found 2 syntax errors
+      </div>
+      <div class="border-b dark:border-white/5 pb-2">
+        <span class="opacity-40 mr-2">08:45:25</span> AI service connected
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Prevent double-tap zoom on iOS
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', function(event) {
+      const now = Date.now();
+      if (now - lastTouchEnd <= 300) {
+        event.preventDefault();
+      }
+      lastTouchEnd = now;
+    }, false);
+
+    function toggleTheme() {
+      const html = document.documentElement;
+      html.classList.toggle('dark');
+      html.classList.toggle('light');
+      localStorage.setItem('theme', html.classList.contains('dark') ? 'dark' : 'light');
+    }
+
+    function toggleChat() {
+      const panel = document.getElementById('chatPanel');
+      panel.classList.toggle('open');
+    }
+
+    function toggleDebug() {
+      const debugWindow = document.getElementById('debugWindow');
+      debugWindow.classList.toggle('open');
+    }
+
+    function toggleConsole() {
+      const panel = document.querySelector('.console-panel');
+      const arrow = document.getElementById('consoleArrow');
+      panel.classList.toggle('collapsed');
+      arrow.style.transform = panel.classList.contains('collapsed') ? 'rotate(180deg)' : 'rotate(0deg)';
+    }
+
+    // Set initial arrow state
+    document.getElementById('consoleArrow').style.transform = 'rotate(180deg)';
+
+    // Load saved theme
+    if (localStorage.getItem('theme') === 'light') {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+    }
+
+    function detectErrors() { 
+      console.log('Detecting errors...'); 
+      alert('Error detection started');
+    }
+    
+    function aiFix() { 
+      console.log('AI Fix initiated...'); 
+      alert('AI Fix started');
+    }
+
+    // Add touch feedback for all buttons
+    document.addEventListener('DOMContentLoaded', function() {
+      const buttons = document.querySelectorAll('button');
+      buttons.forEach(button => {
+        button.addEventListener('touchstart', function() {
+          this.style.opacity = '0.7';
+        }, { passive: true });
+        
+        button.addEventListener('touchend', function() {
+          this.style.opacity = '';
+        }, { passive: true });
+      });
+    });
+  </script>
+</body>
+</html>

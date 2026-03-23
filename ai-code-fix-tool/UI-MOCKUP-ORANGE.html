@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Code Fix Tool | Professional Interface</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            deep: {
+              DEFAULT: '#050505',
+              light: '#f9f9f9'
+            },
+            surface: {
+              DEFAULT: '#0a0a0a',
+              light: '#ffffff'
+            },
+            orange: {
+              400: '#fb923c',
+              500: '#f97316',
+              600: '#ea580c'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    :root {
+      --accent-orange: #f97316;
+      --accent-glow: rgba(249, 115, 22, 0.5);
+      --transition-speed: 0.4s;
+    }
+
+    body {
+      font-family: 'Space Grotesk', sans-serif;
+      height: 100vh;
+      overflow: hidden;
+      transition: background-color var(--transition-speed), color var(--transition-speed);
+    }
+
+    .dark body { background-color: #0a0a0a; color: white; }
+    .light body { background-color: #f5f5f5; color: #0a0a0a; }
+
+    .glass-panel {
+      backdrop-filter: blur(20px);
+      transition: all var(--transition-speed);
+    }
+    .dark .glass-panel { 
+      background: rgba(20, 20, 20, 0.9); 
+      border: 1px solid rgba(255, 255, 255, 0.12); 
+    }
+    .light .glass-panel { 
+      background: rgba(255, 255, 255, 0.95); 
+      border: 1px solid rgba(0, 0, 0, 0.1); 
+      box-shadow: 0 4px 20px rgba(0,0,0,0.05); 
+    }
+
+    .mono { font-family: 'JetBrains Mono', monospace; }
+
+    /* Theme Toggle Switch */
+    .theme-toggle {
+      width: 44px;
+      height: 22px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 20px;
+      position: relative;
+      cursor: pointer;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .light .theme-toggle { 
+      background: rgba(0,0,0,0.05); 
+      border-color: rgba(0,0,0,0.1); 
+    }
+    .theme-toggle-dot {
+      width: 16px;
+      height: 16px;
+      background: white;
+      border-radius: 50%;
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      transition: all 0.3s;
+    }
+    .light .theme-toggle-dot { 
+      left: 24px; 
+      background: #f97316; 
+    }
+
+    /* Console Panel */
+    .console-panel {
+      height: 240px;
+      transition: height 0.3s;
+    }
+    .console-panel.collapsed {
+      height: 40px;
+    }
+
+    /* Debug Window */
+    .debug-window {
+      position: fixed;
+      top: 80px;
+      right: 40px;
+      width: 425px;
+      height: 325px;
+      z-index: 1000;
+      display: none;
+    }
+    .debug-window.open {
+      display: flex;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    .dark ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .light ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.02);
+    }
+    .dark ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+    }
+    .light ::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--accent-orange);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Main Container -->
+  <div class="h-full flex flex-col">
+    
+    <!-- Header -->
+    <div class="glass-panel h-16 flex items-center justify-between px-6 border-b dark:border-white/5 border-black/5">
+      <!-- Left: Title -->
+      <div class="flex items-center gap-4">
+        <div class="text-[13px] font-bold tracking-[0.2em] uppercase dark:text-white text-black">
+          AI Code Fix Tool
+        </div>
+      </div>
+
+      <!-- Right: Status & Actions -->
+      <div class="flex items-center gap-3">
+        <!-- API Status -->
+        <div class="glass-panel px-4 py-1.5 rounded-lg flex items-center gap-2">
+          <div class="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]"></div>
+          <span class="text-[11px] font-medium dark:text-white/70 text-black/70 tracking-wider uppercase">API Connected</span>
+        </div>
+
+        <!-- Error Count -->
+        <div class="glass-panel px-4 py-1.5 rounded-lg flex items-center gap-2">
+          <div class="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]"></div>
+          <span class="text-[11px] font-medium dark:text-white/70 text-black/70 tracking-wider uppercase">2 Errors</span>
+        </div>
+
+        <!-- Debug Button -->
+        <button onclick="toggleDebug()" class="glass-panel p-2 rounded-lg hover:bg-white/5 dark:hover:bg-white/5 hover:bg-black/5 transition-all group">
+          <svg class="w-4 h-4 dark:text-white/40 text-black/40 group-hover:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+          </svg>
+        </button>
+
+        <!-- Theme Toggle -->
+        <div class="theme-toggle" onclick="toggleTheme()">
+          <div class="theme-toggle-dot"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="flex-1 flex overflow-hidden">
+      
+      <!-- Editor Panel -->
+      <div class="flex-1 flex flex-col border-r dark:border-white/5 border-black/5">
+        <!-- Editor Header -->
+        <div class="glass-panel h-10 flex items-center justify-between px-4 border-b dark:border-white/5 border-black/5">
+          <div class="text-[11px] font-semibold dark:text-white/60 text-black/60 tracking-wider uppercase">Code Editor</div>
+          <div class="flex gap-2">
+            <button onclick="detectErrors()" class="px-4 py-1.5 text-[11px] font-medium dark:text-white/80 text-black/80 hover:text-orange-500 dark:hover:text-orange-500 tracking-wider uppercase transition-colors">
+              Detect Errors
+            </button>
+            <button onclick="aiFix()" class="px-4 py-1.5 bg-orange-500 text-white text-[11px] font-semibold rounded-md hover:bg-orange-600 tracking-wider uppercase transition-all shadow-lg">
+              AI Fix
+            </button>
+          </div>
+        </div>
+
+        <!-- Editor Content -->
+        <div class="flex-1 overflow-y-auto p-6 mono text-[13px] dark:bg-[#0f0f0f] bg-white">
+          <div class="flex gap-4">
+            <div class="dark:text-white/40 text-black/40 select-none text-right font-medium" style="min-width: 32px;">
+              <div>1</div>
+              <div>2</div>
+              <div>3</div>
+              <div>4</div>
+              <div>5</div>
+              <div>6</div>
+              <div>7</div>
+              <div>8</div>
+            </div>
+            <div class="flex-1 dark:text-white text-black font-medium">
+              <div>function example() {</div>
+              <div>  const greeting = "Hello World";</div>
+              <div>  console.log(greeting);</div>
+              <div>}</div>
+              <div></div>
+              <div>export default Example;</div>
+              <div></div>
+              <div class="dark:text-white/50 text-black/50">// Missing closing parenthesis on line 8</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat Panel -->
+      <div class="w-[380px] flex flex-col glass-panel">
+        <!-- Chat Header -->
+        <div class="h-10 flex items-center justify-between px-4 border-b dark:border-white/5 border-black/5">
+          <div class="text-[11px] font-semibold dark:text-white/60 text-black/60 tracking-wider uppercase">AI Assistant</div>
+        </div>
+
+        <!-- Chat Messages -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-4">
+          <!-- User Message -->
+          <div class="flex flex-col items-end gap-1">
+            <div class="text-[10px] font-medium dark:text-white/50 text-black/50 tracking-wider uppercase">You</div>
+            <div class="glass-panel px-4 py-3 rounded-xl rounded-tr-none max-w-[85%]">
+              <p class="text-[13px] dark:text-white text-black leading-relaxed">
+                Can you help me fix the syntax errors in this code?
+              </p>
+            </div>
+          </div>
+
+          <!-- AI Message -->
+          <div class="flex flex-col items-start gap-1">
+            <div class="text-[10px] font-medium dark:text-white/50 text-black/50 tracking-wider uppercase">AI Assistant</div>
+            <div class="glass-panel px-4 py-3 rounded-xl rounded-tl-none max-w-[85%]">
+              <p class="text-[13px] dark:text-white text-black leading-relaxed">
+                I've analyzed your code and found 2 syntax errors. Click "AI Fix" to apply the corrections automatically.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat Input -->
+        <div class="p-4 border-t dark:border-white/5 border-black/5">
+          <div class="glass-panel rounded-xl p-3 flex gap-2">
+            <textarea 
+              class="flex-1 bg-transparent border-none outline-none resize-none text-[13px] font-medium dark:text-white text-black dark:placeholder:text-white/30 placeholder:text-black/30" 
+              rows="2" 
+              placeholder="Ask AI for help..."></textarea>
+            <button class="shrink-0 w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center hover:bg-orange-600 transition-all shadow-lg">
+              <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Console Panel -->
+    <div class="console-panel glass-panel border-t dark:border-white/5 border-black/5 flex flex-col">
+      <!-- Console Header -->
+      <div class="h-10 flex items-center justify-between px-4 border-b dark:border-white/5 border-black/5">
+        <div class="flex gap-4">
+          <button class="text-[11px] font-bold dark:text-orange-500 text-orange-600 tracking-wider uppercase border-b-2 border-orange-500 pb-2">Console</button>
+          <button class="text-[11px] font-medium dark:text-white/60 text-black/60 tracking-wider uppercase hover:text-orange-500 dark:hover:text-orange-500 transition-colors">Problems</button>
+          <button class="text-[11px] font-medium dark:text-white/60 text-black/60 tracking-wider uppercase hover:text-orange-500 dark:hover:text-orange-500 transition-colors">Output</button>
+        </div>
+        <div class="flex gap-2">
+          <button onclick="toggleConsole()" class="p-1 hover:bg-white/5 dark:hover:bg-white/5 hover:bg-black/5 rounded transition-all">
+            <svg class="w-4 h-4 dark:text-white/60 text-black/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+          <button class="p-1 hover:bg-white/5 dark:hover:bg-white/5 hover:bg-black/5 rounded transition-all">
+            <svg class="w-4 h-4 dark:text-white/60 text-black/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Console Content -->
+      <div class="flex-1 overflow-y-auto p-2 mono text-[12px]">
+        <!-- Error Entry -->
+        <div class="flex gap-2 p-2 hover:bg-white/5 dark:hover:bg-white/5 hover:bg-black/5 rounded cursor-pointer transition-all group">
+          <svg class="w-4 h-4 text-orange-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <div class="flex-1">
+            <div class="dark:text-orange-400 text-orange-600 font-medium">Missing closing parenthesis</div>
+            <div class="text-[11px] dark:text-white/50 text-black/50 mt-0.5">Line 8, Column 23</div>
+          </div>
+        </div>
+
+        <!-- Warning Entry -->
+        <div class="flex gap-2 p-2 hover:bg-white/5 dark:hover:bg-white/5 hover:bg-black/5 rounded cursor-pointer transition-all group">
+          <svg class="w-4 h-4 text-orange-500 shrink-0 mt-0.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+          </svg>
+          <div class="flex-1">
+            <div class="dark:text-orange-400 text-orange-600 opacity-70 font-medium">Unused variable 'greeting'</div>
+            <div class="text-[11px] dark:text-white/50 text-black/50 mt-0.5">Line 5, Column 10</div>
+          </div>
+        </div>
+
+        <!-- Info Entry -->
+        <div class="flex gap-2 p-2 hover:bg-white/5 dark:hover:bg-white/5 hover:bg-black/5 rounded cursor-pointer transition-all group">
+          <svg class="w-4 h-4 dark:text-white/60 text-black/60 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+          <div class="flex-1">
+            <div class="dark:text-white/70 text-black/70 font-medium">Code analysis complete</div>
+            <div class="text-[11px] dark:text-white/50 text-black/50 mt-0.5">2 issues found</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Debug Window (Hidden by default) -->
+  <div id="debugWindow" class="debug-window flex-col glass-panel rounded-2xl overflow-hidden shadow-xl">
+    <!-- Debug Header -->
+    <div class="h-10 flex items-center justify-between px-4 border-b dark:border-white/5 border-black/5 cursor-move">
+      <div class="text-[11px] font-semibold dark:text-white/60 text-black/60 tracking-wider uppercase">Debug Log</div>
+      <div class="flex gap-2">
+        <button class="p-1 hover:bg-white/5 dark:hover:bg-white/5 hover:bg-black/5 rounded transition-all">
+          <svg class="w-4 h-4 dark:text-white/60 text-black/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+          </svg>
+        </button>
+        <button class="p-1 hover:bg-white/5 dark:hover:bg-white/5 hover:bg-black/5 rounded transition-all">
+          <svg class="w-4 h-4 dark:text-white/60 text-black/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+          </svg>
+        </button>
+        <button onclick="toggleDebug()" class="p-1 hover:bg-white/5 dark:hover:bg-white/5 hover:bg-black/5 rounded transition-all">
+          <svg class="w-4 h-4 dark:text-white/60 text-black/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Debug Content -->
+    <div class="flex-1 overflow-y-auto p-4 mono text-[11px] dark:text-white/70 text-black/70 space-y-2 font-medium">
+      <div class="border-b dark:border-white/5 border-black/5 pb-2">
+        <div class="dark:text-white/40 text-black/40 mb-1 text-[10px]">08:45:23.456</div>
+        <div>Error detection started</div>
+      </div>
+      <div class="border-b dark:border-white/5 border-black/5 pb-2">
+        <div class="dark:text-white/40 text-black/40 mb-1 text-[10px]">08:45:23.789</div>
+        <div>Found 2 syntax errors in code</div>
+      </div>
+      <div class="border-b dark:border-white/5 border-black/5 pb-2">
+        <div class="dark:text-white/40 text-black/40 mb-1 text-[10px]">08:45:24.012</div>
+        <div>Sending request to AI service...</div>
+      </div>
+      <div class="border-b dark:border-white/5 border-black/5 pb-2">
+        <div class="dark:text-white/40 text-black/40 mb-1 text-[10px]">08:45:25.345</div>
+        <div>AI response received (1.2s)</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Theme Toggle
+    function toggleTheme() {
+      const html = document.documentElement;
+      const currentTheme = html.classList.contains('dark') ? 'dark' : 'light';
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      
+      if (newTheme === 'dark') {
+        html.classList.add('dark');
+      } else {
+        html.classList.remove('dark');
+      }
+      
+      localStorage.setItem('theme', newTheme);
+    }
+
+    // Load saved theme
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    if (savedTheme === 'light') {
+      document.documentElement.classList.remove('dark');
+    }
+
+    // Debug Window Toggle
+    function toggleDebug() {
+      const debugWindow = document.getElementById('debugWindow');
+      debugWindow.classList.toggle('open');
+    }
+
+    // Console Toggle
+    function toggleConsole() {
+      const consolePanel = document.querySelector('.console-panel');
+      consolePanel.classList.toggle('collapsed');
+    }
+
+    // Placeholder functions
+    function detectErrors() {
+      console.log('Detect Errors clicked');
+    }
+
+    function aiFix() {
+      console.log('AI Fix clicked');
+    }
+  </script>
+
+</body>
+</html>
