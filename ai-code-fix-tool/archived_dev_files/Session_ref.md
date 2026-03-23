@@ -617,3 +617,7 @@ Perfect! Now refresh and try the AI fix again. It will automatically strip those
 Try it again!
 
 ---
+*SYSTEM CRASHED HERE, AGENT LOST CONTEXT AND REFRESHED MIDWAY OF THE TASK PROGRESS, AGENT IN NEW SESSION confirm acknowledgment of the context and its full commitment to continue what the user asks next*
+
+*KIRO SHOULD NOT PROCEED WITH EDITING CODE BEFORE THE USER FIRST MESSAGE AFTER THE CONFIRMATION*
+
