@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, ChevronLeft, ChevronRight, Copy, Download, RotateCcw } from 'lucide-react';
+import { CodeEditor } from './CodeEditor';
 
 interface CanvasProps {
   code: string;
@@ -59,6 +60,25 @@ export const Canvas: React.FC<CanvasProps> = ({
   const rendererRef = useRef<any>(null);
   const hadErrorRef = useRef<boolean>(false);
   const lastRenderedCodeRef = useRef<string>('');
+
+  // CRITICAL: Reset versions when initialVersions changes (e.g., switching chats)
+  useEffect(() => {
+    console.log('[Canvas] initialVersions changed:', {
+      hasInitialVersions: !!(initialVersions && initialVersions.length > 0),
+      initialVersionsCount: initialVersions?.length || 0,
+      initialIndex: initialVersionIndex
+    });
+    
+    if (initialVersions && initialVersions.length > 0) {
+      console.log('[Canvas] Setting versions from initialVersions');
+      setVersions(initialVersions);
+      setCurrentVersionIndex(initialVersionIndex !== undefined ? initialVersionIndex : 0);
+    } else {
+      console.log('[Canvas] No initialVersions - creating new version from code');
+      setVersions([{ code, timestamp: Date.now() }]);
+      setCurrentVersionIndex(0);
+    }
+  }, [initialVersions, initialVersionIndex]);
 
   // Track error state changes
   useEffect(() => {
@@ -435,14 +455,15 @@ export const Canvas: React.FC<CanvasProps> = ({
       {/* Canvas Content */}
       <div className="flex-1 overflow-hidden flex flex-col">
         {showCode ? (
-          // Code Editor View - No footer, just the textarea
-          <textarea
-            value={editCode}
-            onChange={(e) => setEditCode(e.target.value)}
-            className="canvas-code-editor flex-1 bg-[#0a0a0c] text-gray-300 font-mono text-[13px] p-6 resize-none focus:outline-none border-none overflow-y-auto"
-            placeholder="Edit your code here..."
-            spellCheck="false"
-          />
+          // Code Editor View with Monaco
+          <div className="flex-1 overflow-hidden">
+            <CodeEditor
+              value={editCode}
+              onChange={(value) => setEditCode(value || '')}
+              language="typescript"
+              theme="dark"
+            />
+          </div>
         ) : (
           // Preview View
           <div className="flex-1 overflow-hidden relative">

@@ -1,39 +1,65 @@
-21:36:45.404 installHook.js:1 React has detected a change in the order of Hooks called by FilePreviewModal. This will lead to bugs and errors if not fixed. For more information, read the Rules of Hooks: https://react.dev/link/rules-of-hooks
+02:39:44.885 Navigated to http://localhost:3000/
+02:39:46.208 pdfParser.ts:17 PDF.js worker configured: https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.624/build/pdf.worker.min.mjs
+02:39:46.404 App.tsx:278 [App] Restoring canvas state on mount: {versionsCount: 3, currentIndex: 2}
+02:39:46.415 installHook.js:1 [App] Restoring canvas state on mount: {versionsCount: 3, currentIndex: 2}
+02:39:46.708 App.tsx:409 [App] Saving chat with canvas state: {hasCanvasState: true, versionsCount: 3, currentIndex: 2}
+02:39:47.296 embeddingWorker.ts?worker_file&type=module:216 [Worker] Model files found in cache - ready to load
+02:39:47.763 embeddingService.ts:67 [EmbeddingService] Status update: ready
+02:39:49.547 Canvas.tsx:66 [Canvas] initialVersions changed: {hasInitialVersions: true, initialVersionsCount: 3, initialIndex: 2}
+02:39:49.548 Canvas.tsx:73 [Canvas] Setting versions from initialVersions
+02:39:49.549 App.tsx:632 [App] Canvas versions changed: 3 versions, current index: 2
+02:39:49.553 installHook.js:1 [Canvas] initialVersions changed: {hasInitialVersions: true, initialVersionsCount: 3, initialIndex: 2}
+02:39:49.554 installHook.js:1 [Canvas] Setting versions from initialVersions
+02:39:49.554 installHook.js:1 [App] Canvas versions changed: 3 versions, current index: 2
+02:39:49.651 App.tsx:409 [App] Saving chat with canvas state: {hasCanvasState: true, versionsCount: 3, currentIndex: 2}
+02:39:50.000 App.tsx:409 [App] Saving chat with canvas state: {hasCanvasState: true, versionsCount: 3, currentIndex: 2}
+02:39:51.607 installHook.js:1 [Canvas] Render error: /component.tsx: Unexpected token, expected "jsxTagEnd" (58:4)
 
-   Previous render            Next render
-   ------------------------------------------------------
-1. useState                   useState
-2. useState                   useState
-3. useState                   useState
-4. useState                   useState
-5. useState                   useState
-6. useState                   useState
-7. useRef                     useRef
-8. useRef                     useRef
-9. undefined                  useEffect
-   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
+  56 |         ))}
+  57 |       </div
+> 58 |     </div>
+     |     ^
+  59 |   );
+  60 | }
+  61 | return Carousel;
 overrideMethod @ installHook.js:1
-updateHookTypesDev @ react-dom-client.development.js:7569
-useEffect @ react-dom-client.development.js:26460
-exports.useEffect @ react.development.js:1225
-FilePreviewModal @ FilePreviewModal.tsx:63
-react_stack_bottom_frame @ react-dom-client.development.js:25904
-renderWithHooks @ react-dom-client.development.js:7662
-updateFunctionComponent @ react-dom-client.development.js:10166
-beginWork @ react-dom-client.development.js:11778
+handleRender @ Canvas.tsx:196
+await in handleRender
+script.onload @ Canvas.tsx:124
+script
+initRenderer @ Canvas.tsx:116
+(anonymous) @ Canvas.tsx:150
+react_stack_bottom_frame @ react-dom-client.development.js:25989
 runWithFiberInDEV @ react-dom-client.development.js:871
-performUnitOfWork @ react-dom-client.development.js:17641
-workLoopSync @ react-dom-client.development.js:17469
-renderRootSync @ react-dom-client.development.js:17450
-performWorkOnRoot @ react-dom-client.development.js:16504
-performSyncWorkOnRoot @ react-dom-client.development.js:18972
-flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:18814
-processRootScheduleInMicrotask @ react-dom-client.development.js:18853
-(anonymous) @ react-dom-client.development.js:18991
-<FilePreviewModal>
+commitHookEffectListMount @ react-dom-client.development.js:13249
+commitHookPassiveMountEffects @ react-dom-client.development.js:13336
+reconnectPassiveEffects @ react-dom-client.development.js:15832
+recursivelyTraverseReconnectPassiveEffects @ react-dom-client.development.js:15784
+commitPassiveMountOnFiber @ react-dom-client.development.js:15675
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15633
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15718
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15718
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15718
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15718
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15718
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15476
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15718
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15519
+flushPassiveEffects @ react-dom-client.development.js:18432
+(anonymous) @ react-dom-client.development.js:17923
+performWorkUntilDeadline @ scheduler.development.js:45
+<...>
 exports.jsxDEV @ react-jsx-dev-runtime.development.js:335
-App @ App.tsx:1458
+App @ App.tsx:1712
 react_stack_bottom_frame @ react-dom-client.development.js:25904
 renderWithHooksAgain @ react-dom-client.development.js:7762
 renderWithHooks @ react-dom-client.development.js:7674
@@ -49,38 +75,68 @@ performWorkUntilDeadline @ scheduler.development.js:45
 <App>
 exports.jsxDEV @ react-jsx-dev-runtime.development.js:335
 (anonymous) @ index.tsx:13
-21:36:45.462 react-dom-client.development.js:7848 Uncaught Error: Rendered more hooks than during the previous render.
-    at updateWorkInProgressHook (react-dom-client.development.js:7848:17)
-    at updateEffectImpl (react-dom-client.development.js:8642:18)
-    at Object.useEffect (react-dom-client.development.js:26461:9)
-    at exports.useEffect (react.development.js:1225:34)
-    at FilePreviewModal (FilePreviewModal.tsx:63:3)
-    at Object.react_stack_bottom_frame (react-dom-client.development.js:25904:20)
-    at renderWithHooks (react-dom-client.development.js:7662:22)
-    at updateFunctionComponent (react-dom-client.development.js:10166:19)
-    at beginWork (react-dom-client.development.js:11778:18)
-    at runWithFiberInDEV (react-dom-client.development.js:871:30)
-updateWorkInProgressHook @ react-dom-client.development.js:7848
-updateEffectImpl @ react-dom-client.development.js:8642
-useEffect @ react-dom-client.development.js:26461
-exports.useEffect @ react.development.js:1225
-FilePreviewModal @ FilePreviewModal.tsx:63
-react_stack_bottom_frame @ react-dom-client.development.js:25904
-renderWithHooks @ react-dom-client.development.js:7662
-updateFunctionComponent @ react-dom-client.development.js:10166
-beginWork @ react-dom-client.development.js:11778
+02:42:59.200 Navigated to http://localhost:3000/
+02:43:00.144 pdfParser.ts:17 PDF.js worker configured: https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.624/build/pdf.worker.min.mjs
+02:43:00.578 App.tsx:278 [App] Restoring canvas state on mount: {versionsCount: 3, currentIndex: 2}
+02:43:00.616 installHook.js:1 [App] Restoring canvas state on mount: {versionsCount: 3, currentIndex: 2}
+02:43:00.829 App.tsx:409 [App] Saving chat with canvas state: {hasCanvasState: true, versionsCount: 3, currentIndex: 2}
+02:43:02.799 embeddingWorker.ts?worker_file&type=module:216 [Worker] Model files found in cache - ready to load
+02:43:02.800 embeddingService.ts:67 [EmbeddingService] Status update: ready
+02:43:04.332 Canvas.tsx:66 [Canvas] initialVersions changed: {hasInitialVersions: true, initialVersionsCount: 3, initialIndex: 2}
+02:43:04.333 Canvas.tsx:73 [Canvas] Setting versions from initialVersions
+02:43:04.333 App.tsx:632 [App] Canvas versions changed: 3 versions, current index: 2
+02:43:04.337 installHook.js:1 [Canvas] initialVersions changed: {hasInitialVersions: true, initialVersionsCount: 3, initialIndex: 2}
+02:43:04.339 installHook.js:1 [Canvas] Setting versions from initialVersions
+02:43:04.339 installHook.js:1 [App] Canvas versions changed: 3 versions, current index: 2
+02:43:05.104 App.tsx:409 [App] Saving chat with canvas state: {hasCanvasState: true, versionsCount: 3, currentIndex: 2}
+02:43:05.139 App.tsx:409 [App] Saving chat with canvas state: {hasCanvasState: true, versionsCount: 3, currentIndex: 2}
+02:43:05.849 installHook.js:1 [Canvas] Render error: /component.tsx: Unexpected token, expected "jsxTagEnd" (58:4)
+
+  56 |         ))}
+  57 |       </div
+> 58 |     </div>
+     |     ^
+  59 |   );
+  60 | }
+  61 | return Carousel;
+overrideMethod @ installHook.js:1
+handleRender @ Canvas.tsx:196
+await in handleRender
+script.onload @ Canvas.tsx:124
+script
+initRenderer @ Canvas.tsx:116
+(anonymous) @ Canvas.tsx:150
+react_stack_bottom_frame @ react-dom-client.development.js:25989
 runWithFiberInDEV @ react-dom-client.development.js:871
-performUnitOfWork @ react-dom-client.development.js:17641
-workLoopSync @ react-dom-client.development.js:17469
-renderRootSync @ react-dom-client.development.js:17450
-performWorkOnRoot @ react-dom-client.development.js:16583
-performSyncWorkOnRoot @ react-dom-client.development.js:18972
-flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:18814
-processRootScheduleInMicrotask @ react-dom-client.development.js:18853
-(anonymous) @ react-dom-client.development.js:18991
-<FilePreviewModal>
+commitHookEffectListMount @ react-dom-client.development.js:13249
+commitHookPassiveMountEffects @ react-dom-client.development.js:13336
+reconnectPassiveEffects @ react-dom-client.development.js:15832
+recursivelyTraverseReconnectPassiveEffects @ react-dom-client.development.js:15784
+commitPassiveMountOnFiber @ react-dom-client.development.js:15675
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15633
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15718
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15718
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15718
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15718
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15718
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15476
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15718
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15519
+flushPassiveEffects @ react-dom-client.development.js:18432
+(anonymous) @ react-dom-client.development.js:17923
+performWorkUntilDeadline @ scheduler.development.js:45
+<...>
 exports.jsxDEV @ react-jsx-dev-runtime.development.js:335
-App @ App.tsx:1458
+App @ App.tsx:1712
 react_stack_bottom_frame @ react-dom-client.development.js:25904
 renderWithHooksAgain @ react-dom-client.development.js:7762
 renderWithHooks @ react-dom-client.development.js:7674
@@ -96,3 +152,1221 @@ performWorkUntilDeadline @ scheduler.development.js:45
 <App>
 exports.jsxDEV @ react-jsx-dev-runtime.development.js:335
 (anonymous) @ index.tsx:13
+02:43:53.230 App.tsx:659 ========================================
+02:43:53.230 App.tsx:660 [CANVAS FIX] STARTING ERROR FIX PROCESS
+02:43:53.230 App.tsx:661 ========================================
+02:43:53.231 App.tsx:662 [CANVAS FIX] Input code length: 1704
+02:43:53.231 App.tsx:663 [CANVAS FIX] Input code preview: import React, { useState } from 'react';
+
+export default function Carousel() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const images = [
+    'https://picsum.photos/200/300',
+    'https...
+02:43:53.231 App.tsx:664 [CANVAS FIX] Canvas error: {message: '/component.tsx: Unexpected token, expected "jsxTag…   ^\n  59 |   );\n  60 | }\n  61 | return Carousel;', code: "import React, { useState } from 'react';\n\nexport d…     />\n        ))}\n      </div\n    </div>\n  );\n}"}
+02:43:53.232 App.tsx:675 [CANVAS FIX] Source code lines: 58
+02:43:53.232 App.tsx:676 [CANVAS FIX] Error message: /component.tsx: Unexpected token, expected "jsxTagEnd" (58:4)
+
+  56 |         ))}
+  57 |       </div
+> 58 |     </div>
+     |     ^
+  59 |   );
+  60 | }
+  61 | return Carousel;
+02:43:53.232 App.tsx:677 [CANVAS FIX] Full source code:
+02:43:53.232 App.tsx:678 --- SOURCE CODE START ---
+02:43:53.232 App.tsx:679 import React, { useState } from 'react';
+
+export default function Carousel() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const images = [
+    'https://picsum.photos/200/300',
+    'https://picsum.photos/200/301',
+    'https://picsum.photos/200/302',
+    'https://picsum.photos/200/303',
+  ];
+
+  const handleNext = () => {
+    setCurrentIndex((currentIndex + 1) % images.length);
+  };
+
+  const handlePrev = () => {
+    setCurrentIndex((currentIndex - 1 + images.length) % images.length);
+  };
+
+  return (
+    <div className="relative w-full h-full flex items-center justify-center">
+      <div className="flex overflow-hidden">
+        {images.map((image, index) => (
+          <img
+            key={index}
+            src={image}
+            alt=""
+            className={`w-full h-full object-cover duration-1000 ease-in-out ${
+              index === currentIndex ? 'block' : 'hidden'
+            }`}
+          />
+        ))}
+      </div>
+      <button
+        className="absolute left-0 flex justify-center items-center w-10 h-10 bg-gray-200 rounded-full cursor-pointer"
+        onClick={handlePrev}
+      >
+        {'<'}
+      </button>
+      <button
+        className="absolute right-0 flex justify-center items-center w-10 h-10 bg-gray-200 rounded-full cursor-pointer"
+        onClick={handleNext}
+      >
+        {'>'}
+      </button>
+<div className="absolute bottom-0 flex justify-center items-center w-full">
+        {images.map((image, index) => (
+          <div
+            key={index}
+            className={`w-2 h-2 mx-1 bg-gray-200 rounded-full ${
+              index === currentIndex ? 'bg-blue-500' : ''
+            }`}
+          />
+        ))}
+      </div
+    </div>
+  );
+}
+02:43:53.233 App.tsx:680 --- SOURCE CODE END ---
+02:43:53.233 App.tsx:741 [CANVAS FIX] Prompt being sent to AI:
+02:43:53.233 App.tsx:742 --- PROMPT START ---
+02:43:53.234 App.tsx:743 # CODE ERROR FIX REQUEST
+
+## ERROR DETAILS
+/component.tsx: Unexpected token, expected "jsxTagEnd" (58:4)
+
+  56 |         ))}
+  57 |       </div
+> 58 |     </div>
+     |     ^
+  59 |   );
+  60 | }
+  61 | return Carousel;
+
+## FULL SOURCE CODE (with line numbers)
+  1 | import React, { useState } from 'react';
+  2 | 
+  3 | export default function Carousel() {
+  4 |   const [currentIndex, setCurrentIndex] = useState(0);
+  5 |   const images = [
+  6 |     'https://picsum.photos/200/300',
+  7 |     'https://picsum.photos/200/301',
+  8 |     'https://picsum.photos/200/302',
+  9 |     'https://picsum.photos/200/303',
+  10 |   ];
+  11 | 
+  12 |   const handleNext = () => {
+  13 |     setCurrentIndex((currentIndex + 1) % images.length);
+  14 |   };
+  15 | 
+  16 |   const handlePrev = () => {
+  17 |     setCurrentIndex((currentIndex - 1 + images.length) % images.length);
+  18 |   };
+  19 | 
+  20 |   return (
+  21 |     <div className="relative w-full h-full flex items-center justify-center">
+  22 |       <div className="flex overflow-hidden">
+  23 |         {images.map((image, index) => (
+  24 |           <img
+  25 |             key={index}
+  26 |             src={image}
+  27 |             alt=""
+  28 |             className={`w-full h-full object-cover duration-1000 ease-in-out ${
+  29 |               index === currentIndex ? 'block' : 'hidden'
+  30 |             }`}
+  31 |           />
+  32 |         ))}
+  33 |       </div>
+  34 |       <button
+  35 |         className="absolute left-0 flex justify-center items-center w-10 h-10 bg-gray-200 rounded-full cursor-pointer"
+  36 |         onClick={handlePrev}
+  37 |       >
+  38 |         {'<'}
+  39 |       </button>
+  40 |       <button
+  41 |         className="absolute right-0 flex justify-center items-center w-10 h-10 bg-gray-200 rounded-full cursor-pointer"
+  42 |         onClick={handleNext}
+  43 |       >
+  44 |         {'>'}
+  45 |       </button>
+  46 | <div className="absolute bottom-0 flex justify-center items-center w-full">
+  47 |         {images.map((image, index) => (
+  48 |           <div
+  49 |             key={index}
+  50 |             className={`w-2 h-2 mx-1 bg-gray-200 rounded-full ${
+  51 |               index === currentIndex ? 'bg-blue-500' : ''
+  52 |             }`}
+  53 |           />
+  54 |         ))}
+  55 |       </div
+  56 |     </div>
+  57 |   );
+  58 | }
+
+## INSTRUCTIONS
+The error above is from transpiled code. You need to find and fix the actual error in the SOURCE CODE above.
+
+**CRITICAL**: Look at the EXACT line number mentioned in the error. The broken code is ON THAT LINE in the source code above.
+
+Common issues:
+- Missing closing brackets: }, ), ], >
+- Missing opening brackets: {, (, [, <
+- Missing semicolons
+- Unclosed strings or template literals
+- Mismatched JSX tags
+
+**IMPORTANT**: If the error says "expected jsxTagEnd", look for a CLOSING tag (</...>) that is missing the final >.
+
+### PATCH FORMAT (CRITICAL - READ CAREFULLY)
+Each patch must be EXACTLY 3 lines:
+
+Line 1: PATCH @@ line X @@
+Line 2: old code (the EXACT broken line from source code - copy it EXACTLY)
+Line 3: new code (the fixed version of that line)
+
+### RULES
+1. Each patch is 3 lines - no more, no less
+2. Put your explanation BEFORE the patches
+3. Do NOT put explanation text after the new code line
+4. Use line numbers from the SOURCE CODE above (not from error message)
+5. Copy the old code EXACTLY as it appears - don't change anything except the fix
+6. Only fix the specific error - don't change other code
+
+### CORRECT EXAMPLE
+Fixed missing closing bracket on div tag at line 55.
+
+PATCH @@ line 55 @@
+      </div
+      </div>
+
+### WRONG EXAMPLE (DO NOT DO THIS)
+PATCH @@ line 55 @@
+<div className="...">
+<div className="...">
+
+## YOUR RESPONSE
+Provide: Brief explanation, then patches in the format above.
+02:43:53.234 App.tsx:744 --- PROMPT END ---
+02:43:53.272 embeddingWorker.ts?worker_file&type=module:120 [Worker] Loading cached model from IndexedDB...
+02:43:53.371 embeddingService.ts:67 [EmbeddingService] Status update: ready
+02:43:55.883 embeddingWorker.ts?worker_file&type=module:134 [Worker] Model loaded in 2.6s
+02:43:55.883 embeddingService.ts:67 [EmbeddingService] Status update: ready
+02:43:55.883 embeddingService.ts:72 [EmbeddingService] Model loaded successfully
+02:43:57.650 vectorDb.ts:178 Searching across 0 chunks from 0 enabled files (2 total)
+02:43:57.651 vectorDb.ts:192 Top 10 scores before filtering:
+02:43:57.651 vectorDb.ts:202 Found 0 relevant chunks (threshold: 0.15)
+02:43:57.652 App.tsx:777 [CANVAS FIX] Starting AI streaming...
+02:43:58.585 App.tsx:828 [CANVAS FIX] AI response received:
+02:43:58.585 App.tsx:829 --- AI RESPONSE START ---
+02:43:58.585 App.tsx:830 The error message indicates that there is an unexpected token at line 58, which suggests that there is a syntax error in the JSX code. After reviewing the source code, it appears that the error is caused by a missing closing bracket on the `div` tag at line 55. The closing tag is missing the final `>`.
+
+PATCH @@ line 55 @@
+</div
+</div>
+02:43:58.585 App.tsx:831 --- AI RESPONSE END ---
+02:43:58.585 App.tsx:832 [CANVAS FIX] AI response length: 337
+02:43:58.586 App.tsx:835 [CANVAS FIX] Parsing patches from AI response...
+02:43:58.586 App.tsx:945 ========================================
+02:43:58.586 App.tsx:946 [PATCH PARSER] Starting patch parsing
+02:43:58.586 App.tsx:947 ========================================
+02:43:58.586 App.tsx:948 [Patch Parser] Raw response length: 337
+02:43:58.586 App.tsx:949 [Patch Parser] Raw response: The error message indicates that there is an unexpected token at line 58, which suggests that there is a syntax error in the JSX code. After reviewing the source code, it appears that the error is caused by a missing closing bracket on the `div` tag at line 55. The closing tag is missing the final `>`.
+
+PATCH @@ line 55 @@
+</div
+</div>
+02:43:58.587 App.tsx:953 [Patch Parser] Cleaned response: The error message indicates that there is an unexpected token at line 58, which suggests that there is a syntax error in the JSX code. After reviewing the source code, it appears that the error is caused by a missing closing bracket on the `div` tag at line 55. The closing tag is missing the final `>`.
+
+PATCH @@ line 55 @@
+</div
+</div>
+02:43:58.587 App.tsx:959 [Patch Parser] Trying standard format regex...
+02:43:58.587 App.tsx:966 [Patch Parser] Found match: PATCH @@ line 55 @@
+</div
+</div>
+02:43:58.587 App.tsx:967 [Patch Parser] Line number: 55
+02:43:58.587 App.tsx:968 [Patch Parser] Old content (raw): </div
+02:43:58.588 groqService.ts:216 Fetch finished loading: POST "https://api.groq.com/openai/v1/chat/completions".
+streamChatResponse @ groqService.ts:216
+handleFixCanvasError @ App.tsx:812
+await in handleFixCanvasError
+onClick @ Canvas.tsx:512
+executeDispatch @ react-dom-client.development.js:19116
+runWithFiberInDEV @ react-dom-client.development.js:871
+processDispatchQueue @ react-dom-client.development.js:19166
+(anonymous) @ react-dom-client.development.js:19767
+batchedUpdates$1 @ react-dom-client.development.js:3255
+dispatchEventForPluginEventSystem @ react-dom-client.development.js:19320
+dispatchEvent @ react-dom-client.development.js:23585
+dispatchDiscreteEvent @ react-dom-client.development.js:23553
+<button>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:335
+Canvas @ Canvas.tsx:511
+react_stack_bottom_frame @ react-dom-client.development.js:25904
+renderWithHooksAgain @ react-dom-client.development.js:7762
+renderWithHooks @ react-dom-client.development.js:7674
+updateFunctionComponent @ react-dom-client.development.js:10166
+beginWork @ react-dom-client.development.js:11778
+runWithFiberInDEV @ react-dom-client.development.js:871
+performUnitOfWork @ react-dom-client.development.js:17641
+workLoopSync @ react-dom-client.development.js:17469
+renderRootSync @ react-dom-client.development.js:17450
+performWorkOnRoot @ react-dom-client.development.js:16504
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:18957
+performWorkUntilDeadline @ scheduler.development.js:45
+<...>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:335
+App @ App.tsx:1712
+react_stack_bottom_frame @ react-dom-client.development.js:25904
+renderWithHooksAgain @ react-dom-client.development.js:7762
+renderWithHooks @ react-dom-client.development.js:7674
+updateFunctionComponent @ react-dom-client.development.js:10166
+beginWork @ react-dom-client.development.js:11778
+runWithFiberInDEV @ react-dom-client.development.js:871
+performUnitOfWork @ react-dom-client.development.js:17641
+workLoopSync @ react-dom-client.development.js:17469
+renderRootSync @ react-dom-client.development.js:17450
+performWorkOnRoot @ react-dom-client.development.js:16504
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:18957
+performWorkUntilDeadline @ scheduler.development.js:45
+<App>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:335
+(anonymous) @ index.tsx:13
+02:43:58.588 App.tsx:969 [Patch Parser] New content (raw): </div>
+02:43:58.588 App.tsx:980 [Patch Parsed] Line 55:
+02:43:58.588 App.tsx:981   Old: "</div"
+02:43:58.588 App.tsx:982   New: "</div>"
+02:43:58.589 App.tsx:1041 [Patch Parser] Found 1 patch(es)
+02:43:58.589 App.tsx:1042 ========================================
+02:43:58.589 App.tsx:1043 [PATCH PARSER] Parsing complete
+02:43:58.589 App.tsx:1044 ========================================
+02:43:58.589 App.tsx:838 [CANVAS FIX] Patches parsed: 1
+02:43:58.589 App.tsx:840 [CANVAS FIX] Patch 1: {line: 55, oldContent: '</div', newContent: '</div>'}
+02:43:58.590 App.tsx:844 [CANVAS FIX] Applying patches to source code...
+02:43:58.590 App.tsx:845 [CANVAS FIX] Source code before patching:
+02:43:58.590 App.tsx:846 --- BEFORE PATCH ---
+02:43:58.590 App.tsx:847 import React, { useState } from 'react';
+
+export default function Carousel() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const images = [
+    'https://picsum.photos/200/300',
+    'https://picsum.photos/200/301',
+    'https://picsum.photos/200/302',
+    'https://picsum.photos/200/303',
+  ];
+
+  const handleNext = () => {
+    setCurrentIndex((currentIndex + 1) % images.length);
+  };
+
+  const handlePrev = () => {
+    setCurrentIndex((currentIndex - 1 + images.length) % images.length);
+  };
+
+  return (
+    <div className="relative w-full h-full flex items-center justify-center">
+      <div className="flex overflow-hidden">
+        {images.map((image, index) => (
+          <img
+            key={index}
+            src={image}
+            alt=""
+            className={`w-full h-full object-cover duration-1000 ease-in-out ${
+              index === currentIndex ? 'block' : 'hidden'
+            }`}
+          />
+        ))}
+      </div>
+      <button
+        className="absolute left-0 flex justify-center items-center w-10 h-10 bg-gray-200 rounded-full cursor-pointer"
+        onClick={handlePrev}
+      >
+        {'<'}
+      </button>
+      <button
+        className="absolute right-0 flex justify-center items-center w-10 h-10 bg-gray-200 rounded-full cursor-pointer"
+        onClick={handleNext}
+      >
+        {'>'}
+      </button>
+<div className="absolute bottom-0 flex justify-center items-center w-full">
+        {images.map((image, index) => (
+          <div
+            key={index}
+            className={`w-2 h-2 mx-1 bg-gray-200 rounded-full ${
+              index === currentIndex ? 'bg-blue-500' : ''
+            }`}
+          />
+        ))}
+      </div
+    </div>
+  );
+}
+02:43:58.590 App.tsx:848 --- BEFORE PATCH END ---
+02:43:58.591 App.tsx:1052 [Patch Applier] Total lines in code: 58
+02:43:58.591 App.tsx:1065 [Patch Applier] Line 55:
+02:43:58.591 App.tsx:1066   Current: "      </div"
+02:43:58.591 App.tsx:1067   Expected: "</div"
+02:43:58.591 App.tsx:1068   New: "</div>"
+02:43:58.591 App.tsx:1073 [Patch Applied] Line 55 replaced (exact match)
+02:43:58.591 App.tsx:853 [CANVAS FIX] Source code after patching:
+02:43:58.591 App.tsx:854 --- AFTER PATCH ---
+02:43:58.591 App.tsx:855 import React, { useState } from 'react';
+
+export default function Carousel() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const images = [
+    'https://picsum.photos/200/300',
+    'https://picsum.photos/200/301',
+    'https://picsum.photos/200/302',
+    'https://picsum.photos/200/303',
+  ];
+
+  const handleNext = () => {
+    setCurrentIndex((currentIndex + 1) % images.length);
+  };
+
+  const handlePrev = () => {
+    setCurrentIndex((currentIndex - 1 + images.length) % images.length);
+  };
+
+  return (
+    <div className="relative w-full h-full flex items-center justify-center">
+      <div className="flex overflow-hidden">
+        {images.map((image, index) => (
+          <img
+            key={index}
+            src={image}
+            alt=""
+            className={`w-full h-full object-cover duration-1000 ease-in-out ${
+              index === currentIndex ? 'block' : 'hidden'
+            }`}
+          />
+        ))}
+      </div>
+      <button
+        className="absolute left-0 flex justify-center items-center w-10 h-10 bg-gray-200 rounded-full cursor-pointer"
+        onClick={handlePrev}
+      >
+        {'<'}
+      </button>
+      <button
+        className="absolute right-0 flex justify-center items-center w-10 h-10 bg-gray-200 rounded-full cursor-pointer"
+        onClick={handleNext}
+      >
+        {'>'}
+      </button>
+<div className="absolute bottom-0 flex justify-center items-center w-full">
+        {images.map((image, index) => (
+          <div
+            key={index}
+            className={`w-2 h-2 mx-1 bg-gray-200 rounded-full ${
+              index === currentIndex ? 'bg-blue-500' : ''
+            }`}
+          />
+        ))}
+</div>
+    </div>
+  );
+}
+02:43:58.592 App.tsx:856 --- AFTER PATCH END ---
+02:43:58.592 App.tsx:858 [CANVAS FIX] Applied 1 patch(es) inline
+02:43:58.592 App.tsx:859 [CANVAS FIX] Patched code preview: import React, { useState } from 'react';
+
+export default function Carousel() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const images = [
+    'https://picsum.photos/200/300',
+    'https...
+02:43:58.592 App.tsx:865 [CANVAS FIX] Creating new version...
+02:43:58.592 App.tsx:866 [CANVAS FIX] Previous versions count: 3
+02:43:58.592 App.tsx:867 [CANVAS FIX] New versions count: 4
+02:43:58.592 App.tsx:868 [CANVAS FIX] New version index: 3
+02:43:58.592 App.tsx:878 [CANVAS FIX] Canvas state updated successfully
+02:43:58.593 App.tsx:879 ========================================
+02:43:58.593 App.tsx:880 [CANVAS FIX] FIX PROCESS COMPLETED
+02:43:58.593 App.tsx:881 ========================================
+02:43:58.593 App.tsx:409 [App] Saving chat with canvas state: {hasCanvasState: true, versionsCount: 3, currentIndex: 2}
+02:43:58.611 App.tsx:934 [CANVAS FIX] Cleaning up...
+02:43:58.611 App.tsx:937 [CANVAS FIX] Cleanup complete
+02:43:58.714 Canvas.tsx:66 [Canvas] initialVersions changed: {hasInitialVersions: true, initialVersionsCount: 4, initialIndex: 3}
+02:43:58.717 Canvas.tsx:73 [Canvas] Setting versions from initialVersions
+02:43:58.718 App.tsx:409 [App] Saving chat with canvas state: {hasCanvasState: true, versionsCount: 4, currentIndex: 3}
+02:43:58.756 installHook.js:1 [Canvas] Render error: /component.tsx: Unexpected token, expected "jsxTagEnd" (58:4)
+
+  56 |         ))}
+  57 |       </div
+> 58 |     </div>
+     |     ^
+  59 |   );
+  60 | }
+  61 | return Carousel;
+overrideMethod @ installHook.js:1
+handleRender @ Canvas.tsx:196
+await in handleRender
+(anonymous) @ Canvas.tsx:167
+react_stack_bottom_frame @ react-dom-client.development.js:25989
+runWithFiberInDEV @ react-dom-client.development.js:871
+commitHookEffectListMount @ react-dom-client.development.js:13249
+commitHookPassiveMountEffects @ react-dom-client.development.js:13336
+commitPassiveMountOnFiber @ react-dom-client.development.js:15484
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15666
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15633
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15718
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15718
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15718
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15718
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15718
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15476
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15718
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15519
+flushPassiveEffects @ react-dom-client.development.js:18432
+(anonymous) @ react-dom-client.development.js:17923
+performWorkUntilDeadline @ scheduler.development.js:45
+<...>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:335
+App @ App.tsx:1712
+react_stack_bottom_frame @ react-dom-client.development.js:25904
+renderWithHooksAgain @ react-dom-client.development.js:7762
+renderWithHooks @ react-dom-client.development.js:7674
+updateFunctionComponent @ react-dom-client.development.js:10166
+beginWork @ react-dom-client.development.js:11778
+runWithFiberInDEV @ react-dom-client.development.js:871
+performUnitOfWork @ react-dom-client.development.js:17641
+workLoopSync @ react-dom-client.development.js:17469
+renderRootSync @ react-dom-client.development.js:17450
+performWorkOnRoot @ react-dom-client.development.js:16504
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:18957
+performWorkUntilDeadline @ scheduler.development.js:45
+<App>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:335
+(anonymous) @ index.tsx:13
+02:43:58.894 App.tsx:632 [App] Canvas versions changed: 4 versions, current index: 3
+02:43:59.000 App.tsx:409 [App] Saving chat with canvas state: {hasCanvasState: true, versionsCount: 4, currentIndex: 3}
+02:55:58.617 client:895  GET http://localhost:3000/App.tsx?t=1774223750729 net::ERR_ABORTED 500 (Internal Server Error)
+importUpdatedModule @ client:895
+fetchUpdate @ client:204
+queueUpdate @ client:179
+(anonymous) @ client:930
+handleMessage @ client:928
+await in handleMessage
+(anonymous) @ client:490
+dequeue @ client:516
+(anonymous) @ client:504
+enqueue @ client:498
+(anonymous) @ client:490
+onMessage @ client:309
+(anonymous) @ client:439
+02:55:58.637 installHook.js:1 [vite] Failed to reload /App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+overrideMethod @ installHook.js:1
+error @ client:882
+warnFailedUpdate @ client:169
+fetchUpdate @ client:206
+await in fetchUpdate
+queueUpdate @ client:179
+(anonymous) @ client:930
+handleMessage @ client:928
+await in handleMessage
+(anonymous) @ client:490
+dequeue @ client:516
+(anonymous) @ client:504
+enqueue @ client:498
+(anonymous) @ client:490
+onMessage @ client:309
+(anonymous) @ client:439
+02:58:03.271 client:895  GET http://localhost:3000/App.tsx?t=1774223879728 net::ERR_ABORTED 500 (Internal Server Error)
+importUpdatedModule @ client:895
+fetchUpdate @ client:204
+queueUpdate @ client:179
+(anonymous) @ client:930
+handleMessage @ client:928
+await in handleMessage
+(anonymous) @ client:490
+dequeue @ client:516
+(anonymous) @ client:504
+enqueue @ client:498
+(anonymous) @ client:490
+onMessage @ client:309
+(anonymous) @ client:439
+02:58:03.272 installHook.js:1 [vite] Failed to reload /App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+overrideMethod @ installHook.js:1
+error @ client:882
+warnFailedUpdate @ client:169
+fetchUpdate @ client:206
+await in fetchUpdate
+queueUpdate @ client:179
+(anonymous) @ client:930
+handleMessage @ client:928
+await in handleMessage
+(anonymous) @ client:490
+dequeue @ client:516
+(anonymous) @ client:504
+enqueue @ client:498
+(anonymous) @ client:490
+onMessage @ client:309
+(anonymous) @ client:439
+02:58:54.591 client:895  GET http://localhost:3000/App.tsx?t=1774223932559 net::ERR_ABORTED 500 (Internal Server Error)
+importUpdatedModule @ client:895
+fetchUpdate @ client:204
+queueUpdate @ client:179
+(anonymous) @ client:930
+handleMessage @ client:928
+await in handleMessage
+(anonymous) @ client:490
+dequeue @ client:516
+(anonymous) @ client:504
+enqueue @ client:498
+(anonymous) @ client:490
+onMessage @ client:309
+(anonymous) @ client:439
+02:58:54.594 installHook.js:1 [vite] Failed to reload /App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above)
+overrideMethod @ installHook.js:1
+error @ client:882
+warnFailedUpdate @ client:169
+fetchUpdate @ client:206
+await in fetchUpdate
+queueUpdate @ client:179
+(anonymous) @ client:930
+handleMessage @ client:928
+await in handleMessage
+(anonymous) @ client:490
+dequeue @ client:516
+(anonymous) @ client:504
+enqueue @ client:498
+(anonymous) @ client:490
+onMessage @ client:309
+(anonymous) @ client:439
+03:00:33.307 Navigated to http://localhost:3000/
+03:00:34.216 index.tsx:4  GET http://localhost:3000/App.tsx?t=1774223932559 net::ERR_ABORTED 500 (Internal Server Error)
+03:01:21.563 Navigated to http://localhost:3000/
+03:01:23.217 pdfParser.ts:17 PDF.js worker configured: https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.624/build/pdf.worker.min.mjs
+03:01:23.579 App.tsx:278 [App] Restoring canvas state on mount: {versionsCount: 4, currentIndex: 3}
+03:01:23.590 installHook.js:1 [App] Restoring canvas state on mount: {versionsCount: 4, currentIndex: 3}
+03:01:23.840 App.tsx:409 [App] Saving chat with canvas state: {hasCanvasState: true, versionsCount: 4, currentIndex: 3}
+03:01:25.430 embeddingWorker.ts?worker_file&type=module:216 [Worker] Model files found in cache - ready to load
+03:01:25.434 embeddingService.ts:67 [EmbeddingService] Status update: ready
+03:01:29.178 Navigated to http://localhost:3000/
+03:01:29.907 pdfParser.ts:17 PDF.js worker configured: https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.624/build/pdf.worker.min.mjs
+03:01:30.065 App.tsx:278 [App] Restoring canvas state on mount: {versionsCount: 4, currentIndex: 3}
+03:01:30.080 installHook.js:1 [App] Restoring canvas state on mount: {versionsCount: 4, currentIndex: 3}
+03:01:30.203 App.tsx:409 [App] Saving chat with canvas state: {hasCanvasState: true, versionsCount: 4, currentIndex: 3}
+03:01:31.032 embeddingWorker.ts:291 [Worker] Model files found in cache - ready to load
+03:01:32.686 embeddingService.ts:67 [EmbeddingService] Status update: ready
+03:01:34.882 Canvas.tsx:66 [Canvas] initialVersions changed: {hasInitialVersions: true, initialVersionsCount: 4, initialIndex: 3}
+03:01:34.882 Canvas.tsx:73 [Canvas] Setting versions from initialVersions
+03:01:34.883 App.tsx:632 [App] Canvas versions changed: 4 versions, current index: 3
+03:01:34.886 installHook.js:1 [Canvas] initialVersions changed: {hasInitialVersions: true, initialVersionsCount: 4, initialIndex: 3}
+03:01:34.887 installHook.js:1 [Canvas] Setting versions from initialVersions
+03:01:34.888 installHook.js:1 [App] Canvas versions changed: 4 versions, current index: 3
+03:01:35.246 App.tsx:409 [App] Saving chat with canvas state: {hasCanvasState: true, versionsCount: 4, currentIndex: 3}
+03:01:35.272 App.tsx:409 [App] Saving chat with canvas state: {hasCanvasState: true, versionsCount: 4, currentIndex: 3}
+03:01:45.482 VM8961 about:srcdoc:37 [ReactRenderer] Libraries loaded successfully
+03:01:45.483 VM8961 about:srcdoc:64 [ReactRenderer] Executing component...
+03:01:45.483 VM8961 about:srcdoc:73 [ReactRenderer] Rendering component...
+03:01:45.488 VM8961 about:srcdoc:78 [ReactRenderer] Render complete
+03:02:12.549 App.tsx:632 [App] Canvas versions changed: 5 versions, current index: 4
+03:02:12.650 Canvas.tsx:66 [Canvas] initialVersions changed: {hasInitialVersions: true, initialVersionsCount: 5, initialIndex: 4}
+03:02:12.651 Canvas.tsx:73 [Canvas] Setting versions from initialVersions
+03:02:15.541 App.tsx:409 [App] Saving chat with canvas state: {hasCanvasState: true, versionsCount: 4, currentIndex: 3}
+03:02:15.740 installHook.js:1 [Canvas] Render error: /component.tsx: Unexpected token, expected "jsxTagEnd" (56:8)
+
+  54 |             }`}
+  55 |           /
+> 56 |         ))}
+     |         ^
+  57 | </div>
+  58 |     </div>
+  59 |   );
+overrideMethod @ installHook.js:1
+handleRender @ Canvas.tsx:196
+await in handleRender
+handleSwitchToPreview @ Canvas.tsx:207
+executeDispatch @ react-dom-client.development.js:19116
+runWithFiberInDEV @ react-dom-client.development.js:871
+processDispatchQueue @ react-dom-client.development.js:19166
+(anonymous) @ react-dom-client.development.js:19767
+batchedUpdates$1 @ react-dom-client.development.js:3255
+dispatchEventForPluginEventSystem @ react-dom-client.development.js:19320
+dispatchEvent @ react-dom-client.development.js:23585
+dispatchDiscreteEvent @ react-dom-client.development.js:23553
+<button>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:335
+Canvas @ Canvas.tsx:416
+react_stack_bottom_frame @ react-dom-client.development.js:25904
+renderWithHooksAgain @ react-dom-client.development.js:7762
+renderWithHooks @ react-dom-client.development.js:7674
+updateFunctionComponent @ react-dom-client.development.js:10166
+beginWork @ react-dom-client.development.js:11727
+runWithFiberInDEV @ react-dom-client.development.js:871
+performUnitOfWork @ react-dom-client.development.js:17641
+workLoopConcurrentByScheduler @ react-dom-client.development.js:17635
+renderRootConcurrent @ react-dom-client.development.js:17617
+performWorkOnRoot @ react-dom-client.development.js:16503
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:18957
+performWorkUntilDeadline @ scheduler.development.js:45
+<...>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:335
+App @ App.tsx:1781
+react_stack_bottom_frame @ react-dom-client.development.js:25904
+renderWithHooksAgain @ react-dom-client.development.js:7762
+renderWithHooks @ react-dom-client.development.js:7674
+updateFunctionComponent @ react-dom-client.development.js:10166
+beginWork @ react-dom-client.development.js:11778
+runWithFiberInDEV @ react-dom-client.development.js:871
+performUnitOfWork @ react-dom-client.development.js:17641
+workLoopSync @ react-dom-client.development.js:17469
+renderRootSync @ react-dom-client.development.js:17450
+performWorkOnRoot @ react-dom-client.development.js:16504
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:18957
+performWorkUntilDeadline @ scheduler.development.js:45
+<App>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:335
+(anonymous) @ index.tsx:13
+03:02:17.746 App.tsx:659 ========================================
+03:02:17.746 App.tsx:660 [CANVAS FIX] STARTING ERROR FIX PROCESS
+03:02:17.746 App.tsx:661 ========================================
+03:02:17.747 App.tsx:662 [CANVAS FIX] Input code length: 1698
+03:02:17.747 App.tsx:663 [CANVAS FIX] Input code preview: import React, { useState } from 'react';
+
+export default function Carousel() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const images = [
+    'https://picsum.photos/200/300',
+    'https...
+03:02:17.747 App.tsx:664 [CANVAS FIX] Canvas error: {message: '/component.tsx: Unexpected token, expected "jsxTag…    ^\n  57 | </div>\n  58 |     </div>\n  59 |   );', code: "import React, { useState } from 'react';\n\nexport d…\n          /\n        ))}\n</div>\n    </div>\n  );\n}"}
+03:02:17.747 App.tsx:674 [CANVAS FIX] Source code lines: 58
+03:02:17.748 App.tsx:675 [CANVAS FIX] Error message: /component.tsx: Unexpected token, expected "jsxTagEnd" (56:8)
+
+  54 |             }`}
+  55 |           /
+> 56 |         ))}
+     |         ^
+  57 | </div>
+  58 |     </div>
+  59 |   );
+03:02:17.748 App.tsx:676 [CANVAS FIX] Full source code:
+03:02:17.748 App.tsx:677 --- SOURCE CODE START ---
+03:02:17.748 App.tsx:678 import React, { useState } from 'react';
+
+export default function Carousel() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const images = [
+    'https://picsum.photos/200/300',
+    'https://picsum.photos/200/301',
+    'https://picsum.photos/200/302',
+    'https://picsum.photos/200/303',
+  ];
+
+  const handleNext = () => {
+    setCurrentIndex((currentIndex + 1) % images.length);
+  };
+
+  const handlePrev = () => {
+    setCurrentIndex((currentIndex - 1 + images.length) % images.length);
+  };
+
+  return (
+    <div className="relative w-full h-full flex items-center justify-center">
+      <div className="flex overflow-hidden">
+        {images.map((image, index) => (
+          <img
+            key={index}
+            src={image}
+            alt=""
+            className={`w-full h-full object-cover duration-1000 ease-in-out ${
+              index === currentIndex ? 'block' : 'hidden'
+            }`}
+          />
+        ))}
+      </div>
+      <button
+        className="absolute left-0 flex justify-center items-center w-10 h-10 bg-gray-200 rounded-full cursor-pointer"
+        onClick={handlePrev}
+      >
+        {'<'}
+      </button>
+      <button
+        className="absolute right-0 flex justify-center items-center w-10 h-10 bg-gray-200 rounded-full cursor-pointer"
+        onClick={handleNext}
+      >
+        {'>'}
+      </button>
+<div className="absolute bottom-0 flex justify-center items-center w-full">
+        {images.map((image, index) => (
+          <div
+            key={index}
+            className={`w-2 h-2 mx-1 bg-gray-200 rounded-full ${
+              index === currentIndex ? 'bg-blue-500' : ''
+            }`}
+          /
+        ))}
+</div>
+    </div>
+  );
+}
+03:02:17.748 App.tsx:679 --- SOURCE CODE END ---
+03:02:17.749 App.tsx:686 [CANVAS FIX] Extracted error line: null
+03:02:17.749 App.tsx:687 [CANVAS FIX] Is closing tag error: true
+03:02:17.749 App.tsx:787 [CANVAS FIX] Prompt being sent to AI:
+03:02:17.749 App.tsx:787 [CANVAS FIX] Prompt being sent to AI:
+03:02:17.749 App.tsx:788 --- PROMPT START ---
+03:02:17.750 App.tsx:789 # CODE ERROR FIX REQUEST
+
+## ERROR DETAILS
+/component.tsx: Unexpected token, expected "jsxTagEnd" (56:8)
+
+  54 |             }`}
+  55 |           /
+> 56 |         ))}
+     |         ^
+  57 | </div>
+  58 |     </div>
+  59 |   );
+
+**ERROR TYPE**: This error is about a missing ">" in a CLOSING JSX tag (</...>)
+
+## FOCUSED CONTEXT (PRIORITY - FIX HERE)
+No focused context available
+
+## FULL SOURCE CODE (with line numbers)
+  1 | import React, { useState } from 'react';
+  2 | 
+  3 | export default function Carousel() {
+  4 |   const [currentIndex, setCurrentIndex] = useState(0);
+  5 |   const images = [
+  6 |     'https://picsum.photos/200/300',
+  7 |     'https://picsum.photos/200/301',
+  8 |     'https://picsum.photos/200/302',
+  9 |     'https://picsum.photos/200/303',
+  10 |   ];
+  11 | 
+  12 |   const handleNext = () => {
+  13 |     setCurrentIndex((currentIndex + 1) % images.length);
+  14 |   };
+  15 | 
+  16 |   const handlePrev = () => {
+  17 |     setCurrentIndex((currentIndex - 1 + images.length) % images.length);
+  18 |   };
+  19 | 
+  20 |   return (
+  21 |     <div className="relative w-full h-full flex items-center justify-center">
+  22 |       <div className="flex overflow-hidden">
+  23 |         {images.map((image, index) => (
+  24 |           <img
+  25 |             key={index}
+  26 |             src={image}
+  27 |             alt=""
+  28 |             className={`w-full h-full object-cover duration-1000 ease-in-out ${
+  29 |               index === currentIndex ? 'block' : 'hidden'
+  30 |             }`}
+  31 |           />
+  32 |         ))}
+  33 |       </div>
+  34 |       <button
+  35 |         className="absolute left-0 flex justify-center items-center w-10 h-10 bg-gray-200 rounded-full cursor-pointer"
+  36 |         onClick={handlePrev}
+  37 |       >
+  38 |         {'<'}
+  39 |       </button>
+  40 |       <button
+  41 |         className="absolute right-0 flex justify-center items-center w-10 h-10 bg-gray-200 rounded-full cursor-pointer"
+  42 |         onClick={handleNext}
+  43 |       >
+  44 |         {'>'}
+  45 |       </button>
+  46 | <div className="absolute bottom-0 flex justify-center items-center w-full">
+  47 |         {images.map((image, index) => (
+  48 |           <div
+  49 |             key={index}
+  50 |             className={`w-2 h-2 mx-1 bg-gray-200 rounded-full ${
+  51 |               index === currentIndex ? 'bg-blue-500' : ''
+  52 |             }`}
+  53 |           /
+  54 |         ))}
+  55 | </div>
+  56 |     </div>
+  57 |   );
+  58 | }
+
+## CRITICAL TARGETING STEP
+1. Find the EXACT line in the source code that matches the broken syntax
+2. COPY that line EXACTLY as it appears
+3. Only fix THAT exact line
+
+You MUST:
+- Match the FULL line text exactly (including </ vs <)
+- If the line starts with </ it is a CLOSING tag
+- If the line starts with < (without /) it is an OPENING tag
+- NEVER modify a different line even if similar
+
+Before writing a patch:
+- Output: "FOUND LINE X: <paste exact line>"
+
+If this step is wrong the patch is invalid.
+
+## INSTRUCTIONS
+The error above is from transpiled code. You need to find and fix the actual error in the SOURCE CODE above.
+
+**PRIORITY**: Fix the error inside the FOCUSED CONTEXT section above.
+
+Common issues:
+- Missing closing brackets: }, ), ], >
+- Missing opening brackets: {, (, [, <
+- Missing semicolons
+- Unclosed strings or template literals
+- Mismatched JSX tags
+
+**IMPORTANT**: If the error says "expected jsxTagEnd", look for a CLOSING tag (</...>) that is missing the final >.
+
+### PATCH FORMAT (CRITICAL - READ CAREFULLY)
+Each patch must be EXACTLY 3 lines:
+
+Line 1: PATCH @@ line X @@
+Line 2: old code (the EXACT broken line from source code - copy it EXACTLY)
+Line 3: new code (the fixed version of that line)
+
+### RULES
+1. Each patch is 3 lines - no more, no less
+2. Put your explanation BEFORE the patches
+3. Do NOT put explanation text after the new code line
+4. Use line numbers from the SOURCE CODE above (not from error message)
+5. Copy the old code EXACTLY as it appears - don't change anything except the fix
+6. Only fix the specific error - don't change other code
+
+### CORRECT EXAMPLE
+FOUND LINE 55: "      </div"
+Fixed missing closing bracket on div tag at line 55.
+
+PATCH @@ line 55 @@
+      </div
+      </div>
+
+### WRONG EXAMPLE (DO NOT DO THIS)
+PATCH @@ line 55 @@
+<div className="...">
+<div className="...">
+
+## YOUR RESPONSE
+Provide: Brief explanation with "FOUND LINE X: <exact line>", then patches in the format above.
+03:02:17.750 App.tsx:790 --- PROMPT END ---
+03:02:17.971 embeddingWorker.ts:170 [Worker] Loading cached model from IndexedDB...
+03:02:17.972 embeddingService.ts:67 [EmbeddingService] Status update: ready
+03:02:22.060 embeddingWorker.ts:188 [Worker] Model loaded in 4.1s
+03:02:22.060 embeddingService.ts:67 [EmbeddingService] Status update: ready
+03:02:22.061 embeddingService.ts:72 [EmbeddingService] Model loaded successfully
+03:02:23.844 vectorDb.ts:178 Searching across 0 chunks from 0 enabled files (2 total)
+03:02:23.844 vectorDb.ts:192 Top 10 scores before filtering:
+03:02:23.844 vectorDb.ts:202 Found 0 relevant chunks (threshold: 0.15)
+03:02:23.845 App.tsx:823 [CANVAS FIX] Starting AI streaming...
+03:02:25.332 App.tsx:874 [CANVAS FIX] AI response received:
+03:02:25.333 App.tsx:875 --- AI RESPONSE START ---
+03:02:25.333 App.tsx:876 The error message indicates that there is an unexpected token at line 56, which suggests that there is a syntax error in the JSX code. After reviewing the source code, it appears that the error is caused by a missing closing bracket on the `div` tag at line 53.
+
+FOUND LINE 53: `/`
+
+The issue here is that the `/` is not a valid way to close a JSX tag. Instead, it should be `/>` to properly close the `div` tag.
+
+PATCH @@ line 53 @@
+          /
+          />
+03:02:25.333 App.tsx:877 --- AI RESPONSE END ---
+03:02:25.333 App.tsx:878 [CANVAS FIX] AI response length: 458
+03:02:25.333 App.tsx:881 [CANVAS FIX] Parsing patches from AI response...
+03:02:25.334 App.tsx:991 ========================================
+03:02:25.334 App.tsx:992 [PATCH PARSER] Starting patch parsing
+03:02:25.334 App.tsx:993 ========================================
+03:02:25.334 App.tsx:994 [Patch Parser] Raw response length: 458
+03:02:25.334 App.tsx:995 [Patch Parser] Raw response: The error message indicates that there is an unexpected token at line 56, which suggests that there is a syntax error in the JSX code. After reviewing the source code, it appears that the error is caused by a missing closing bracket on the `div` tag at line 53.
+
+FOUND LINE 53: `/`
+
+The issue here is that the `/` is not a valid way to close a JSX tag. Instead, it should be `/>` to properly close the `div` tag.
+
+PATCH @@ line 53 @@
+          /
+          />
+03:02:25.334 App.tsx:999 [Patch Parser] Cleaned response: The error message indicates that there is an unexpected token at line 56, which suggests that there is a syntax error in the JSX code. After reviewing the source code, it appears that the error is caused by a missing closing bracket on the `div` tag at line 53.
+
+FOUND LINE 53: `/`
+
+The issue here is that the `/` is not a valid way to close a JSX tag. Instead, it should be `/>` to properly close the `div` tag.
+
+PATCH @@ line 53 @@
+          /
+          />
+03:02:25.334 App.tsx:1005 [Patch Parser] Trying standard format regex...
+03:02:25.335 App.tsx:1012 [Patch Parser] Found match: PATCH @@ line 53 @@
+          /
+          />
+03:02:25.335 App.tsx:1013 [Patch Parser] Line number: 53
+03:02:25.335 App.tsx:1014 [Patch Parser] Old content (raw):           /
+03:02:25.335 App.tsx:1015 [Patch Parser] New content (raw):           />
+03:02:25.335 App.tsx:1026 [Patch Parsed] Line 53:
+03:02:25.335 App.tsx:1027   Old: "/"
+03:02:25.335 App.tsx:1028   New: "/>"
+03:02:25.336 App.tsx:1087 [Patch Parser] Found 1 patch(es)
+03:02:25.336 App.tsx:1088 ========================================
+03:02:25.336 App.tsx:1089 [PATCH PARSER] Parsing complete
+03:02:25.336 App.tsx:1090 ========================================
+03:02:25.336 App.tsx:884 [CANVAS FIX] Patches parsed: 1
+03:02:25.336 App.tsx:886 [CANVAS FIX] Patch 1: {line: 53, oldContent: '/', newContent: '/>'}
+03:02:25.336 App.tsx:890 [CANVAS FIX] Applying patches to source code...
+03:02:25.336 App.tsx:891 [CANVAS FIX] Source code before patching:
+03:02:25.336 App.tsx:892 --- BEFORE PATCH ---
+03:02:25.337 App.tsx:893 import React, { useState } from 'react';
+
+export default function Carousel() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const images = [
+    'https://picsum.photos/200/300',
+    'https://picsum.photos/200/301',
+    'https://picsum.photos/200/302',
+    'https://picsum.photos/200/303',
+  ];
+
+  const handleNext = () => {
+    setCurrentIndex((currentIndex + 1) % images.length);
+  };
+
+  const handlePrev = () => {
+    setCurrentIndex((currentIndex - 1 + images.length) % images.length);
+  };
+
+  return (
+    <div className="relative w-full h-full flex items-center justify-center">
+      <div className="flex overflow-hidden">
+        {images.map((image, index) => (
+          <img
+            key={index}
+            src={image}
+            alt=""
+            className={`w-full h-full object-cover duration-1000 ease-in-out ${
+              index === currentIndex ? 'block' : 'hidden'
+            }`}
+          />
+        ))}
+      </div>
+      <button
+        className="absolute left-0 flex justify-center items-center w-10 h-10 bg-gray-200 rounded-full cursor-pointer"
+        onClick={handlePrev}
+      >
+        {'<'}
+      </button>
+      <button
+        className="absolute right-0 flex justify-center items-center w-10 h-10 bg-gray-200 rounded-full cursor-pointer"
+        onClick={handleNext}
+      >
+        {'>'}
+      </button>
+<div className="absolute bottom-0 flex justify-center items-center w-full">
+        {images.map((image, index) => (
+          <div
+            key={index}
+            className={`w-2 h-2 mx-1 bg-gray-200 rounded-full ${
+              index === currentIndex ? 'bg-blue-500' : ''
+            }`}
+          /
+        ))}
+</div>
+    </div>
+  );
+}
+03:02:25.337 App.tsx:894 --- BEFORE PATCH END ---
+03:02:25.337 App.tsx:1098 [Patch Applier] Total lines in code: 58
+03:02:25.337 App.tsx:1117 [Patch Applier] Line 53:
+03:02:25.337 App.tsx:1118   Current: "          /"
+03:02:25.337 App.tsx:1119   Expected: "/"
+03:02:25.337 App.tsx:1120   New: "/>"
+03:02:25.338 App.tsx:1136 [Patch Applied] Line 53 replaced (exact match)
+03:02:25.338 App.tsx:899 [CANVAS FIX] Source code after patching:
+03:02:25.338 App.tsx:900 --- AFTER PATCH ---
+03:02:25.338 App.tsx:901 import React, { useState } from 'react';
+
+export default function Carousel() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const images = [
+    'https://picsum.photos/200/300',
+    'https://picsum.photos/200/301',
+    'https://picsum.photos/200/302',
+    'https://picsum.photos/200/303',
+  ];
+
+  const handleNext = () => {
+    setCurrentIndex((currentIndex + 1) % images.length);
+  };
+
+  const handlePrev = () => {
+    setCurrentIndex((currentIndex - 1 + images.length) % images.length);
+  };
+
+  return (
+    <div className="relative w-full h-full flex items-center justify-center">
+      <div className="flex overflow-hidden">
+        {images.map((image, index) => (
+          <img
+            key={index}
+            src={image}
+            alt=""
+            className={`w-full h-full object-cover duration-1000 ease-in-out ${
+              index === currentIndex ? 'block' : 'hidden'
+            }`}
+          />
+        ))}
+      </div>
+      <button
+        className="absolute left-0 flex justify-center items-center w-10 h-10 bg-gray-200 rounded-full cursor-pointer"
+        onClick={handlePrev}
+      >
+        {'<'}
+      </button>
+      <button
+        className="absolute right-0 flex justify-center items-center w-10 h-10 bg-gray-200 rounded-full cursor-pointer"
+        onClick={handleNext}
+      >
+        {'>'}
+      </button>
+<div className="absolute bottom-0 flex justify-center items-center w-full">
+        {images.map((image, index) => (
+          <div
+            key={index}
+            className={`w-2 h-2 mx-1 bg-gray-200 rounded-full ${
+              index === currentIndex ? 'bg-blue-500' : ''
+            }`}
+/>
+        ))}
+</div>
+    </div>
+  );
+}
+03:02:25.338 App.tsx:902 --- AFTER PATCH END ---
+03:02:25.338 App.tsx:904 [CANVAS FIX] Applied 1 patch(es) inline
+03:02:25.338 App.tsx:905 [CANVAS FIX] Patched code preview: import React, { useState } from 'react';
+
+export default function Carousel() {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const images = [
+    'https://picsum.photos/200/300',
+    'https...
+03:02:25.338 App.tsx:911 [CANVAS FIX] Creating new version...
+03:02:25.338 App.tsx:912 [CANVAS FIX] Previous versions count: 5
+03:02:25.338 App.tsx:913 [CANVAS FIX] New versions count: 6
+03:02:25.339 App.tsx:914 [CANVAS FIX] New version index: 5
+03:02:25.339 App.tsx:924 [CANVAS FIX] Canvas state updated successfully
+03:02:25.339 App.tsx:925 ========================================
+03:02:25.339 App.tsx:926 [CANVAS FIX] FIX PROCESS COMPLETED
+03:02:25.339 App.tsx:927 ========================================
+03:02:25.339 App.tsx:409 [App] Saving chat with canvas state: {hasCanvasState: true, versionsCount: 5, currentIndex: 4}
+03:02:25.346 groqService.ts:216 Fetch finished loading: POST "https://api.groq.com/openai/v1/chat/completions".
+streamChatResponse @ groqService.ts:216
+handleFixCanvasError @ App.tsx:858
+await in handleFixCanvasError
+onClick @ Canvas.tsx:512
+executeDispatch @ react-dom-client.development.js:19116
+runWithFiberInDEV @ react-dom-client.development.js:871
+processDispatchQueue @ react-dom-client.development.js:19166
+(anonymous) @ react-dom-client.development.js:19767
+batchedUpdates$1 @ react-dom-client.development.js:3255
+dispatchEventForPluginEventSystem @ react-dom-client.development.js:19320
+dispatchEvent @ react-dom-client.development.js:23585
+dispatchDiscreteEvent @ react-dom-client.development.js:23553
+<button>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:335
+Canvas @ Canvas.tsx:511
+react_stack_bottom_frame @ react-dom-client.development.js:25904
+renderWithHooksAgain @ react-dom-client.development.js:7762
+renderWithHooks @ react-dom-client.development.js:7674
+updateFunctionComponent @ react-dom-client.development.js:10166
+beginWork @ react-dom-client.development.js:11778
+runWithFiberInDEV @ react-dom-client.development.js:871
+performUnitOfWork @ react-dom-client.development.js:17641
+workLoopSync @ react-dom-client.development.js:17469
+renderRootSync @ react-dom-client.development.js:17450
+performWorkOnRoot @ react-dom-client.development.js:16504
+performSyncWorkOnRoot @ react-dom-client.development.js:18972
+flushSyncWorkAcrossRoots_impl @ react-dom-client.development.js:18814
+processRootScheduleInMicrotask @ react-dom-client.development.js:18853
+(anonymous) @ react-dom-client.development.js:18991
+<...>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:335
+App @ App.tsx:1781
+react_stack_bottom_frame @ react-dom-client.development.js:25904
+renderWithHooksAgain @ react-dom-client.development.js:7762
+renderWithHooks @ react-dom-client.development.js:7674
+updateFunctionComponent @ react-dom-client.development.js:10166
+beginWork @ react-dom-client.development.js:11778
+runWithFiberInDEV @ react-dom-client.development.js:871
+performUnitOfWork @ react-dom-client.development.js:17641
+workLoopSync @ react-dom-client.development.js:17469
+renderRootSync @ react-dom-client.development.js:17450
+performWorkOnRoot @ react-dom-client.development.js:16504
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:18957
+performWorkUntilDeadline @ scheduler.development.js:45
+<App>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:335
+(anonymous) @ index.tsx:13
+03:02:25.358 App.tsx:980 [CANVAS FIX] Cleaning up...
+03:02:25.358 App.tsx:983 [CANVAS FIX] Cleanup complete
+03:02:25.436 Canvas.tsx:66 [Canvas] initialVersions changed: {hasInitialVersions: true, initialVersionsCount: 6, initialIndex: 5}
+03:02:25.437 Canvas.tsx:73 [Canvas] Setting versions from initialVersions
+03:02:25.448 App.tsx:409 [App] Saving chat with canvas state: {hasCanvasState: true, versionsCount: 6, currentIndex: 5}
+03:02:25.471 installHook.js:1 [Canvas] Render error: /component.tsx: Unexpected token, expected "jsxTagEnd" (56:8)
+
+  54 |             }`}
+  55 |           /
+> 56 |         ))}
+     |         ^
+  57 | </div>
+  58 |     </div>
+  59 |   );
+overrideMethod @ installHook.js:1
+handleRender @ Canvas.tsx:196
+await in handleRender
+(anonymous) @ Canvas.tsx:167
+react_stack_bottom_frame @ react-dom-client.development.js:25989
+runWithFiberInDEV @ react-dom-client.development.js:871
+commitHookEffectListMount @ react-dom-client.development.js:13249
+commitHookPassiveMountEffects @ react-dom-client.development.js:13336
+commitPassiveMountOnFiber @ react-dom-client.development.js:15484
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15666
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15633
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15718
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15718
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15718
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15718
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15718
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15476
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15718
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:15439
+commitPassiveMountOnFiber @ react-dom-client.development.js:15519
+flushPassiveEffects @ react-dom-client.development.js:18432
+(anonymous) @ react-dom-client.development.js:17923
+performWorkUntilDeadline @ scheduler.development.js:45
+03:02:25.570 App.tsx:632 [App] Canvas versions changed: 6 versions, current index: 5
+03:02:25.672 App.tsx:409 [App] Saving chat with canvas state: {hasCanvasState: true, versionsCount: 6, currentIndex: 5}
