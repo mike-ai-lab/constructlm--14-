@@ -1,6 +1,6 @@
 // Diff display and management
 import { state } from './state.js';
-import { log, escapeHtml } from './logger.js';
+import { log, escapeHtml, clearConsoleErrors } from './logger.js';
 import { updateLineNumbers, saveToHistory } from './editor.js';
 import { addChatMessage } from './chat.js';
 import { updateStatus } from './aiService.js';
@@ -52,7 +52,9 @@ export function acceptFix() {
   saveToHistory();
   
   document.getElementById('diff-overlay').classList.remove('active');
-  document.getElementById('error-display').innerHTML = '';
+  
+  // Clear console errors since they're now fixed
+  clearConsoleErrors();
   
   updateStatus('Applied', 'success');
   addChatMessage('✓ Fix accepted and applied!');

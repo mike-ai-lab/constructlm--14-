@@ -6,9 +6,47 @@ export function log(message, level = 'info', data = null) {
   const entry = { timestamp, level, message, data };
   state.debugLog.push(entry);
   
-  const logContainer = document.getElementById('debug-log');
+  // Add to debug log window
+  const debugLogContainer = document.getElementById('debug-log');
+  if (debugLogContainer) {
+    const logEntry = document.createElement('div');
+    logEntry.className = 'log-entry';
+    
+    const time = new Date().toLocaleTimeString();
+    let html = `<span class="log-timestamp">[${time}]</span>`;
+    html += `<span class="log-level ${level}">${level.toUpperCase()}</span>`;
+    html += `<span class="log-message">${escapeHtml(message)}</span>`;
+    
+    if (data) {
+      const dataStr = typeof data === 'object' ? JSON.stringify(data, null, 2) : String(data);
+      html += `<div class="log-data">${escapeHtml(dataStr)}</div>`;
+    }
+    
+    logEntry.innerHTML = html;
+    debugLogContainer.appendChild(logEntry);
+    debugLogContainer.scrollTop = debugLogContainer.scrollHeight;
+  }
+  
+  console.log(`[${level.toUpperCase()}] ${message}`, data || '');
+}
+
+// Console logging (for errors only)
+export function logToConsole(message, level = 'info', data = null, lineNumber = null) {
+  const consoleContainer = document.getElementById('console-log');
+  if (!consoleContainer) return;
+  
   const logEntry = document.createElement('div');
   logEntry.className = 'log-entry';
+  
+  // Make error entries clickable if they have a line number
+  if (level === 'error' && lineNumber) {
+    logEntry.classList.add('clickable-error');
+    logEntry.style.cursor = 'pointer';
+    logEntry.title = `Click to jump to line ${lineNumber}`;
+    logEntry.addEventListener('click', () => {
+      jumpToLine(lineNumber);
+    });
+  }
   
   const time = new Date().toLocaleTimeString();
   let html = `<span class="log-timestamp">[${time}]</span>`;
@@ -21,13 +59,58 @@ export function log(message, level = 'info', data = null) {
   }
   
   logEntry.innerHTML = html;
-  logContainer.appendChild(logEntry);
-  logContainer.scrollTop = logContainer.scrollHeight;
-  
-  console.log(`[${level.toUpperCase()}] ${message}`, data || '');
+  consoleContainer.appendChild(logEntry);
+  consoleContainer.scrollTop = consoleContainer.scrollHeight;
 }
 
-export function toggleDebugPanel() {
+// Jump to a specific line in the editor
+function jumpToLine(lineNumber) {
+  const editor = document.getElementById('code-editor');
+  if (!editor) return;
+  
+  const lines = editor.value.split('\n');
+  if (lineNumber > lines.length || lineNumber < 1) return;
+  
+  // Calculate character position
+  let charPosition = 0;
+  for (let i = 0; i < lineNumber - 1; i++) {
+    charPosition += lines[i].length + 1; // +1 for newline
+  }
+  
+  // Focus editor and set cursor position
+  editor.focus();
+  editor.setSelectionRange(charPosition, charPosition + lines[lineNumber - 1].length);
+  
+  // Scroll to the line
+  const lineHeight = 20; // matches CSS line-height
+  const scrollPosition = (lineNumber - 1) * lineHeight;
+  editor.scrollTop = scrollPosition - (editor.clientHeight / 2);
+  
+  log(`Jumped to line ${lineNumber}`, 'info');
+}
+
+export function clearConsole() {
+  document.getElementById('console-log').innerHTML = '';
+  logToConsole('Console cleared', 'info');
+}
+
+export function clearConsoleErrors() {
+  const consoleContainer = document.getElementById('console-log');
+  if (!consoleContainer) return;
+  
+  // Remove all error entries
+  const errorEntries = consoleContainer.querySelectorAll('.log-entry .log-level.error');
+  errorEntries.forEach(errorLevel => {
+    const logEntry = errorLevel.closest('.log-entry');
+    if (logEntry) {
+      logEntry.remove();
+    }
+  });
+  
+  logToConsole('✓ Errors cleared - fix applied', 'success');
+}
+
+export function toggleConsolePanel() {
   const panel = document.getElementById('debug-panel');
   const mainContent = document.querySelector('.main-content');
   
@@ -35,10 +118,71 @@ export function toggleDebugPanel() {
   
   if (panel.classList.contains('collapsed')) {
     mainContent.classList.remove('debug-open');
-    log('Debug panel collapsed', 'info');
   } else {
     mainContent.classList.add('debug-open');
-    log('Debug panel expanded', 'info');
+  }
+}
+
+export function toggleDebugWindow() {
+  const window = document.getElementById('debug-window');
+  window.classList.toggle('active');
+  
+  // Initialize drag functionality if not already done
+  if (!window.dataset.dragInitialized) {
+    makeDraggable(window);
+    window.dataset.dragInitialized = 'true';
+  }
+}
+
+// Make debug window draggable
+function makeDraggable(element) {
+  const header = element.querySelector('.debug-window-header');
+  let isDragging = false;
+  let currentX;
+  let currentY;
+  let initialX;
+  let initialY;
+  let xOffset = 0;
+  let yOffset = 0;
+
+  header.addEventListener('mousedown', dragStart);
+  document.addEventListener('mousemove', drag);
+  document.addEventListener('mouseup', dragEnd);
+
+  function dragStart(e) {
+    if (e.target.tagName === 'BUTTON') return; // Don't drag when clicking buttons
+    
+    initialX = e.clientX - xOffset;
+    initialY = e.clientY - yOffset;
+
+    isDragging = true;
+    header.style.cursor = 'grabbing';
+  }
+
+  function drag(e) {
+    if (isDragging) {
+      e.preventDefault();
+      
+      currentX = e.clientX - initialX;
+      currentY = e.clientY - initialY;
+
+      xOffset = currentX;
+      yOffset = currentY;
+
+      setTranslate(currentX, currentY, element);
+    }
+  }
+
+  function dragEnd(e) {
+    initialX = currentX;
+    initialY = currentY;
+
+    isDragging = false;
+    header.style.cursor = 'move';
+  }
+
+  function setTranslate(xPos, yPos, el) {
+    el.style.transform = `translate(calc(-50% + ${xPos}px), calc(-50% + ${yPos}px))`;
   }
 }
 

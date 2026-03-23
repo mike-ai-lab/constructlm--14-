@@ -149,15 +149,33 @@ async function handleStreamingResponse(response) {
   
   if (finalParsed.code) {
     log('Validating fixed code', 'info');
-    log('Fixed code from AI:', 'info', finalParsed.code);
+    
+    // Strip inline comments that AI sometimes adds (they break JSX)
+    let cleanedCode = finalParsed.code
+      .split('\n')
+      .map(line => {
+        // Remove inline // comments after JSX tags
+        if (line.includes('>') && line.includes('//')) {
+          const jsxEnd = line.lastIndexOf('>');
+          const commentStart = line.indexOf('//', jsxEnd);
+          if (commentStart > jsxEnd) {
+            return line.substring(0, commentStart).trimEnd();
+          }
+        }
+        return line;
+      })
+      .join('\n');
+    
+    log('Fixed code from AI:', 'info', cleanedCode);
+    
     try {
       // Try TypeScript preset first, fallback to React only
       try {
-        Babel.transform(finalParsed.code, { presets: ['typescript', 'react'] });
+        Babel.transform(cleanedCode, { presets: ['typescript', 'react'] });
       } catch (tsError) {
-        Babel.transform(finalParsed.code, { presets: ['react'] });
+        Babel.transform(cleanedCode, { presets: ['react'] });
       }
-      state.suggestedCode = finalParsed.code;
+      state.suggestedCode = cleanedCode;
       updateStatus('Fix Ready', 'success');
       showDiff(state.originalCode, state.suggestedCode);
       log('Fixed code is valid', 'success');

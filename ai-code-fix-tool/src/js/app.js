@@ -1,6 +1,6 @@
 // Main application entry point
 import { state, loadAPIKey } from './state.js';
-import { log, toggleDebugPanel, clearDebugLog, copyDebugLog, downloadDebugLog } from './logger.js';
+import { log, logToConsole, toggleConsolePanel, toggleDebugWindow, clearDebugLog, clearConsole, clearConsoleErrors, copyDebugLog } from './logger.js';
 import { 
   updateLineNumbers, 
   syncLineNumbersScroll, 
@@ -32,7 +32,9 @@ function detectErrors() {
   log('Code being analyzed:', 'info', code);
   
   updateStatus('Analyzing...', 'processing');
-  addChatMessage('Analyzing your code...', true);
+  
+  // Clear console
+  document.getElementById('console-log').innerHTML = '';
   
   const errors = detectAllErrors(code);
   state.errors = errors;
@@ -41,7 +43,7 @@ function detectErrors() {
   
   if (errors.length === 0) {
     updateStatus('Valid', 'success');
-    addChatMessage('✓ No errors! Code is valid.');
+    logToConsole('✓ No syntax errors found', 'success');
     displayErrors([]);
     document.getElementById('fix-btn').disabled = true;
     log('Code is valid', 'success');
@@ -54,13 +56,12 @@ function detectErrors() {
       message: e.message.split('\n')[0]
     })));
     
+    // Log errors to console
+    errors.forEach((err, i) => {
+      logToConsole(`Error ${i + 1} (Line ${err.line}:${err.column})`, 'error', err.message.split('\n')[0], err.line);
+    });
+    
     displayErrors(errors);
-    
-    const errorList = errors.map((err, i) => 
-      `Error ${i + 1} (Line ${err.line}): ${err.message.split('\n')[0]}`
-    ).join('\n');
-    
-    addChatMessage(`Found ${errors.length} error(s):\n\n${errorList}`);
     document.getElementById('fix-btn').disabled = false;
   }
   
@@ -88,6 +89,7 @@ function attachEventListeners() {
   document.getElementById('detect-errors-btn').addEventListener('click', detectErrors);
   document.getElementById('fix-btn').addEventListener('click', handleAIFix);
   document.getElementById('toggle-chat').addEventListener('click', toggleChatPanel);
+  document.getElementById('debug-log-btn').addEventListener('click', toggleDebugWindow);
   
   // Editor toolbar
   document.getElementById('undo-btn').addEventListener('click', undo);
@@ -110,20 +112,17 @@ function attachEventListeners() {
   // Chat panel
   document.getElementById('clear-chat-btn').addEventListener('click', clearChat);
   
-  // Debug panel
-  document.getElementById('debug-header').addEventListener('click', toggleDebugPanel);
-  document.getElementById('copy-debug-btn').addEventListener('click', (e) => {
+  // Console panel
+  document.getElementById('debug-header').addEventListener('click', toggleConsolePanel);
+  document.getElementById('clear-console-btn').addEventListener('click', (e) => {
     e.stopPropagation();
-    copyDebugLog();
+    clearConsole();
   });
-  document.getElementById('clear-debug-btn').addEventListener('click', (e) => {
-    e.stopPropagation();
-    clearDebugLog();
-  });
-  document.getElementById('download-debug-btn').addEventListener('click', (e) => {
-    e.stopPropagation();
-    downloadDebugLog();
-  });
+  
+  // Debug window
+  document.getElementById('copy-debug-btn').addEventListener('click', copyDebugLog);
+  document.getElementById('clear-debug-btn').addEventListener('click', clearDebugLog);
+  document.getElementById('close-debug-btn').addEventListener('click', toggleDebugWindow);
 }
 
 // Initialize application

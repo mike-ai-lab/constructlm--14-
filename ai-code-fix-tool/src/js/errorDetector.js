@@ -149,20 +149,6 @@ export function detectAllErrors(code) {
 }
 
 export function displayErrors(errors) {
-  if (errors.length === 0) {
-    document.getElementById('error-display').innerHTML = '';
-    return;
-  }
-  
-  const errorHtml = `<div class="error-display">
-    <strong>Found ${errors.length} error(s):</strong>
-    ${errors.map((err, i) => `
-      <div class="error-item">
-        <strong>Error ${i + 1}</strong> ${err.line > 0 ? `(Line ${err.line}:${err.column})` : ''}
-        <div style="color: #856404; margin-top: 4px; font-size: 12px;">${escapeHtml(err.message.split('\n')[0])}</div>
-      </div>
-    `).join('')}
-  </div>`;
-  
-  document.getElementById('error-display').innerHTML = errorHtml;
+  // Errors are now only shown in the console, not in an overlay
+  // This function is kept for compatibility but does nothing
 }

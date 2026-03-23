@@ -20,6 +20,7 @@
       <button class="secondary" id="toggle-chat">
         <span id="chat-toggle-text">Hide Chat</span>
       </button>
+      <button class="secondary" id="debug-log-btn" title="Debug Log">📋 Debug</button>
     </div>
   </div>
 
@@ -53,8 +54,6 @@
           <textarea id="code-editor"></textarea>
         </div>
 
-        <div id="error-display"></div>
-
         <div class="diff-overlay" id="diff-overlay">
           <div class="diff-header">
             <h3>AI Suggested Changes</h3>
@@ -85,15 +84,26 @@
 
   <div class="debug-panel collapsed" id="debug-panel">
     <div class="debug-header" id="debug-header">
-      <h3>Debug Log & Workflow Trace</h3>
+      <h3>Console</h3>
       <div class="debug-controls" id="debug-controls">
-        <button id="copy-debug-btn" class="secondary">📋 Copy</button>
-        <button id="clear-debug-btn" class="secondary">Clear</button>
-        <button id="download-debug-btn" class="secondary">Download</button>
+        <button id="clear-console-btn" class="secondary">Clear</button>
       </div>
     </div>
-    <div class="debug-log" id="debug-log"></div>
+    <div class="debug-log" id="console-log"></div>
   </div>
+</div>
+
+<!-- Floating Debug Log Window -->
+<div class="debug-window" id="debug-window">
+  <div class="debug-window-header">
+    <h3>Debug Log</h3>
+    <div class="debug-window-controls">
+      <button id="copy-debug-btn" class="secondary">📋</button>
+      <button id="clear-debug-btn" class="secondary">Clear</button>
+      <button id="close-debug-btn" class="secondary">✕</button>
+    </div>
+  </div>
+  <div class="debug-window-content" id="debug-log"></div>
 </div>
 
 <script type="module" src="js/app.js"></script>
