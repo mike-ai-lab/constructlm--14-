@@ -173,24 +173,16 @@ export const Canvas: React.FC<CanvasProps> = ({
   // Update initial state when code changes
   useEffect(() => {
     if (isOpen && code && rendererRef.current) {
-      // Get current version code
-      const currentVersionCode = versions[currentVersionIndex]?.code;
-      
-      // Check if code prop is different from what we're currently showing
-      if (code !== editCode) {
+      // Only update if the code prop actually changed (not editCode)
+      if (code !== lastRenderedCodeRef.current) {
         console.log('[Canvas] Code prop changed, updating editor and rendering...');
-        console.log('[Canvas] Old code length:', editCode.length, 'New code length:', code.length);
+        console.log('[Canvas] New code length:', code.length);
         lastRenderedCodeRef.current = code;
         setEditCode(code);
         handleRender(code);
-      } else if (code !== lastRenderedCodeRef.current) {
-        // Code matches editCode but hasn't been rendered yet
-        console.log('[Canvas] Rendering code...');
-        lastRenderedCodeRef.current = code;
-        handleRender(code);
       }
     }
-  }, [code, isOpen, editCode]);
+  }, [code, isOpen]);
 
   const handleRender = async (codeToRender: string) => {
     if (!rendererRef.current || !iframeRef.current) {
@@ -568,17 +560,19 @@ export const Canvas: React.FC<CanvasProps> = ({
               sandbox="allow-scripts allow-same-origin"
               title="Canvas Preview"
               onLoad={() => {
-                // Prevent nested app loading - intercept link clicks and button navigation
+                // Prevent nested app loading - only intercept navigation links (with href)
                 try {
                   const iframeDoc = iframeRef.current?.contentDocument;
                   if (iframeDoc) {
-                    // Prevent all navigation
+                    // Only prevent navigation links, not interactive buttons
                     iframeDoc.addEventListener('click', (e: any) => {
-                      if (e.target.tagName === 'A' || e.target.tagName === 'BUTTON') {
+                      // Only block links with href attribute (navigation)
+                      if (e.target.tagName === 'A' && e.target.hasAttribute('href')) {
                         e.preventDefault();
                         e.stopPropagation();
-                        console.warn('[Canvas] Prevented nested navigation - click blocked');
+                        console.warn('[Canvas] Prevented link navigation');
                       }
+                      // Allow buttons and other interactive elements to work normally
                     }, true);
                     
                     // Also disable form submissions

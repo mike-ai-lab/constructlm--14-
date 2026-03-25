@@ -1,0 +1,45 @@
+11:46:55.712 Canvas.tsx:103 [Canvas] Notifying parent of version change: Object
+11:46:55.713 App.tsx:630 [App] Canvas versions changed: 5 versions, current index: 4
+11:46:55.800 Canvas.tsx:67 [Canvas] initialVersions changed: Object
+11:46:55.801 Canvas.tsx:77 [Canvas] Setting versions from initialVersions
+11:46:57.075 App.tsx:407 [App] Saving chat with canvas state: Object
+11:47:03.864 Canvas.tsx:204 [Canvas] Render error: /component.tsx: Unexpected token (18:6)
+
+  16 |   return (
+  17 |     <div className="flex flex-col items-center justify-center h-screen"
+> 18 |       <h1 className="text-3xl mb-4">Counter: {count}</h1>
+     |       ^
+  19 |       <button
+  20 |         className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-700"
+  21 |         onClick={handleIncrement}
+handleRender @ Canvas.tsx:204
+11:47:07.661 App.tsx:754 [CANVAS FIX] Starting tool-based error fix
+11:47:07.661 App.tsx:755 [CANVAS FIX] Error: /component.tsx: Unexpected token (18:6)
+
+  16 |   return (
+  17 |     <div className="flex flex-col items-center justify-center h-screen"
+> 18 |       <h1 className="text-3xl mb-4">Counter: {count}</h1>
+     |       ^
+  19 |       <button
+  20 |         className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-700"
+  21 |         onClick={handleIncrement}
+11:52:39.963 Canvas.tsx:204 [Canvas] Render error: /component.tsx: Unexpected token (18:6)
+
+  16 |   return (
+  17 |     <div className="flex flex-col items-center justify-center h-screen"
+> 18 |       <h1 className="text-3xl mb-4">Counter: {count}</h1>
+     |       ^
+  19 |       <button
+  20 |         className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-700"
+  21 |         onClick={handleIncrement}
+handleRender @ Canvas.tsx:204
+await in handleRender
+handleSwitchToPreview @ Canvas.tsx:215
+executeDispatch @ react-dom-client.development.js:19116
+runWithFiberInDEV @ react-dom-client.development.js:871
+processDispatchQueue @ react-dom-client.development.js:19166
+(anonymous) @ react-dom-client.development.js:19767
+batchedUpdates$1 @ react-dom-client.development.js:3255
+dispatchEventForPluginEventSystem @ react-dom-client.development.js:19320
+dispatchEvent @ react-dom-client.development.js:23585
+dispatchDiscreteEvent @ react-dom-client.development.js:23553
