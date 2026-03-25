@@ -6,7 +6,8 @@ export function log(message, level = 'info', data = null) {
   const entry = { timestamp, level, message, data };
   state.debugLog.push(entry);
   
-  // Add to debug log window
+  // DEBUG WINDOW - Commented out (not functional)
+  /*
   const debugLogContainer = document.getElementById('debug-log');
   if (debugLogContainer) {
     const logEntry = document.createElement('div');
@@ -26,6 +27,7 @@ export function log(message, level = 'info', data = null) {
     debugLogContainer.appendChild(logEntry);
     debugLogContainer.scrollTop = debugLogContainer.scrollHeight;
   }
+  */
   
   console.log(`[${level.toUpperCase()}] ${message}`, data || '');
 }
@@ -107,7 +109,7 @@ export function clearConsoleErrors() {
     }
   });
   
-  logToConsole('✓ Errors cleared - fix applied', 'success');
+  logToConsole('[OK] Errors cleared - fix applied', 'success');
 }
 
 export function toggleConsolePanel() {
@@ -123,6 +125,8 @@ export function toggleConsolePanel() {
   }
 }
 
+// DEBUG WINDOW FUNCTIONS - COMMENTED OUT (Not functional)
+/*
 export function toggleDebugWindow() {
   const window = document.getElementById('debug-window');
   window.classList.toggle('active');
@@ -188,7 +192,7 @@ function makeDraggable(element) {
 
 export function clearDebugLog() {
   state.debugLog = [];
-  document.getElementById('debug-log').innerHTML = '';
+  // document.getElementById('debug-log').innerHTML = ''; // DEBUG WINDOW - Commented out
   log('Debug log cleared', 'info');
 }
 

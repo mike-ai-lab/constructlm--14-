@@ -1,78 +1,426 @@
-// Diff display and management
+// Inline diff display using Monaco Editor - GitHub Style (matching mockup.tsx)
 import { state } from './state.js';
-import { log, escapeHtml, clearConsoleErrors } from './logger.js';
-import { updateLineNumbers, saveToHistory } from './editor.js';
+import { log, clearConsoleErrors } from './logger.js';
+import { saveToHistory } from './editor.js';
+import { getMonacoEditor, setEditorValue } from './monacoEditor.js';
 import { addChatMessage } from './chat.js';
 import { updateStatus } from './aiService.js';
 
-export function showDiff(originalCode, suggestedCode) {
-  log('Showing diff overlay', 'info');
+// Track diff state
+let diffDecorations = [];
+let diffWidgets = [];
+let diffZones = [];
+let diffChanges = [];
+let originalCodeBackup = '';
+
+/**
+ * Show inline diff directly in Monaco editor (GitHub style with both old and new lines)
+ */
+export function showDiff(originalCode, fixedCode) {
+  log('=== INLINE DIFF STARTED ===', 'info');
   
-  const dmp = new diff_match_patch();
-  const diffs = dmp.diff_main(originalCode, suggestedCode);
-  dmp.diff_cleanupSemantic(diffs);
-  
-  const originalLines = originalCode.split('\n');
-  const fixedLines = suggestedCode.split('\n');
-  const maxLines = Math.max(originalLines.length, fixedLines.length);
-  
-  let html = '';
-  for (let i = 0; i < maxLines; i++) {
-    const origLine = originalLines[i] || '';
-    const fixedLine = fixedLines[i] || '';
-    
-    if (origLine === fixedLine) {
-      html += `<div class="diff-line unchanged">  ${escapeHtml(origLine) || ' '}</div>`;
-    } else {
-      if (origLine) {
-        html += `<div class="diff-line removed">- ${escapeHtml(origLine)}</div>`;
-      }
-      if (fixedLine) {
-        html += `<div class="diff-line added">+ ${escapeHtml(fixedLine)}</div>`;
-      }
-    }
+  const editor = getMonacoEditor();
+  if (!editor) {
+    log('Monaco editor not available', 'error');
+    return;
   }
   
-  document.getElementById('diff-content').innerHTML = html;
-  document.getElementById('diff-overlay').classList.add('active');
+  // Clear previous diff
+  clearDiff();
   
-  log('Diff displayed', 'success', { 
-    originalLines: originalLines.length,
-    fixedLines: fixedLines.length
+  // Backup original code
+  originalCodeBackup = originalCode;
+  
+  // Replace editor content with a merged view showing both old and new lines
+  const mergedContent = createMergedDiffView(originalCode, fixedCode);
+  
+  // Set the merged content
+  editor.setValue(mergedContent.text);
+  
+  // Store diff changes for later
+  diffChanges = mergedContent.changes;
+  
+  log('Diff changes calculated', 'info', { changes: diffChanges.length });
+  
+  // Apply decorations for visual styling
+  const decorations = [];
+  
+  diffChanges.forEach((change, index) => {
+    // Red background for removed lines (old code)
+    if (change.oldLine) {
+      decorations.push({
+        range: new monaco.Range(change.oldLine, 1, change.oldLine, 1),
+        options: {
+          isWholeLine: true,
+          className: 'diff-line-removed',
+          glyphMarginClassName: 'diff-glyph-removed'
+        }
+      });
+    }
+    
+    // Green background for added lines (new code)
+    if (change.newLine) {
+      decorations.push({
+        range: new monaco.Range(change.newLine, 1, change.newLine, 1),
+        options: {
+          isWholeLine: true,
+          className: 'diff-line-added',
+          glyphMarginClassName: 'diff-glyph-added'
+        }
+      });
+      
+      // Add action buttons widget on the green line
+      const widget = createDiffActionWidget(editor, change.newLine, index);
+      diffWidgets.push(widget);
+    }
+  });
+  
+  diffDecorations = editor.deltaDecorations([], decorations);
+  
+  // Make editor read-only during diff
+  editor.updateOptions({ readOnly: true });
+  
+  log('Inline diff displayed', 'success', { 
+    decorations: decorations.length, 
+    widgets: diffWidgets.length,
+    changes: diffChanges.length 
   });
 }
 
-export function acceptFix() {
-  log('=== ACCEPT FIX ===', 'info');
-  log('Applying fixed code:', 'info', state.suggestedCode);
+/**
+ * Create merged view with both old (red) and new (green) lines
+ */
+function createMergedDiffView(originalCode, fixedCode) {
+  const originalLines = originalCode.split('\n');
+  const fixedLines = fixedCode.split('\n');
   
-  document.getElementById('code-editor').value = state.suggestedCode;
-  state.originalCode = state.suggestedCode;
-  updateLineNumbers();
-  saveToHistory();
+  const mergedLines = [];
+  const changes = [];
+  let currentLine = 1;
   
-  document.getElementById('diff-overlay').classList.remove('active');
+  const maxLines = Math.max(originalLines.length, fixedLines.length);
   
-  // Clear console errors since they're now fixed
-  clearConsoleErrors();
+  for (let i = 0; i < maxLines; i++) {
+    const origLine = originalLines[i];
+    const fixedLine = fixedLines[i];
+    
+    if (origLine === fixedLine) {
+      // Unchanged line
+      mergedLines.push(origLine || '');
+      currentLine++;
+    } else {
+      // Changed line - show BOTH old and new
+      const oldLineNum = currentLine;
+      const newLineNum = currentLine + 1;
+      
+      // Add old line (red)
+      mergedLines.push(origLine || '');
+      currentLine++;
+      
+      // Add new line (green)
+      mergedLines.push(fixedLine || '');
+      currentLine++;
+      
+      // Track this change
+      changes.push({
+        index: changes.length,
+        oldLine: oldLineNum,
+        newLine: newLineNum,
+        oldContent: origLine || '',
+        newContent: fixedLine || '',
+        originalIndex: i
+      });
+    }
+  }
   
-  updateStatus('Applied', 'success');
-  addChatMessage('✓ Fix accepted and applied!');
-  
-  state.errors = [];
-  state.suggestedCode = '';
-  
-  log('Fix accepted and applied successfully', 'success');
+  return {
+    text: mergedLines.join('\n'),
+    changes
+  };
 }
 
-export function rejectFix() {
-  log('=== REJECT FIX ===', 'info');
+
+/**
+ * Create inline action widget with Accept/Reject buttons (positioned on right side)
+ */
+function createDiffActionWidget(editor, lineNumber, changeIndex) {
+  const domNode = document.createElement('div');
+  domNode.className = 'diff-action-widget';
+  domNode.innerHTML = `
+    <div class="diff-actions-inline">
+      <button class="diff-btn diff-btn-accept" data-index="${changeIndex}" title="Accept change">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+      </button>
+      <button class="diff-btn diff-btn-reject" data-index="${changeIndex}" title="Reject change">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+  `;
   
-  document.getElementById('diff-overlay').classList.remove('active');
+  // Attach event listeners
+  domNode.querySelector('.diff-btn-accept').addEventListener('click', () => acceptChange(changeIndex));
+  domNode.querySelector('.diff-btn-reject').addEventListener('click', () => rejectChange(changeIndex));
+  
+  const widget = {
+    domNode,
+    getId: () => `diff.action.${lineNumber}.${changeIndex}`,
+    getDomNode: () => domNode,
+    getPosition: () => {
+      // Position at the end of the line content, within visible viewport
+      const model = editor.getModel();
+      const lineContent = model.getLineContent(lineNumber);
+      const column = lineContent.length + 1;
+      
+      return {
+        position: { lineNumber, column },
+        preference: [
+          monaco.editor.ContentWidgetPositionPreference.EXACT
+        ]
+      };
+    }
+  };
+  
+  editor.addContentWidget(widget);
+  return widget;
+}
+
+/**
+ * Accept a specific change (remove old line, keep new line)
+ */
+function acceptChange(changeIndex) {
+  log(`Accepting change ${changeIndex}`, 'info');
+  
+  const change = diffChanges[changeIndex];
+  if (!change) return;
+  
+  const editor = getMonacoEditor();
+  const model = editor.getModel();
+  
+  // Remove the old (red) line
+  if (change.oldLine) {
+    const range = new monaco.Range(change.oldLine, 1, change.oldLine + 1, 1);
+    model.pushEditOperations([], [{
+      range,
+      text: ''
+    }], () => null);
+  }
+  
+  // Update line numbers for remaining changes
+  diffChanges = diffChanges.filter((c, i) => i !== changeIndex).map(c => {
+    if (c.oldLine > change.oldLine) {
+      return { ...c, oldLine: c.oldLine - 1, newLine: c.newLine - 1 };
+    }
+    return c;
+  });
+  
+  // Refresh diff display
+  if (diffChanges.length === 0) {
+    clearDiff();
+    updateStatus('All Applied', 'success');
+    addChatMessage('[OK] All changes accepted!');
+    clearConsoleErrors();
+    
+    // Re-enable editor
+    editor.updateOptions({ readOnly: false });
+  } else {
+    // Re-render remaining diffs
+    refreshDiffDisplay();
+  }
+  
+  saveToHistory();
+}
+
+/**
+ * Reject a specific change (remove new line, keep old line)
+ */
+function rejectChange(changeIndex) {
+  log(`Rejecting change ${changeIndex}`, 'info');
+  
+  const change = diffChanges[changeIndex];
+  if (!change) return;
+  
+  const editor = getMonacoEditor();
+  const model = editor.getModel();
+  
+  // Remove the new (green) line
+  if (change.newLine) {
+    const range = new monaco.Range(change.newLine, 1, change.newLine + 1, 1);
+    model.pushEditOperations([], [{
+      range,
+      text: ''
+    }], () => null);
+  }
+  
+  // Update line numbers for remaining changes
+  diffChanges = diffChanges.filter((c, i) => i !== changeIndex).map(c => {
+    if (c.newLine > change.newLine) {
+      return { ...c, oldLine: c.oldLine - 1, newLine: c.newLine - 1 };
+    }
+    return c;
+  });
+  
+  // Refresh diff display
+  if (diffChanges.length === 0) {
+    clearDiff();
+    updateStatus('Changes Rejected', 'error');
+    addChatMessage('All changes rejected.');
+    
+    // Re-enable editor
+    editor.updateOptions({ readOnly: false });
+  } else {
+    // Re-render remaining diffs
+    refreshDiffDisplay();
+  }
+}
+
+/**
+ * Refresh diff display after accepting/rejecting a change
+ */
+function refreshDiffDisplay() {
+  const editor = getMonacoEditor();
+  
+  // Clear old decorations and widgets
+  if (diffDecorations.length > 0) {
+    editor.deltaDecorations(diffDecorations, []);
+    diffDecorations = [];
+  }
+  
+  diffWidgets.forEach(widget => {
+    editor.removeContentWidget(widget);
+  });
+  diffWidgets = [];
+  
+  // Re-apply decorations
+  const decorations = [];
+  
+  diffChanges.forEach((change, index) => {
+    // Red background for removed lines
+    if (change.oldLine) {
+      decorations.push({
+        range: new monaco.Range(change.oldLine, 1, change.oldLine, 1),
+        options: {
+          isWholeLine: true,
+          className: 'diff-line-removed',
+          glyphMarginClassName: 'diff-glyph-removed'
+        }
+      });
+    }
+    
+    // Green background for added lines
+    if (change.newLine) {
+      decorations.push({
+        range: new monaco.Range(change.newLine, 1, change.newLine, 1),
+        options: {
+          isWholeLine: true,
+          className: 'diff-line-added',
+          glyphMarginClassName: 'diff-glyph-added'
+        }
+      });
+      
+      // Re-add action buttons
+      const widget = createDiffActionWidget(editor, change.newLine, index);
+      diffWidgets.push(widget);
+    }
+  });
+  
+  diffDecorations = editor.deltaDecorations([], decorations);
+}
+
+
+/**
+ * Accept all changes at once
+ */
+export function acceptFix() {
+  log('=== ACCEPT ALL CHANGES ===', 'info');
+  
+  const editor = getMonacoEditor();
+  
+  // Get current content and remove all red lines
+  let finalCode = editor.getValue();
+  const lines = finalCode.split('\n');
+  const linesToRemove = new Set();
+  
+  diffChanges.forEach(change => {
+    if (change.oldLine) {
+      linesToRemove.add(change.oldLine - 1); // 0-indexed
+    }
+  });
+  
+  // Filter out red lines
+  const cleanedLines = lines.filter((_, index) => !linesToRemove.has(index));
+  finalCode = cleanedLines.join('\n');
+  
+  setEditorValue(finalCode);
+  state.originalCode = finalCode;
+  state.suggestedCode = '';
+  
+  clearDiff();
+  clearConsoleErrors();
+  
+  // Re-enable editor
+  editor.updateOptions({ readOnly: false });
+  
+  updateStatus('Applied', 'success');
+  addChatMessage('[OK] All fixes accepted and applied!');
+  
+  state.errors = [];
+  
+  saveToHistory();
+  log('All fixes accepted', 'success');
+}
+
+/**
+ * Reject all changes at once
+ */
+export function rejectFix() {
+  log('=== REJECT ALL CHANGES ===', 'info');
+  
+  const editor = getMonacoEditor();
+  
+  // Restore original code
+  setEditorValue(originalCodeBackup);
+  
+  clearDiff();
+  
+  // Re-enable editor
+  editor.updateOptions({ readOnly: false });
+  
   updateStatus('Rejected', 'error');
-  addChatMessage('Fix rejected. Original code unchanged.');
+  addChatMessage('All changes rejected. Original code unchanged.');
   
   state.suggestedCode = '';
   
-  log('Fix rejected', 'info');
+  log('All fixes rejected', 'info');
+}
+
+/**
+ * Clear all diff decorations and widgets
+ */
+function clearDiff() {
+  const editor = getMonacoEditor();
+  if (!editor) return;
+  
+  // Remove decorations
+  if (diffDecorations.length > 0) {
+    editor.deltaDecorations(diffDecorations, []);
+    diffDecorations = [];
+  }
+  
+  // Remove widgets
+  diffWidgets.forEach(widget => {
+    editor.removeContentWidget(widget);
+  });
+  diffWidgets = [];
+  
+  // Clear changes
+  diffChanges = [];
+  diffZones = [];
+  originalCodeBackup = '';
+  
+  log('Diff cleared', 'info');
 }

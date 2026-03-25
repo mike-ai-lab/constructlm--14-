@@ -663,67 +663,14 @@ const App: React.FC = () => {
     
     try {
       const errorMsg = canvasError?.message || 'Unknown error';
-      const sourceCode = code;
       
-      // Extract error line number and type
-      const lineMatch = errorMsg.match(/line (\d+)|:(\d+):\d+/i);
-      const errorLine = lineMatch ? parseInt(lineMatch[1] || lineMatch[2]) : null;
-      const isClosingTagError = errorMsg.includes('jsxTagEnd');
-      
-      // Build FOCUSED context (10 lines around error) + full source
-      const lines = sourceCode.split('\n');
-      let focusedContext = '';
-      
-      if (errorLine && errorLine <= lines.length) {
-        const start = Math.max(0, errorLine - 5);
-        const end = Math.min(lines.length, errorLine + 5);
-        
-        focusedContext = lines.slice(start, end).map((line, idx) => {
-          const lineNum = start + idx + 1;
-          const marker = lineNum === errorLine ? '>>> ' : '    ';
-          return `${marker}${lineNum} | ${line}`;
-        }).join('\n');
-        
-        console.log('[CANVAS FIX] Focused context (lines', start + 1, 'to', end, '):');
-        console.log(focusedContext);
-      }
-      
-      // Full source with line numbers (fallback)
-      const contextLines = lines.map((line, idx) => 
-        `  ${idx + 1} | ${line}`
-      ).join('\n');
-      
-      // Simple, clear prompt that accepts both formats
-      const errorFixPrompt = `Fix this error:
-
-Error: ${errorMsg}
-
-Context (lines around error):
-${contextLines}
-
-Return patches in this format (you can use either):
-
-Format 1 (simple):
-PATCH @@ line 133 @@
-</div
-</div>
-
-Format 2 (git diff):
-PATCH @@ -133,1 +133,1 @@
--</div
-+</div>
-
-Just return the patches, nothing else.`;
-
-      console.log('[CANVAS FIX] Sending prompt to AI');
-
-      // Send to chat
+      // Add minimal user message to chat (just for indication)
       const userMsg: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'user',
-        content: errorFixPrompt,
+        content: 'Help me fix the error',
         timestamp: Date.now(),
-        inputTokens: GeminiService.estimateTokens(errorFixPrompt),
+        inputTokens: 5,
         metadata: {
           isErrorFix: true,
           errorCode: code
@@ -733,9 +680,7 @@ Just return the patches, nothing else.`;
       setMessages(prev => [...prev, userMsg]);
       setIsStreaming(true);
 
-      // Get citations
-      const citations = await VectorDB.searchVectors(errorFixPrompt, 3);
-      
+      // Create AI message for streaming response
       const modelMsgId = crypto.randomUUID();
       setMessages(prev => [...prev, {
         id: modelMsgId,
@@ -743,20 +688,17 @@ Just return the patches, nothing else.`;
         content: '',
         timestamp: Date.now(),
         isStreaming: true,
-        citations: citations
+        citations: []
       }]);
 
       let accumulatedText = '';
       
-      console.log('[CANVAS FIX] Starting AI streaming...');
+      console.log('[CANVAS FIX] Calling Canvas Error Fixer service...');
       
-      const streamService = 
-        aiModel === 'gemini' ? GeminiService :
-        aiModel === 'cerebras' ? CerebrasService :
-        aiModel === 'groq' ? GroqService :
-        aiModel === 'openrouter' ? OpenRouterService :
-        OllamaService;
+      // Import the new service
+      const { fixCanvasError } = await import('./services/canvasErrorFixer');
       
+      // Get API key based on model
       const apiKey = 
         aiModel === 'gemini' ? geminiApiKey :
         aiModel === 'cerebras' ? cerebrasApiKey :
@@ -764,92 +706,50 @@ Just return the patches, nothing else.`;
         aiModel === 'openrouter' ? openrouterApiKey :
         ollamaApiKey;
 
-      if (aiModel === 'ollama') {
-        const OllamaService = await import('./services/ollamaService');
-        await OllamaService.streamChatResponse(
-          errorFixPrompt,
-          messages,
-          citations,
-          (chunk) => {
-            accumulatedText += chunk;
-            setMessages(prev => prev.map(msg => 
-              msg.id === modelMsgId ? { ...msg, content: accumulatedText } : msg
-            ));
-          },
-          apiKey,
-          selectedModel,
-          undefined,
-          ollamaBaseUrl,
-          ollamaMode === 'cloud'
-        );
-      } else {
-        await streamService.streamChatResponse(
-          errorFixPrompt,
-          messages,
-          citations,
-          (chunk) => {
-            accumulatedText += chunk;
-            setMessages(prev => prev.map(msg => 
-              msg.id === modelMsgId ? { ...msg, content: accumulatedText } : msg
-            ));
-          },
-          apiKey,
-          selectedModel,
-          undefined
-        );
-      }
+      // Call the fixer service with streaming callback
+      const result = await fixCanvasError(
+        errorMsg,
+        code,
+        aiModel,
+        messages,
+        (chunk: string) => {
+          // Stream AI response to chat
+          accumulatedText += chunk;
+          setMessages(prev => prev.map(msg => 
+            msg.id === modelMsgId ? { ...msg, content: accumulatedText } : msg
+          ));
+        },
+        apiKey,
+        selectedModel,
+        ollamaBaseUrl,
+        ollamaMode
+      );
 
-      console.log('[CANVAS FIX] AI response received, parsing patches...');
-      const patches = parsePatchesFromResponse(accumulatedText);
-      
-      if (patches.length > 0) {
-        console.log(`[CANVAS FIX] Applying ${patches.length} patch(es)`);
+      console.log('[CANVAS FIX] Service completed:', result);
+
+      if (result.success && result.fixedCode) {
+        console.log('[CANVAS FIX] Fix validated, applying to Canvas...');
         
-        // Apply patches to the SOURCE code (the original code from editor)
-        const patchedCode = applyPatchesToCode(code, patches);
+        // IMPORTANT: Update code FIRST, then versions
+        // This ensures Canvas receives the new code before versions update
+        setCanvasCode(result.fixedCode);
         
-        // Create a new version with the patched code
-        const newVersion = { code: patchedCode, timestamp: Date.now() };
+        // Clear error immediately
+        setCanvasError(null);
+        
+        // Then update versions (this will trigger Canvas to sync)
+        const newVersion = { code: result.fixedCode, timestamp: Date.now() };
         const updatedVersions = [...canvasVersions.slice(0, canvasVersionIndex + 1), newVersion];
-        
-        // Update versions and index
         setCanvasVersions(updatedVersions);
         setCanvasVersionIndex(updatedVersions.length - 1);
         
-        // Update canvas code to trigger re-render
-        setCanvasCode(patchedCode);
-        setCanvasError(null);
-        
-        console.log('[CANVAS FIX] Fix applied successfully');
-        
+        console.log('[CANVAS FIX] Fix applied successfully, Canvas will re-render');
       } else {
-        console.log('[CANVAS FIX] No patches found, trying fallback...');
-        // Fallback: try to extract full code if AI didn't follow patch format
-        const codeMatch = accumulatedText.match(/```(?:jsx|tsx|js|typescript)?\s*\n([\s\S]*?)```/);
-        if (codeMatch) {
-          const fixedCode = codeMatch[1].trim();
-          
-          console.log('[CANVAS FIX] Found code block, applying full replacement');
-          
-          // Create a new version with the fixed code
-          const newVersion = { code: fixedCode, timestamp: Date.now() };
-          const updatedVersions = [...canvasVersions.slice(0, canvasVersionIndex + 1), newVersion];
-          
-          setCanvasVersions(updatedVersions);
-          setCanvasVersionIndex(updatedVersions.length - 1);
-          setCanvasCode(fixedCode);
-          setCanvasError(null);
-          console.log('[CANVAS FIX] Full code replacement applied');
-          console.log('========================================');
-        } else {
-          console.warn('[CANVAS FIX] No patches or code found in AI response');
-          console.warn('[CANVAS FIX] AI response was:', accumulatedText);
-          console.log('========================================');
-          console.log('[CANVAS FIX] FIX PROCESS FAILED - NO PATCHES');
-          console.log('========================================');
-        }
+        console.error('[CANVAS FIX] Fix failed:', result.error);
+        // Error message is already in the AI response in chat
       }
 
+      // Mark streaming as complete
       const outputTokens = GeminiService.estimateTokens(accumulatedText);
       setMessages(prev => prev.map(msg => 
         msg.id === modelMsgId 
@@ -860,90 +760,12 @@ Just return the patches, nothing else.`;
       saveCurrentChat();
       
     } catch (error) {
-      console.error('========================================');
-      console.error('[CANVAS FIX] ERROR IN FIX PROCESS');
-      console.error('========================================');
-      console.error('[handleFixCanvasError] Error:', error);
-      console.error('[handleFixCanvasError] Error stack:', error instanceof Error ? error.stack : 'No stack');
+      console.error('[CANVAS FIX] Error during fix process:', error);
       alert('Failed to fix error: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
-      console.log('[CANVAS FIX] Cleaning up...');
       setIsFixingError(false);
       setIsStreaming(false);
-      console.log('[CANVAS FIX] Cleanup complete');
     }
-  };
-
-  // Parse PATCH format from AI response
-  // Parse PATCH format from AI response - accepts BOTH simple and git diff formats
-  const parsePatchesFromResponse = (response: string): Array<{line: number, oldContent: string, newContent: string}> => {
-    const patches: Array<{line: number, oldContent: string, newContent: string}> = [];
-    
-    console.log('[CANVAS FIX] Parsing patches from response');
-    
-    // Format 1: Simple format - PATCH @@ line X @@
-    const simpleRegex = /PATCH\s+@@\s+line\s+(\d+)\s+@@\s*\n([^\n]+)\n([^\n]+)/gi;
-    let match;
-    
-    while ((match = simpleRegex.exec(response)) !== null) {
-      const lineNum = parseInt(match[1]);
-      const oldContent = match[2].trim().replace(/^[-]\s*/, '');
-      const newContent = match[3].trim().replace(/^[+]\s*/, '');
-      
-      patches.push({ line: lineNum, oldContent, newContent });
-      console.log(`[CANVAS FIX] Parsed simple format patch - Line ${lineNum}`);
-    }
-    
-    // Format 2: Git diff format - PATCH @@ -X,Y +X,Y @@
-    if (patches.length === 0) {
-      console.log('[CANVAS FIX] No simple format patches found, trying git diff format');
-      const gitDiffRegex = /PATCH\s+@@\s+-(\d+),\d+\s+\+(\d+),\d+\s+@@\s*\n-([^\n]+)\n\+([^\n]+)/gi;
-      
-      while ((match = gitDiffRegex.exec(response)) !== null) {
-        const lineNum = parseInt(match[1]); // Use the old line number
-        const oldContent = match[3].trim();
-        const newContent = match[4].trim();
-        
-        patches.push({ line: lineNum, oldContent, newContent });
-      }
-    }
-    
-    return patches;
-  };
-
-  // Apply patches to code - with fuzzy matching
-  const applyPatchesToCode = (code: string, patches: Array<{line: number, oldContent: string, newContent: string}>): string => {
-    const lines = code.split('\n');
-
-    
-    for (const patch of patches) {
-      const lineIndex = patch.line - 1; // Convert to 0-based index
-      
-      if (lineIndex >= 0 && lineIndex < lines.length) {
-        // Try exact match first
-        if (lines[lineIndex].trim() === patch.oldContent.trim()) {
-          lines[lineIndex] = patch.newContent;
-        } else {
-          // Fuzzy match - search ±2 lines
-          let found = false;
-          for (let offset = -2; offset <= 2; offset++) {
-            const idx = lineIndex + offset;
-            if (idx >= 0 && idx < lines.length && lines[idx].trim() === patch.oldContent.trim()) {
-              lines[idx] = patch.newContent;
-              found = true;
-              break;
-            }
-          }
-          if (!found) {
-            console.warn(`[CANVAS FIX] Could not find line to patch: "${patch.oldContent}"`);
-          }
-        }
-      } else {
-        console.warn(`[CANVAS FIX] Line ${patch.line} out of range (total lines: ${lines.length})`);
-      }
-    }
-    
-    return lines.join('\n');
   };
 
   const handleSendMessage = async (text: string, imageBase64?: string) => {

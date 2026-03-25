@@ -181,7 +181,7 @@ async function handleStreamingResponse(response) {
       log('Fixed code is valid', 'success');
     } catch (e) {
       updateStatus('Fix Failed', 'error');
-      addChatMessage('⚠️ Fixed code still has errors.');
+      addChatMessage('[WARNING] Fixed code still has errors.');
       log('Fixed code invalid', 'error', { error: e.message });
     }
   }

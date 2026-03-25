@@ -2,302 +2,847 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Code Fix Tool | Monochromatic Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI Code Fix Tool | Professional Edition</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts: Inter & JetBrains Mono -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Required Libraries for App Integration -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/diff_match_patch/20121119/diff_match_patch.js"></script>
+    
     <style>
+        /* SMOOTH THEME ENGINE */
         :root {
             --bg-primary: #ffffff;
-            --bg-secondary: #f4f4f5;
-            --text-primary: #18181b;
-            --text-secondary: #71717a;
-            --border-color: #e4e4e7;
-            --accent-bg: #18181b;
+            --bg-secondary: #f8f8f8;
+            --bg-tertiary: #f1f1f1;
+            --text-primary: #121212;
+            --text-secondary: #666666;
+            --border-color: #e5e5e5;
+            --accent-bg: #121212;
             --accent-text: #ffffff;
             --input-bg: #ffffff;
-            --console-bg: #18181b;
-            --console-text: #e4e4e7;
+            --console-bg: #1a1a1a;
+            --console-header: #262626;
+            --console-text: #d4d4d8;
+            --selection: #e2e2e2;
+            --transition-speed: 0.4s;
+            
+            /* App-specific colors */
+            --error-color: #dc3545;
+            --success-color: #28a745;
+            --processing-color: #ffc107;
+            --diff-add: #d4edda;
+            --diff-remove: #f8d7da;
         }
 
         .dark-theme {
             --bg-primary: #0a0a0a;
-            --bg-secondary: #171717;
-            --text-primary: #f4f4f5;
-            --text-secondary: #a1a1aa;
-            --border-color: #262626;
-            --accent-bg: #f4f4f5;
+            --bg-secondary: #141414;
+            --bg-tertiary: #1a1a1a;
+            --text-primary: #f0f0f0;
+            --text-secondary: #999999;
+            --border-color: #222222;
+            --accent-bg: #f0f0f0;
             --accent-text: #0a0a0a;
             --input-bg: #000000;
             --console-bg: #000000;
+            --console-header: #111111;
             --console-text: #a1a1aa;
+            --selection: #333333;
+        }
+
+        /* Smooth transitions */
+        * {
+            transition: background-color var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1), 
+                        border-color var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1), 
+                        color var(--transition-speed) cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--bg-primary);
             color: var(--text-primary);
-            transition: background-color 0.2s ease, color 0.2s ease;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .app-header {
+            height: 45px;
+            min-height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1rem;
+            border-bottom: 1px solid var(--border-color);
+            background-color: var(--bg-primary);
+            z-index: 50;
+        }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .editor-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            background-color: var(--bg-primary);
+        }
+
+        /* SIDEBAR */
+        .ai-sidebar {
+            width: 340px;
+            border-left: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            background-color: var(--bg-primary);
+            z-index: 40;
+            transition: width 0.3s ease, transform 0.3s ease;
+        }
+        
+        /* Desktop collapse */
+        .ai-sidebar.collapsed {
+            width: 0;
             overflow: hidden;
         }
 
-        .glass-panel {
-            background-color: var(--bg-primary);
-            border: 1px solid var(--border-color);
+        @media (max-width: 1024px) {
+            .ai-sidebar {
+                position: absolute; right: 0; top: 0; bottom: 0;
+                width: 85%; max-width: 360px;
+                transform: translateX(100%);
+                box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+            }
+            .ai-sidebar.active { transform: translateX(0); }
+            .ai-sidebar.collapsed { width: 85%; max-width: 360px; } /* Override desktop collapse on mobile */
+            .overlay {
+                display: none; position: fixed; inset: 0;
+                background: rgba(0,0,0,0.5); z-index: 35;
+            }
+            .overlay.active { display: block; }
         }
 
-        .code-line-numbers {
-            user-select: none;
-            text-align: right;
-            color: var(--text-secondary);
-            padding-right: 1rem;
-            border-right: 1px solid var(--border-color);
-        }
-
-        .editor-textarea {
-            background: transparent;
-            color: var(--text-primary);
-            resize: none;
-            outline: none;
-            line-height: 1.6;
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        .ai-bubble-user {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 12px 12px 2px 12px;
-        }
-
-        .ai-bubble-bot {
-            background: var(--accent-bg);
-            color: var(--accent-text);
-            border-radius: 12px 12px 12px 2px;
-        }
-
-        .status-pill {
-            padding: 2px 10px;
-            border-radius: 9999px;
-            font-size: 0.7rem;
+        /* EDITOR UI */
+        .editor-toolbar {
+            height: 40px;
             display: flex;
             align-items: center;
-            gap: 6px;
-            background-color: var(--accent-bg);
-            color: var(--accent-text);
-            transition: all 0.2s ease;
+            justify-content: space-between;
+            padding: 0 1rem;
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
         }
 
-        /* Console Styles */
-        #console-panel {
-            transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        /* FIXED SCROLLING CONTAINER */
+        .code-viewport {
+            flex: 1;
+            display: flex;
+            overflow: auto; /* Handles scrolling for both children */
+            position: relative;
+            background-color: var(--bg-primary);
+        }
+
+        .line-numbers {
+            width: 45px;
+            padding: 1rem 0;
+            text-align: right;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--text-secondary);
+            background-color: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            user-select: none;
+            flex-shrink: 0;
+            /* No internal scroll - moves with parent */
+        }
+
+        .code-editor {
+            flex: 1;
+            padding: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background-color: transparent;
+            white-space: pre;
+            outline: none;
+            resize: none;
+            border: none;
+            min-height: 100%;
+            overflow: hidden; /* Prevent double scrollbars */
+        }
+
+        /* PREVIEW RENDERER */
+        #previewContainer {
+            display: none;
+            flex: 1;
+            background: white;
+            border: none;
+        }
+
+        /* CONSOLE */
+        .console-panel {
+            height: 32px;
             background-color: var(--console-bg);
             border-top: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .console-panel.expanded { height: 220px; }
+        .console-header {
+            height: 32px; min-height: 32px;
+            background-color: var(--console-header);
+            color: var(--console-text);
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 1rem; cursor: pointer; font-size: 10px; font-weight: 700;
+        }
+        .console-body {
+            flex: 1; overflow-y: auto; padding: 0.75rem;
+            font-family: 'JetBrains Mono', monospace; font-size: 11px;
+            color: var(--console-text); background-color: var(--console-bg);
         }
 
-        .console-tab {
+        /* CHAT */
+        .chat-container { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 1.25rem; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 1rem;
+            background-color: var(--bg-secondary);
+        }
+        .message { 
+            max-width: 85%; 
+            padding: 0.85rem 1rem; 
+            font-size: 13px; 
+            line-height: 1.6; 
+            border-radius: 12px;
+            word-wrap: break-word;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .message-user { 
+            align-self: flex-end; 
+            background-color: var(--bg-tertiary); 
+            color: var(--text-primary); 
+            border-bottom-right-radius: 2px; 
+            border: 1px solid var(--border-color);
+        }
+        .message-bot { 
+            align-self: flex-start; 
+            background-color: var(--accent-bg); 
+            color: var(--accent-text); 
+            border-bottom-left-radius: 2px;
+        }
+        
+        .chat-input-area {
+            padding: 1rem;
+            border-top: 1px solid var(--border-color);
+            background-color: var(--bg-primary);
+        }
+        
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: flex-end;
+        }
+        
+        .message-input {
+            width: 100%;
+            min-height: 42px;
+            max-height: 120px;
+            padding: 0.75rem 3rem 0.75rem 1rem;
+            font-size: 13px;
+            line-height: 1.5;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--input-bg);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            resize: none;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        
+        .message-input:focus {
+            border-color: var(--text-secondary);
+        }
+        
+        .message-input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.6;
+        }
+        
+        .send-btn {
+            position: absolute;
+            right: 6px;
+            bottom: 6px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             background-color: var(--accent-bg);
             color: var(--accent-text);
-            height: 32px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
         }
-
-        .log-entry {
+        
+        .send-btn:hover {
+            opacity: 0.9;
+        }
+        
+        .send-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .send-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        
+        /* STATUS BADGE */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .status-badge.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-badge.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-badge.processing {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        /* DIFF OVERLAY */
+        .diff-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 100;
+            display: none;
+            flex-direction: column;
+        }
+        
+        .diff-overlay.visible {
+            display: flex;
+        }
+        
+        .diff-header {
+            padding: 1rem 1.5rem;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .diff-header h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        
+        .diff-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .diff-content {
+            flex: 1;
+            overflow: auto;
+            padding: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            line-height: 1.6;
+            color: var(--console-text);
+        }
+        
+        .diff-line {
+            padding: 2px 8px;
+            white-space: pre;
+        }
+        
+        .diff-line.add {
+            background: var(--diff-add);
+            color: #155724;
+        }
+        
+        .diff-line.remove {
+            background: var(--diff-remove);
+            color: #721c24;
+        }
+        
+        /* DEBUG WINDOW */
+        .debug-window {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 500px;
+            max-width: 90vw;
+            max-height: 400px;
+            background: var(--console-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            display: none;
+            flex-direction: column;
+            z-index: 1000;
+        }
+        
+        .debug-window.visible {
+            display: flex;
+        }
+        
+        .debug-window-header {
+            padding: 12px 16px;
+            background: var(--console-header);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .debug-window-header h3 {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--console-text);
+        }
+        
+        .debug-window-controls {
+            display: flex;
+            gap: 6px;
+        }
+        
+        .debug-window-content {
+            flex: 1;
+            overflow: auto;
+            padding: 12px;
             font-family: 'JetBrains Mono', monospace;
             font-size: 11px;
-            padding: 2px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+            line-height: 1.5;
+            color: var(--console-text);
+        }
+        
+        .log-entry {
+            margin-bottom: 8px;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        
+        .log-entry.info { color: #60a5fa; }
+        .log-entry.success { color: #34d399; }
+        .log-entry.warning { color: #fbbf24; }
+        .log-entry.error { color: #f87171; }
+        .log-entry.debug { color: #a78bfa; }
+        
+        /* PREVIEW - Simple Tab Switch Only */
+        #preview-iframe {
+            display: none;
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: white;
+        }
+        
+        /* STREAMING INDICATOR */
+        .streaming-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: var(--accent-bg);
+            border-radius: 50%;
+            animation: pulse 1.5s ease-in-out infinite;
+            margin-left: 8px;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.3; transform: scale(0.8); }
         }
 
-        .tag-info { color: #38bdf8; font-weight: bold; }
-        .tag-success { color: #4ade80; font-weight: bold; }
-        .tag-error { color: #f87171; font-weight: bold; }
-        .timestamp { color: #52525b; margin-right: 8px; }
+        .btn-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 8px; color: var(--text-secondary); cursor: pointer; }
+        .btn-icon:hover { background-color: var(--bg-tertiary); color: var(--text-primary); }
+        .action-btn { padding: 4px 12px; font-size: 11px; font-weight: 600; border-radius: 6px; }
+
+        .tab-btn {
+            padding: 4px 12px;
+            font-size: 11px;
+            font-weight: 500;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        .tab-btn.active {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
     </style>
 </head>
-<body class="h-screen flex flex-col dark-theme" id="appBody">
+<body class="dark-theme" id="app">
 
-    <!-- Header Navigation (45px) -->
-    <header class="h-[45px] border-b flex items-center justify-between px-4 glass-panel z-10" style="border-color: var(--border-color)">
+    <div class="overlay" id="overlay"></div>
+
+    <header class="app-header">
         <div class="flex items-center gap-3">
-            <div class="bg-zinc-800 dark:bg-zinc-100 p-1 rounded-lg">
-                <i data-lucide="cpu" class="w-3.5 h-3.5 text-white dark:text-black"></i>
-            </div>
-            <h1 class="font-bold text-sm tracking-tight">AI Code <span class="opacity-50">Fix Tool</span></h1>
+            <button class="mobile-toggle btn-icon" id="menuBtn">
+                <i data-lucide="menu" class="w-5 h-5"></i>
+            </button>
+            <h1 class="font-bold text-sm tracking-tight whitespace-nowrap">
+                AI Code <span class="opacity-50">Fix Pro</span>
+            </h1>
         </div>
 
         <div class="flex items-center gap-3">
-            <div class="status-pill">
-                <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
-                API Connected
-            </div>
-            <div class="h-4 w-px bg-zinc-200 dark:bg-zinc-800 mx-1"></div>
-            <button class="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-lg transition-colors">
-                <i data-lucide="copy" class="w-4 h-4 text-zinc-500"></i>
+            <span id="status-badge" class="status-badge success">Ready</span>
+            <button id="detect-errors-btn" class="action-btn bg-blue-600 text-white">Detect Errors</button>
+            <button id="fix-btn" class="action-btn bg-green-600 text-white" disabled>AI Fix</button>
+            <button id="toggle-chat" class="action-btn bg-gray-600 text-white hidden lg:block">
+                <span id="chat-toggle-text">Hide Chat</span>
             </button>
-            <button id="themeToggle" class="p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-lg transition-colors">
-                <i id="themeIcon" data-lucide="sun" class="w-4 h-4 text-zinc-500"></i>
+            <div class="flex bg-zinc-100 dark:bg-zinc-900 p-1 rounded-md border border-zinc-200 dark:border-zinc-800">
+                <button id="editorTab" class="tab-btn active">Editor</button>
+                <button id="previewTab" class="tab-btn">Preview</button>
+            </div>
+            <button class="btn-icon" id="debug-log-btn" title="Debug Log">
+                <i data-lucide="bug" class="w-4 h-4"></i>
+            </button>
+            <button class="btn-icon" id="themeToggle">
+                <i id="themeIcon" data-lucide="sun" class="w-4 h-4"></i>
             </button>
         </div>
     </header>
 
-    <!-- Main Workspace -->
-    <div class="flex-1 flex overflow-hidden">
-        <!-- Editor Section -->
-        <main class="flex-1 flex flex-col overflow-hidden">
-            <section class="flex-1 flex flex-col border-r bg-transparent" style="border-color: var(--border-color)">
-                <!-- Editor Toolbar (40px) -->
-                <div class="h-10 flex items-center justify-between px-4 border-b" style="border-color: var(--border-color); background-color: var(--bg-secondary)">
-                    <div class="flex items-center gap-2 text-xs font-medium opacity-70">
-                        <i data-lucide="file-code" class="w-3.5 h-3.5"></i>
-                        example.js
-                    </div>
-                    <div class="flex gap-2">
-                        <button class="bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 px-3 py-1 text-[11px] font-semibold rounded hover:opacity-80 transition-all">
-                            Detect Errors
-                        </button>
-                        <button class="bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black px-3 py-1 text-[11px] font-semibold rounded hover:opacity-80 transition-all">
-                            AI Fix
-                        </button>
+    <div class="main-container">
+        <main class="editor-section">
+            <div class="editor-toolbar">
+                <div class="flex items-center gap-2">
+                    <button class="btn-icon" id="undo-btn" disabled title="Undo">
+                        <i data-lucide="undo" class="w-4 h-4"></i>
+                    </button>
+                    <button class="btn-icon" id="redo-btn" disabled title="Redo">
+                        <i data-lucide="redo" class="w-4 h-4"></i>
+                    </button>
+                    <span id="history-info" class="text-xs opacity-60 ml-2">No history</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <label class="text-xs flex items-center gap-2 opacity-70 cursor-pointer">
+                        <input type="checkbox" id="auto-fix-toggle" checked>
+                        Auto-fix
+                    </label>
+                    <button class="btn-icon" id="copy-code-btn" title="Copy">
+                        <i data-lucide="copy" class="w-4 h-4"></i>
+                    </button>
+                    <button class="btn-icon" id="clear-code-btn" title="Clear">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Unified Scrolling Container -->
+            <div class="code-viewport" id="codeViewport">
+                <div class="line-numbers" id="line-numbers"></div>
+                <textarea class="code-editor" id="code-editor" spellcheck="false"><html>
+<body style="background: #000; color: #0f0; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: monospace;">
+  <h1>HELLO MUHAMAD</h1>
+  <p>Preview mode is now active!</p>
+</body>
+</html></textarea>
+            </div>
+
+            <iframe id="preview-iframe" sandbox="allow-scripts"></iframe>
+            
+            <!-- Diff Overlay -->
+            <div id="diff-overlay" class="diff-overlay">
+                <div class="diff-header">
+                    <h3>AI Suggested Changes</h3>
+                    <div class="diff-actions">
+                        <button id="reject-fix-btn" class="action-btn bg-red-600 text-white">Reject</button>
+                        <button id="accept-fix-btn" class="action-btn bg-green-600 text-white">Accept</button>
                     </div>
                 </div>
+                <div id="diff-content" class="diff-content"></div>
+            </div>
 
-                <!-- Editor Content -->
-                <div class="flex-1 flex p-4 overflow-auto">
-                    <div class="code-line-numbers font-mono text-xs leading-6 h-full min-w-[35px]">
-                        1<br>2<br>3<br>4<br>5<br>6
+            <div id="consolePanel" class="console-panel">
+                <div id="consoleHeader" class="console-header">
+                    <div class="flex items-center gap-2">
+                        <i id="consoleChevron" data-lucide="chevron-up" class="w-3.5 h-3.5"></i>
+                        Console Output
                     </div>
-                    <textarea class="editor-textarea flex-1 pl-4 h-full text-sm" spellcheck="false">function example() {
-    const greeting = "Hello World";
-    console.log(greeting);
-}
-
-export default example;</textarea>
+                    <button class="btn-icon h-6 w-6" id="clear-console-btn" title="Clear console">
+                        <i data-lucide="x" class="w-3 h-3"></i>
+                    </button>
                 </div>
-            </section>
-
-            <!-- Console Expandable Panel -->
-            <div id="console-panel" class="h-8 flex flex-col overflow-hidden">
-                <!-- Console Header/Toggle -->
-                <div onclick="toggleConsole()" class="console-tab flex items-center justify-between px-4 cursor-pointer select-none">
-                    <div class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider">
-                        <i id="console-chevron" data-lucide="chevron-up" class="w-3 h-3"></i>
-                        Debug Log & Workflow Trace
-                    </div>
-                    <div class="flex items-center gap-4">
-                        <button class="flex items-center gap-1.5 opacity-60 hover:opacity-100 text-[10px]">
-                            <i data-lucide="copy" class="w-3 h-3"></i> Copy
-                        </button>
-                        <button class="flex items-center gap-1.5 opacity-60 hover:opacity-100 text-[10px]">
-                            <i data-lucide="x" class="w-3 h-3"></i> Clear
-                        </button>
-                        <button class="flex items-center gap-1.5 opacity-60 hover:opacity-100 text-[10px]">
-                            <i data-lucide="download" class="w-3 h-3"></i> Download
-                        </button>
-                    </div>
-                </div>
-                <!-- Console Body -->
-                <div class="flex-1 p-3 overflow-y-auto bg-black/40">
-                    <div class="log-entry"><span class="timestamp">[14:32:15]</span> <span class="tag-info">INFO</span> AI Code Fix Pro V3 Initialized</div>
-                    <div class="log-entry"><span class="timestamp">[14:32:16]</span> <span class="tag-success">SUCCESS</span> API key loaded from localStorage</div>
-                    <div class="log-entry"><span class="timestamp">[14:32:17]</span> <span class="tag-info">INFO</span> Default code loaded</div>
-                    <div class="log-entry"><span class="timestamp">[14:32:45]</span> <span class="tag-info">INFO</span> === DETECT ERRORS STARTED ===</div>
-                    <div class="log-entry"><span class="timestamp">[14:32:46]</span> <span class="tag-error">ERROR</span> Error 1 (Line 15:45): Expected semicolon at end of statement</div>
+                <div class="console-body" id="console-log">
+                    <div class="log-row"><span class="log-ts">[Log]</span> System ready.</div>
                 </div>
             </div>
         </main>
 
-        <!-- Right Side: AI Assistant -->
-        <aside class="w-80 flex flex-col border-l" style="border-color: var(--border-color)">
-            <div class="p-3 border-b flex items-center justify-between" style="border-color: var(--border-color)">
-                <h2 class="text-sm font-semibold flex items-center gap-2">
-                    <i data-lucide="sparkles" class="w-3.5 h-3.5 text-zinc-400"></i>
-                    AI Assistant
-                </h2>
-                <span class="text-[9px] uppercase tracking-widest opacity-40 font-bold">Standard</span>
-            </div>
-
-            <!-- Chat -->
-            <div id="chatHistory" class="flex-1 p-4 overflow-y-auto space-y-4">
-                <div class="flex flex-col items-end">
-                    <span class="text-[10px] opacity-50 mb-1 mr-1">Muhamad</span>
-                    <div class="ai-bubble-user p-3 text-xs max-w-[90%]">
-                        Can you help me fix the syntax errors in this code?
-                    </div>
-                </div>
-                <div class="flex flex-col items-start">
-                    <span class="text-[10px] opacity-50 mb-1 ml-1">AI Assistant</span>
-                    <div class="ai-bubble-bot p-3 text-xs max-w-[90%] shadow-sm">
-                        I've analyzed the code. All syntax looks correct, but I can optimize the export for you.
-                    </div>
+        <aside class="ai-sidebar" id="chat-panel">
+            <div class="p-4 border-b flex items-center justify-between" style="border-color: var(--border-color)">
+                <h2 class="text-sm font-bold flex items-center gap-2">AI Assistant</h2>
+                <div class="flex gap-2">
+                    <button class="btn-icon h-7 w-7" id="clear-chat-btn" title="Clear chat">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    </button>
+                    <button class="mobile-toggle btn-icon h-7 w-7" id="closeSidebarBtn">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
                 </div>
             </div>
-
-            <!-- Chat Input -->
-            <div class="p-4 border-t" style="border-color: var(--border-color); background-color: var(--bg-secondary)">
-                <div class="relative">
-                    <textarea id="userInput" rows="2" class="w-full border rounded-xl p-3 text-xs pr-12 outline-none transition-all placeholder-zinc-500" 
-                        style="border-color: var(--border-color); background-color: var(--input-bg); color: var(--text-primary);" 
-                        placeholder="Message AI..."></textarea>
-                    <button onclick="sendMessage()" class="absolute right-2 bottom-3 p-1.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-black rounded-lg transition-transform hover:scale-105">
-                        <i data-lucide="arrow-up" class="w-4 h-4"></i>
+            <div class="chat-container" id="chat-messages">
+                <div class="message message-bot">
+                    Hello Muhamad. I'm your AI assistant. I can help you fix code errors, explain concepts, and improve your code quality. How can I help you today?
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <div class="input-wrapper">
+                    <textarea class="message-input" id="chatInput" placeholder="Ask AI to fix errors, explain code, or improve quality..." rows="1"></textarea>
+                    <button id="sendBtn" class="send-btn">
+                        <i data-lucide="send" class="w-4 h-4"></i>
                     </button>
                 </div>
             </div>
         </aside>
     </div>
 
+    <!-- Debug Window (Floating Only) -->
+    <div id="debug-window" class="debug-window">
+        <div class="debug-window-header">
+            <h3>Debug Log</h3>
+            <div class="debug-window-controls">
+                <button id="copy-debug-btn" class="action-btn">Copy</button>
+                <button id="clear-debug-btn" class="action-btn">Clear</button>
+                <button id="close-debug-btn" class="action-btn">X</button>
+            </div>
+        </div>
+        <div id="debug-log" class="debug-window-content"></div>
+    </div>
+
     <script>
-        lucide.createIcons();
-
-        const body = document.getElementById('appBody');
+        // DOM Cache
+        const app = document.getElementById('app');
         const themeToggle = document.getElementById('themeToggle');
-        const chatHistory = document.getElementById('chatHistory');
-        const userInput = document.getElementById('userInput');
-        const consolePanel = document.getElementById('console-panel');
-        
-        let consoleExpanded = false;
+        const themeIcon = document.getElementById('themeIcon');
+        const editor = document.getElementById('code-editor');
+        const lineNumbers = document.getElementById('line-numbers');
+        const codeViewport = document.getElementById('codeViewport');
+        const previewIframe = document.getElementById('preview-iframe');
+        const editorTab = document.getElementById('editorTab');
+        const previewTab = document.getElementById('previewTab');
+        const consolePanel = document.getElementById('consolePanel');
+        const consoleHeader = document.getElementById('consoleHeader');
+        const sidebar = document.getElementById('chat-panel');
+        const overlay = document.getElementById('overlay');
+        const menuBtn = document.getElementById('menuBtn');
+        const closeSidebarBtn = document.getElementById('closeSidebarBtn');
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const debugWindow = document.getElementById('debug-window');
 
-        function toggleConsole() {
-            consoleExpanded = !consoleExpanded;
-            consolePanel.style.height = consoleExpanded ? '180px' : '32px';
+        // Line Numbers - Calculation
+        function updateLineNumbers() {
+            const lines = editor.value.split('\n').length;
+            lineNumbers.innerHTML = Array.from({length: lines}, (_, i) => i + 1).join('<br>');
             
-            const icon = document.getElementById('console-chevron');
-            icon.setAttribute('data-lucide', consoleExpanded ? 'chevron-down' : 'chevron-up');
-            lucide.createIcons();
+            // Sync heights to ensure line numbers match editor exactly
+            editor.style.height = 'auto';
+            editor.style.height = editor.scrollHeight + 'px';
         }
 
+        editor.addEventListener('input', updateLineNumbers);
+        
+        // Tab Switching - CLEAN APPROACH (No modals, no panels, just tabs)
+        function switchTab(mode) {
+            if (mode === 'preview') {
+                editorTab.classList.remove('active');
+                previewTab.classList.add('active');
+                codeViewport.style.display = 'none';
+                previewIframe.style.display = 'block';
+                updatePreview();
+            } else {
+                previewTab.classList.remove('active');
+                editorTab.classList.add('active');
+                codeViewport.style.display = 'flex';
+                previewIframe.style.display = 'none';
+            }
+        }
+
+        function updatePreview() {
+            const content = editor.value;
+            const doc = previewIframe.contentDocument || previewIframe.contentWindow.document;
+            doc.open();
+            doc.write(content);
+            doc.close();
+        }
+
+        editorTab.addEventListener('click', () => switchTab('editor'));
+        previewTab.addEventListener('click', () => {
+            switchTab('preview');
+            addLog('INFO', 'Switched to preview mode.');
+        });
+
+        // Theme Toggle
         themeToggle.addEventListener('click', () => {
-            body.classList.toggle('dark-theme');
-            const isDark = body.classList.contains('dark-theme');
-            const themeIcon = document.getElementById('themeIcon');
+            app.classList.toggle('dark-theme');
+            const isDark = app.classList.contains('dark-theme');
             themeIcon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
             lucide.createIcons();
         });
 
-        function sendMessage() {
-            const text = userInput.value.trim();
-            if (!text) return;
+        // Console
+        consoleHeader.addEventListener('click', () => {
+            consolePanel.classList.toggle('expanded');
+        });
 
-            const userDiv = document.createElement('div');
-            userDiv.className = 'flex flex-col items-end';
-            userDiv.innerHTML = `
-                <span class="text-[10px] opacity-50 mb-1 mr-1">Muhamad</span>
-                <div class="ai-bubble-user p-3 text-xs max-w-[90%]">${text}</div>
-            `;
-            chatHistory.appendChild(userDiv);
-            userInput.value = '';
-            chatHistory.scrollTop = chatHistory.scrollHeight;
+        // Sidebar Toggle
+        function toggleSidebar() {
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        }
+        
+        // Mobile menu button
+        menuBtn.addEventListener('click', toggleSidebar);
+        closeSidebarBtn.addEventListener('click', toggleSidebar);
+        overlay.addEventListener('click', toggleSidebar);
+        
+        // Desktop toggle chat button
+        const toggleChatBtn = document.getElementById('toggle-chat');
+        if (toggleChatBtn) {
+            toggleChatBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('collapsed');
+                const text = document.getElementById('chat-toggle-text');
+                if (sidebar.classList.contains('collapsed')) {
+                    text.textContent = 'Show Chat';
+                } else {
+                    text.textContent = 'Hide Chat';
+                }
+            });
         }
 
-        userInput.addEventListener('keydown', (e) => {
+        // Logs
+        function addLog(type, msg) {
+            const row = document.createElement('div');
+            row.className = 'log-row';
+            row.innerHTML = `<span class="opacity-40">[${type}]</span> ${msg}`;
+            const consoleLog = document.getElementById('console-log');
+            if (consoleLog) {
+                consoleLog.appendChild(row);
+                consoleLog.scrollTop = consoleLog.scrollHeight;
+            }
+        }
+        
+        // Debug Window Toggle
+        const debugLogBtn = document.getElementById('debug-log-btn');
+        if (debugLogBtn) {
+            debugLogBtn.addEventListener('click', () => {
+                debugWindow.classList.toggle('visible');
+            });
+        }
+        
+        const closeDebugBtn = document.getElementById('close-debug-btn');
+        if (closeDebugBtn) {
+            closeDebugBtn.addEventListener('click', () => {
+                debugWindow.classList.remove('visible');
+            });
+        }
+
+        // Chat Input Auto-resize
+        chatInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+
+        // Send Message
+        function sendMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
+
+            // Add user message
+            const userMsg = document.createElement('div');
+            userMsg.className = 'message message-user';
+            userMsg.textContent = message;
+            document.getElementById('chat-messages').appendChild(userMsg);
+
+            // Clear input
+            chatInput.value = '';
+            chatInput.style.height = 'auto';
+
+            // Scroll to bottom
+            const container = document.getElementById('chat-messages');
+            container.scrollTop = container.scrollHeight;
+
+            // Simulate AI response
+            setTimeout(() => {
+                const botMsg = document.createElement('div');
+                botMsg.className = 'message message-bot';
+                botMsg.textContent = 'I understand your request. Let me analyze the code and provide suggestions...';
+                container.appendChild(botMsg);
+                container.scrollTop = container.scrollHeight;
+            }, 800);
+        }
+        
+        // Clear Chat
+        const clearChatBtn = document.getElementById('clear-chat-btn');
+        if (clearChatBtn) {
+            clearChatBtn.addEventListener('click', () => {
+                const container = document.getElementById('chat-messages');
+                if (container) {
+                    container.innerHTML = '<div class="message message-bot">Chat cleared. How can I help you?</div>';
+                }
+            });
+        }
+
+        sendBtn.addEventListener('click', sendMessage);
+        chatInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 sendMessage();
             }
         });
+
+        // Init
+        updateLineNumbers();
+        lucide.createIcons();
     </script>
 </body>
 </html>

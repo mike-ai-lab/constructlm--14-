@@ -1,8 +1,6 @@
-// Main application entry point - MODERN INTERFACE WITH MONACO
+// Main application entry point - MODERN INTERFACE
 import { state, loadAPIKey } from './state.js';
-// import { log, toggleDebugWindow, clearDebugLog, copyDebugLog } from './logger.js'; // DEBUG WINDOW - Commented out
-import { log } from './logger.js';
-import { initializeMonaco, getEditorValue, setEditorValue, setEditorTheme, goToLine } from './monacoEditor.js';
+import { log, toggleDebugWindow, clearDebugLog, copyDebugLog } from './logger.js';
 import { 
   updateLineNumbers, 
   syncLineNumbersScroll, 
@@ -14,12 +12,12 @@ import {
   initializeEditor 
 } from './editor.js';
 import { detectAllErrors, displayErrors } from './errorDetector.js';
-import { addChatMessage, clearChat } from './chat.js';
+import { addChatMessage, clearChat } from './chat-new.js';
 import { startAIFix, updateStatus } from './aiService.js';
 import { acceptFix, rejectFix } from './diff.js';
-import { renderPreview, clearPreview, initializePreview } from './preview.js';
+import { renderPreview, clearPreview, initializePreview } from './preview-new.js';
 
-// Console log function - VS Code style Problems panel
+// Console log function
 function logToConsole(message, type = 'info') {
   const consoleLog = document.getElementById('console-log');
   if (!consoleLog) return;
@@ -34,62 +32,6 @@ function logToConsole(message, type = 'info') {
   consoleLog.scrollTop = consoleLog.scrollHeight;
 }
 
-// Display errors in VS Code style Problems panel
-function displayErrorsInConsole(errors) {
-  const consoleLog = document.getElementById('console-log');
-  if (!consoleLog) return;
-  
-  consoleLog.innerHTML = '';
-  
-  if (errors.length === 0) {
-    consoleLog.innerHTML = '<div style="opacity: 0.6; color: #34d399;">[✓] No problems found</div>';
-    return;
-  }
-  
-  errors.forEach((err, index) => {
-    const errorEntry = document.createElement('div');
-    errorEntry.style.cssText = `
-      padding: 6px 8px;
-      margin-bottom: 2px;
-      cursor: pointer;
-      border-left: 3px solid #ef4444;
-      background: rgba(239, 68, 68, 0.1);
-      font-size: 11px;
-      line-height: 1.4;
-      transition: background 0.2s;
-    `;
-    
-    errorEntry.innerHTML = `
-      <div style="display: flex; align-items: start; gap: 8px;">
-        <span style="color: #ef4444; font-weight: bold; flex-shrink: 0;">✗</span>
-        <div style="flex: 1;">
-          <div style="color: #f87171; font-weight: 500;">Line ${err.line}:${err.column}</div>
-          <div style="color: #d1d5db; margin-top: 2px;">${err.message.split('\n')[0]}</div>
-        </div>
-      </div>
-    `;
-    
-    // Click to navigate to error line
-    errorEntry.addEventListener('click', () => {
-      goToLine(err.line);
-      errorEntry.style.background = 'rgba(239, 68, 68, 0.2)';
-      setTimeout(() => {
-        errorEntry.style.background = 'rgba(239, 68, 68, 0.1)';
-      }, 300);
-    });
-    
-    errorEntry.addEventListener('mouseenter', () => {
-      errorEntry.style.background = 'rgba(239, 68, 68, 0.15)';
-    });
-    
-    errorEntry.addEventListener('mouseleave', () => {
-      errorEntry.style.background = 'rgba(239, 68, 68, 0.1)';
-    });
-    
-    consoleLog.appendChild(errorEntry);
-  });
-}
-
 // Clear console
 function clearConsole() {
   const consoleLog = document.getElementById('console-log');
@@ -102,7 +44,7 @@ function clearConsole() {
 function detectErrors() {
   log('=== DETECT ERRORS STARTED ===', 'info');
   
-  const code = getEditorValue();
+  const code = document.getElementById('code-editor').value;
   state.originalCode = code;
   
   log('Code analysis', 'debug', { 
@@ -112,6 +54,9 @@ function detectErrors() {
   
   updateStatus('Analyzing...', 'processing');
   
+  // Clear console
+  clearConsole();
+  
   const errors = detectAllErrors(code);
   state.errors = errors;
   
@@ -119,7 +64,7 @@ function detectErrors() {
   
   if (errors.length === 0) {
     updateStatus('Valid', 'success');
-    displayErrorsInConsole([]);
+    logToConsole('[OK] No syntax errors found', 'success');
     displayErrors([]);
     document.getElementById('fix-btn').disabled = true;
     log('Code is valid', 'success');
@@ -132,19 +77,17 @@ function detectErrors() {
       message: e.message.split('\n')[0]
     })));
     
-    // Display in VS Code style console
-    displayErrorsInConsole(errors);
+    // Log errors to console
+    errors.forEach((err, i) => {
+      logToConsole(`Error ${i + 1} (Line ${err.line}:${err.column}): ${err.message.split('\n')[0]}`, 'error');
+    });
+    
     displayErrors(errors);
     document.getElementById('fix-btn').disabled = false;
   }
   
   log('=== DETECT ERRORS COMPLETED ===', 'info');
 }
-
-// Auto-detect errors (called from Monaco editor)
-window.autoDetectErrorsCallback = function() {
-  detectErrors();
-};
 
 // Main AI fix function
 async function handleAIFix() {
@@ -176,138 +119,8 @@ function switchToEditor() {
   log('Switched to editor mode', 'info');
 }
 
-// Render React component preview
-async function renderReactPreview() {
-  const code = getEditorValue();
-  const previewIframe = document.getElementById('preview-iframe');
-  
-  if (!code.trim()) {
-    logToConsole('[Preview] No code to render', 'warning');
-    return;
-  }
-  
-  try {
-    logToConsole('[Preview] Compiling React component...', 'info');
-    
-    // Initialize renderer if needed
-    await initializePreview();
-    
-    // Get the renderer instance from preview module
-    const { getRenderer } = await import('./preview.js');
-    const renderer = getRenderer();
-    
-    if (!renderer) {
-      throw new Error('React renderer not initialized');
-    }
-    
-    // Render to iframe
-    await renderer.renderToIframe(previewIframe, code);
-    
-    logToConsole('[Preview] React component rendered successfully', 'success');
-    log('React component rendered', 'success');
-  } catch (error) {
-    logToConsole('[Preview] Error: ' + error.message, 'error');
-    log('Preview render failed', 'error', error.message);
-    
-    // Show error in iframe
-    previewIframe.srcdoc = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <style>
-          body {
-            margin: 0;
-            padding: 20px;
-            font-family: monospace;
-            background: #1f2937;
-            color: white;
-          }
-          .error-title {
-            color: #ef4444;
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 15px;
-          }
-          .error-content {
-            background: #111827;
-            padding: 15px;
-            border-left: 4px solid #ef4444;
-            white-space: pre-wrap;
-          }
-        </style>
-      </head>
-      <body>
-        <div class="error-title">Preview Error</div>
-        <div class="error-content">${error.message}</div>
-      </body>
-      </html>
-    `;
-  }
-}
-
 function switchToPreview() {
-  const editorTab = document.getElementById('editorTab');
-  const previewTab = document.getElementById('previewTab');
-  const codeViewport = document.getElementById('codeViewport');
-  const previewIframe = document.getElementById('preview-iframe');
-  
-  if (editorTab) editorTab.classList.remove('active');
-  if (previewTab) previewTab.classList.add('active');
-  if (codeViewport) codeViewport.style.display = 'none';
-  if (previewIframe) previewIframe.style.display = 'block';
-  
-  // Render preview - use React renderer for React components
-  const code = getEditorValue();
-  if (code.trim()) {
-    // Check if it's a React component (contains import React or JSX)
-    const isReactComponent = code.includes('import React') || 
-                            code.includes('from "react"') || 
-                            code.includes('from \'react\'') ||
-                            code.includes('useState') ||
-                            code.includes('useEffect') ||
-                            code.includes('className=') ||
-                            code.includes('<div') ||
-                            code.includes('export default');
-    
-    if (isReactComponent) {
-      // Use React renderer
-      renderReactPreview();
-    } else {
-      // Plain HTML - use srcdoc
-      try {
-        previewIframe.srcdoc = code;
-        logToConsole('[Preview] HTML rendered successfully', 'success');
-      } catch (error) {
-        logToConsole('[Preview] Error: ' + error.message, 'error');
-      }
-    }
-  } else {
-    previewIframe.srcdoc = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <style>
-          body {
-            margin: 0;
-            padding: 40px;
-            font-family: system-ui, sans-serif;
-            background: #f8fafc;
-            color: #64748b;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            text-align: center;
-          }
-        </style>
-      </head>
-      <body>
-        <div>Paste your code in the editor and click Preview</div>
-      </body>
-      </html>
-    `;
-  }
-  
+  renderPreview();
   log('Switched to preview mode', 'info');
 }
 
@@ -354,9 +167,6 @@ function toggleTheme() {
   
   app.classList.toggle('dark-theme');
   const isDark = app.classList.contains('dark-theme');
-  
-  // Update Monaco theme
-  setEditorTheme(isDark);
   
   if (themeIcon) {
     themeIcon.setAttribute('data-lucide', isDark ? 'sun' : 'moon');
@@ -414,13 +224,13 @@ function attachEventListeners() {
   const detectBtn = document.getElementById('detect-errors-btn');
   const fixBtn = document.getElementById('fix-btn');
   const toggleChatBtn = document.getElementById('toggle-chat');
-  // const debugBtn = document.getElementById('debug-log-btn'); // DEBUG WINDOW - Commented out
+  const debugBtn = document.getElementById('debug-log-btn');
   const themeBtn = document.getElementById('themeToggle');
   
   if (detectBtn) detectBtn.addEventListener('click', detectErrors);
   if (fixBtn) fixBtn.addEventListener('click', handleAIFix);
   if (toggleChatBtn) toggleChatBtn.addEventListener('click', toggleChatPanel);
-  // if (debugBtn) debugBtn.addEventListener('click', toggleDebugWindow); // DEBUG WINDOW - Commented out
+  if (debugBtn) debugBtn.addEventListener('click', toggleDebugWindow);
   if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
   
   // Tab buttons
@@ -441,14 +251,28 @@ function attachEventListeners() {
   if (copyBtn) copyBtn.addEventListener('click', copyCode);
   if (clearBtn) clearBtn.addEventListener('click', clearCode);
   
-  // Monaco handles its own input events - no need to attach here
+  // Code editor events
+  const codeEditor = document.getElementById('code-editor');
+  if (codeEditor) {
+    codeEditor.addEventListener('input', () => {
+      updateLineNumbers();
+      saveToHistory();
+    });
+    codeEditor.addEventListener('scroll', syncLineNumbersScroll);
+  }
+  
+  // Diff overlay buttons
+  const acceptBtn = document.getElementById('accept-fix-btn');
+  const rejectBtn = document.getElementById('reject-fix-btn');
+  
+  if (acceptBtn) acceptBtn.addEventListener('click', acceptFix);
+  if (rejectBtn) rejectBtn.addEventListener('click', rejectFix);
   
   // Chat panel
   const clearChatBtn = document.getElementById('clear-chat-btn');
   if (clearChatBtn) clearChatBtn.addEventListener('click', clearChat);
   
-  // DEBUG WINDOW - Commented out (not functional)
-  /*
+  // Debug window
   const copyDebugBtn = document.getElementById('copy-debug-btn');
   const clearDebugBtn = document.getElementById('clear-debug-btn');
   const closeDebugBtn = document.getElementById('close-debug-btn');
@@ -456,7 +280,6 @@ function attachEventListeners() {
   if (copyDebugBtn) copyDebugBtn.addEventListener('click', copyDebugLog);
   if (clearDebugBtn) clearDebugBtn.addEventListener('click', clearDebugLog);
   if (closeDebugBtn) closeDebugBtn.addEventListener('click', toggleDebugWindow);
-  */
   
   // Console panel
   const consoleHeader = document.getElementById('consoleHeader');
@@ -495,10 +318,6 @@ function attachEventListeners() {
 
 // Initialize application
 window.addEventListener('DOMContentLoaded', async () => {
-  // Initialize Monaco Editor first
-  await initializeMonaco();
-  log('Monaco Editor loaded', 'success');
-  
   // Initialize React renderer
   await initializePreview();
   log('=== AI Code Fix Pro V3 Initialized ===', 'info');
@@ -506,7 +325,7 @@ window.addEventListener('DOMContentLoaded', async () => {
   // Load API key from server
   await loadAPIKey();
   
-  // Initialize editor with default code (Monaco already has content)
+  // Initialize editor with default code
   initializeEditor();
   
   // Attach all event listeners

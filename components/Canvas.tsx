@@ -172,25 +172,25 @@ export const Canvas: React.FC<CanvasProps> = ({
 
   // Update initial state when code changes
   useEffect(() => {
-    if (isOpen && code && rendererRef.current && code !== lastRenderedCodeRef.current) {
-      lastRenderedCodeRef.current = code;
+    if (isOpen && code && rendererRef.current) {
+      // Get current version code
+      const currentVersionCode = versions[currentVersionIndex]?.code;
       
-      // Check if we have saved versions
-      if (initialVersions && initialVersions.length > 0) {
-        // Use saved versions - don't reset
-        const currentCode = versions[currentVersionIndex]?.code || code;
-        setEditCode(currentCode);
-        handleRender(currentCode);
-      } else {
-        // New code from AI - create first version
+      // Check if code prop is different from what we're currently showing
+      if (code !== editCode) {
+        console.log('[Canvas] Code prop changed, updating editor and rendering...');
+        console.log('[Canvas] Old code length:', editCode.length, 'New code length:', code.length);
+        lastRenderedCodeRef.current = code;
         setEditCode(code);
-        const newVersion: CodeVersion = { code, timestamp: Date.now() };
-        setVersions([newVersion]);
-        setCurrentVersionIndex(0);
+        handleRender(code);
+      } else if (code !== lastRenderedCodeRef.current) {
+        // Code matches editCode but hasn't been rendered yet
+        console.log('[Canvas] Rendering code...');
+        lastRenderedCodeRef.current = code;
         handleRender(code);
       }
     }
-  }, [code, isOpen]);
+  }, [code, isOpen, editCode]);
 
   const handleRender = async (codeToRender: string) => {
     if (!rendererRef.current || !iframeRef.current) {

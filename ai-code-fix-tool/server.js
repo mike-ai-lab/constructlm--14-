@@ -40,7 +40,23 @@ const server = http.createServer((req, res) => {
   }
 
   // Serve static files
-  let filePath = path.join(__dirname, 'src', req.url === '/' ? 'index.html' : req.url);
+  // Strip query parameters from URL
+  let requestUrl = req.url.split('?')[0];
+  
+  let filePath;
+  
+  // Handle root path
+  if (requestUrl === '/') {
+    filePath = path.join(__dirname, 'src', 'index.html');
+  } 
+  // Handle paths starting with /styles/ or /js/
+  else if (requestUrl.startsWith('/styles/') || requestUrl.startsWith('/js/')) {
+    filePath = path.join(__dirname, 'src', requestUrl);
+  }
+  // Default: look in src folder
+  else {
+    filePath = path.join(__dirname, 'src', requestUrl);
+  }
   
   const extname = String(path.extname(filePath)).toLowerCase();
   const contentType = mimeTypes[extname] || 'application/octet-stream';
@@ -48,14 +64,22 @@ const server = http.createServer((req, res) => {
   fs.readFile(filePath, (error, content) => {
     if (error) {
       if (error.code === 'ENOENT') {
+        console.log(`404 - File not found: ${filePath}`);
         res.writeHead(404);
-        res.end('File not found');
+        res.end('File not found: ' + req.url);
       } else {
+        console.log(`500 - Server error: ${error.code} for ${filePath}`);
         res.writeHead(500);
         res.end('Server error: ' + error.code);
       }
     } else {
-      res.writeHead(200, { 'Content-Type': contentType });
+      // Add cache-control headers to prevent caching during development
+      res.writeHead(200, { 
+        'Content-Type': contentType,
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      });
       res.end(content, 'utf-8');
     }
   });

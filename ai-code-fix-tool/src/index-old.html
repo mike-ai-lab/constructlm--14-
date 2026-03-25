@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>AI Code Fix Pro V3 - Modern Interface</title>
+    
+    <!-- External Libraries -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/diff_match_patch/20121119/diff_match_patch.js"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="styles/main-new.css?v=3.0">
+</head>
+<body class="dark-theme" id="app">
+
+    <div class="overlay" id="overlay"></div>
+
+    <!-- Header -->
+    <header class="app-header">
+        <div class="flex items-center gap-3">
+            <button class="btn-icon" id="menuBtn" style="display: none;">
+                <i data-lucide="menu" class="w-5 h-5"></i>
+            </button>
+            <h1 class="font-bold text-sm whitespace-nowrap">
+                AI Code <span class="opacity-60">Fix Pro</span>
+            </h1>
+        </div>
+
+        <div class="header-controls">
+            <span id="status-badge" class="status-badge success">Ready</span>
+            <button id="detect-errors-btn" class="action-btn" style="background: #007bff; color: white;">Detect Errors</button>
+            <button id="fix-btn" class="action-btn" style="background: #28a745; color: white;" disabled>AI Fix</button>
+            <button id="toggle-chat" class="action-btn secondary hidden lg:block">
+                <span id="chat-toggle-text">Hide Chat</span>
+            </button>
+            <div class="flex" style="background: var(--bg-tertiary); padding: 4px; border-radius: 6px; border: 1px solid var(--border-color);">
+                <button id="editorTab" class="tab-btn active">Editor</button>
+                <button id="previewTab" class="tab-btn">Preview</button>
+            </div>
+            <button class="btn-icon" id="debug-log-btn" title="Debug Log">
+                <i data-lucide="bug" class="w-4 h-4"></i>
+            </button>
+            <button class="btn-icon" id="themeToggle">
+                <i id="themeIcon" data-lucide="sun" class="w-4 h-4"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="main-container">
+        <!-- Editor Section -->
+        <main class="editor-section">
+            <!-- Editor Toolbar -->
+            <div class="editor-toolbar">
+                <div class="flex items-center gap-2">
+                    <button class="btn-icon" id="undo-btn" disabled title="Undo">
+                        <i data-lucide="undo" class="w-4 h-4"></i>
+                    </button>
+                    <button class="btn-icon" id="redo-btn" disabled title="Redo">
+                        <i data-lucide="redo" class="w-4 h-4"></i>
+                    </button>
+                    <span id="history-info" class="text-xs opacity-60" style="margin-left: 8px;">No history</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <label class="text-xs flex items-center gap-2 opacity-70" style="cursor: pointer;">
+                        <input type="checkbox" id="auto-fix-toggle" checked>
+                        Auto-fix
+                    </label>
+                    <button class="btn-icon" id="copy-code-btn" title="Copy">
+                        <i data-lucide="copy" class="w-4 h-4"></i>
+                    </button>
+                    <button class="btn-icon" id="clear-code-btn" title="Clear">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Code Editor Viewport -->
+            <div class="code-viewport" id="codeViewport">
+                <div class="line-numbers" id="line-numbers"></div>
+                <textarea class="code-editor" id="code-editor" spellcheck="false"></textarea>
+            </div>
+
+            <!-- Preview Iframe (Hidden by default, shown when Preview tab active) -->
+            <iframe id="preview-iframe" sandbox="allow-scripts"></iframe>
+            
+            <!-- Diff Overlay -->
+            <div id="diff-overlay" class="diff-overlay">
+                <div class="diff-header">
+                    <h3>AI Suggested Changes</h3>
+                    <div class="diff-actions">
+                        <button id="reject-fix-btn" class="danger">Reject</button>
+                        <button id="accept-fix-btn" class="success">Accept</button>
+                    </div>
+                </div>
+                <div id="diff-content" class="diff-content"></div>
+            </div>
+
+            <!-- Console Panel -->
+            <div id="consolePanel" class="console-panel">
+                <div id="consoleHeader" class="console-header">
+                    <div class="flex items-center gap-2">
+                        <i id="consoleChevron" data-lucide="chevron-up" class="w-3.5 h-3.5"></i>
+                        Console Output
+                    </div>
+                    <button class="btn-icon" id="clear-console-btn" title="Clear console" style="width: 24px; height: 24px;">
+                        <i data-lucide="x" class="w-3 h-3"></i>
+                    </button>
+                </div>
+                <div class="console-body" id="console-log">
+                    <div style="opacity: 0.6;">[Log] System ready.</div>
+                </div>
+            </div>
+        </main>
+
+        <!-- AI Chat Sidebar -->
+        <aside class="ai-sidebar" id="chat-panel">
+            <div class="panel-header">
+                <h2 class="text-sm font-bold">AI Assistant</h2>
+                <div class="flex gap-2">
+                    <button class="btn-icon" id="clear-chat-btn" title="Clear chat" style="width: 28px; height: 28px;">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                    </button>
+                    <button class="btn-icon" id="closeSidebarBtn" style="width: 28px; height: 28px; display: none;">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="chat-container" id="chat-messages">
+                <div class="message ai">
+                    <div class="message-bubble">
+                        Hi! Paste your code and click "Detect Errors" to get started.
+                    </div>
+                </div>
+            </div>
+            <div class="chat-input-area">
+                <div class="input-wrapper">
+                    <textarea class="message-input" id="chatInput" placeholder="Ask AI to fix errors, explain code, or improve quality..." rows="1"></textarea>
+                    <button id="sendBtn" class="send-btn">
+                        <i data-lucide="send" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Debug Window (Floating) -->
+    <div id="debug-window" class="debug-window">
+        <div class="debug-window-header">
+            <h3>Debug Log</h3>
+            <div class="debug-window-controls">
+                <button id="copy-debug-btn" class="secondary">Copy</button>
+                <button id="clear-debug-btn" class="secondary">Clear</button>
+                <button id="close-debug-btn" class="secondary">X</button>
+            </div>
+        </div>
+        <div id="debug-log" class="debug-window-content"></div>
+    </div>
+
+    <!-- App Module -->
+    <script type="module" src="js/app-new.js"></script>
+    
+    <!-- Initialize Lucide Icons -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        });
+    </script>
+</body>
+</html>

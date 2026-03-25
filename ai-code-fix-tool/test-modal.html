@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Test Modal</title>
+<style>
+.preview-modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  padding: 20px;
+}
+
+.preview-modal-backdrop.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.preview-panel {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  width: 90%;
+  max-width: 1200px;
+  height: 85vh;
+  max-height: 800px;
+  transform: scale(0.9);
+  transition: transform 0.3s ease;
+  overflow: hidden;
+  padding: 20px;
+}
+
+.preview-modal-backdrop.visible .preview-panel {
+  transform: scale(1);
+}
+
+button {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+}
+</style>
+</head>
+<body>
+<h1>Modal Test</h1>
+<button onclick="showModal()">Show Modal</button>
+
+<div class="preview-modal-backdrop" id="modal">
+  <div class="preview-panel">
+    <h2>This is the Modal!</h2>
+    <p>If you see this centered on the screen with a dark backdrop, the modal is working.</p>
+    <button onclick="hideModal()">Close Modal</button>
+  </div>
+</div>
+
+<script>
+function showModal() {
+  document.getElementById('modal').classList.add('visible');
+}
+
+function hideModal() {
+  document.getElementById('modal').classList.remove('visible');
+}
+
+// Close on backdrop click
+document.getElementById('modal').addEventListener('click', function(e) {
+  if (e.target === this) {
+    hideModal();
+  }
+});
+</script>
+</body>
+</html>
