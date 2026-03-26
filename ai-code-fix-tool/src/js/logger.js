@@ -189,6 +189,8 @@ function makeDraggable(element) {
     el.style.transform = `translate(calc(-50% + ${xPos}px), calc(-50% + ${yPos}px))`;
   }
 }
+*/
+// END DEBUG WINDOW FUNCTIONS
 
 export function clearDebugLog() {
   state.debugLog = [];

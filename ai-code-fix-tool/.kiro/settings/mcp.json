@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "C:\\Users\\Administrator\\react_playground\\react-playground"
+      ],
+      "disabled": false,
+      "autoApprove": [
+        "list_allowed_directories",
+        "read_text_file",
+        "edit_file"
+      ],
+      "disabledTools": []
+    }
+  }
+}

@@ -126,8 +126,8 @@ export const streamChatResponse = async (
     throw new Error("Gemini API key not configured");
   }
 
-  // Use REST API for better compatibility with vision
-  const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${key}`;
+  // SECURITY FIX: Use header-based authentication instead of URL query parameter
+  const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent`;
   
   // Format context for the system instruction
   const contextString = context.map((c, i) => 
@@ -223,7 +223,10 @@ Canvas renders this immediately - no setup needed.`;
 
   const response = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      'x-goog-api-key': key
+    },
     body: JSON.stringify(requestBody)
   });
 
@@ -268,12 +271,14 @@ export const fixCodeError = async (
   }
 
   try {
+    // SECURITY FIX: Use header-based authentication instead of URL query parameter
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "x-goog-api-key": key
         },
         body: JSON.stringify({
           contents: [

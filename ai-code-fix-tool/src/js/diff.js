@@ -25,6 +25,21 @@ export function showDiff(originalCode, fixedCode) {
     return;
   }
   
+  // Check if auto-accept is enabled
+  const autoAcceptToggle = document.getElementById('auto-accept-toggle');
+  if (autoAcceptToggle && autoAcceptToggle.checked) {
+    log('Auto-accept enabled - applying fixes immediately', 'info');
+    setEditorValue(fixedCode);
+    state.originalCode = fixedCode;
+    state.suggestedCode = '';
+    saveToHistory();
+    clearConsoleErrors();
+    updateStatus('Auto-Applied', 'success');
+    addChatMessage('[OK] Fixes auto-accepted and applied!');
+    state.errors = [];
+    return;
+  }
+  
   // Clear previous diff
   clearDiff();
   
@@ -41,6 +56,9 @@ export function showDiff(originalCode, fixedCode) {
   diffChanges = mergedContent.changes;
   
   log('Diff changes calculated', 'info', { changes: diffChanges.length });
+  
+  // Show batch action buttons
+  showBatchActions(diffChanges.length);
   
   // Apply decorations for visual styling
   const decorations = [];
@@ -333,7 +351,98 @@ function refreshDiffDisplay() {
 
 
 /**
+ * Show batch action buttons
+ */
+function showBatchActions(changeCount) {
+  const batchActions = document.getElementById('diff-batch-actions');
+  const diffCount = document.getElementById('diff-count');
+  
+  if (batchActions && diffCount) {
+    diffCount.textContent = `${changeCount} change${changeCount !== 1 ? 's' : ''}`;
+    batchActions.style.display = 'flex';
+  }
+}
+
+/**
+ * Hide batch action buttons
+ */
+function hideBatchActions() {
+  const batchActions = document.getElementById('diff-batch-actions');
+  if (batchActions) {
+    batchActions.style.display = 'none';
+  }
+}
+
+/**
  * Accept all changes at once
+ */
+export function acceptAllChanges() {
+  log('=== ACCEPT ALL CHANGES ===', 'info');
+  
+  const editor = getMonacoEditor();
+  
+  // Get current content and remove all red lines
+  let finalCode = editor.getValue();
+  const lines = finalCode.split('\n');
+  const linesToRemove = new Set();
+  
+  diffChanges.forEach(change => {
+    if (change.oldLine) {
+      linesToRemove.add(change.oldLine - 1); // 0-indexed
+    }
+  });
+  
+  // Filter out red lines
+  const cleanedLines = lines.filter((_, index) => !linesToRemove.has(index));
+  finalCode = cleanedLines.join('\n');
+  
+  setEditorValue(finalCode);
+  state.originalCode = finalCode;
+  state.suggestedCode = '';
+  
+  clearDiff();
+  clearConsoleErrors();
+  hideBatchActions();
+  
+  // Re-enable editor
+  editor.updateOptions({ readOnly: false });
+  
+  updateStatus('All Applied', 'success');
+  addChatMessage('[OK] All fixes accepted and applied!');
+  
+  state.errors = [];
+  
+  saveToHistory();
+  log('All fixes accepted', 'success');
+}
+
+/**
+ * Reject all changes at once
+ */
+export function rejectAllChanges() {
+  log('=== REJECT ALL CHANGES ===', 'info');
+  
+  const editor = getMonacoEditor();
+  
+  // Restore original code
+  setEditorValue(originalCodeBackup);
+  
+  clearDiff();
+  hideBatchActions();
+  
+  // Re-enable editor
+  editor.updateOptions({ readOnly: false });
+  
+  updateStatus('All Rejected', 'error');
+  addChatMessage('All changes rejected. Original code unchanged.');
+  
+  state.suggestedCode = '';
+  
+  log('All fixes rejected', 'info');
+}
+
+/**
+ * Accept all changes at once (alias for backward compatibility)
  */
 export function acceptFix() {
   log('=== ACCEPT ALL CHANGES ===', 'info');
@@ -421,6 +530,9 @@ function clearDiff() {
   diffChanges = [];
   diffZones = [];
   originalCodeBackup = '';
+  
+  // Hide batch actions
+  hideBatchActions();
   
   log('Diff cleared', 'info');
 }

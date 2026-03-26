@@ -2,6 +2,46 @@
 inclusion: always
 ---
 
+## 🔒 API SECURITY RULE (MANDATORY)
+
+1. NEVER place API keys in frontend code (React, HTML, client JS).
+2. NEVER expose API keys in:
+   - URL query (?key=...)
+   - Headers (Authorization, x-api-key)
+   - Env variables prefixed with VITE_, NEXT_PUBLIC_, etc.
+
+3. ALL external API calls requiring secrets MUST go through backend.
+
+4. Required architecture:
+   Frontend → Internal API (/api/*) → External Service
+
+5. Backend rules:
+   - Store keys in server environment variables ONLY
+   - Example: process.env.GEMINI_API_KEY
+   - Never log or return API keys
+
+6. Frontend rules:
+   - Only call internal endpoints:
+     fetch('/api/generate', {...})
+
+7. If any API key is detected in frontend code:
+   → BLOCK execution
+   → THROW error: "SECURITY VIOLATION: API key exposure"
+
+8. Refuse any implementation that:
+   - Calls external paid APIs directly from frontend
+   - Embeds keys in code, even temporarily
+
+9. Exception:
+   - Public APIs with NO key required (e.g. Open-Meteo)
+
+10. Always prefer:
+   - Server-side proxy
+   - Rate limiting
+   - Input validation
+
+ENFORCEMENT: STRICT — NO OVERRIDES
+
 # AI Provider Integration Guide
 
 Complete reference for integrating multiple AI providers with streaming support, RAG context, and vision capabilities.

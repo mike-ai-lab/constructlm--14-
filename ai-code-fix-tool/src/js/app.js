@@ -16,7 +16,7 @@ import {
 import { detectAllErrors, displayErrors } from './errorDetector.js';
 import { addChatMessage, clearChat } from './chat.js';
 import { startAIFix, updateStatus } from './aiService.js';
-import { acceptFix, rejectFix } from './diff.js';
+import { acceptFix, rejectFix, acceptAllChanges, rejectAllChanges } from './diff.js';
 import { renderPreview, clearPreview, initializePreview } from './preview.js';
 
 // Console log function - VS Code style Problems panel
@@ -440,6 +440,13 @@ function attachEventListeners() {
   if (redoBtn) redoBtn.addEventListener('click', redo);
   if (copyBtn) copyBtn.addEventListener('click', copyCode);
   if (clearBtn) clearBtn.addEventListener('click', clearCode);
+  
+  // Batch diff actions
+  const acceptAllBtn = document.getElementById('accept-all-btn');
+  const rejectAllBtn = document.getElementById('reject-all-btn');
+  
+  if (acceptAllBtn) acceptAllBtn.addEventListener('click', acceptAllChanges);
+  if (rejectAllBtn) rejectAllBtn.addEventListener('click', rejectAllChanges);
   
   // Monaco handles its own input events - no need to attach here
   
