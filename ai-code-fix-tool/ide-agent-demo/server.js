@@ -15,6 +15,25 @@ process.on('unhandledRejection', (err) => { console.error('UNHANDLED REJECTION:'
 // ─────────────────────────────────────────────────────────────
 let CODEBASE = {};
 
+function chunkContent(file, content, chunkSize = 40, overlap = 5) {
+  const lines = content.split('\n');
+  const chunks = [];
+  if (lines.length <= chunkSize) {
+    return [{ file, content, startLine: 1, endLine: lines.length }];
+  }
+  for (let i = 0; i < lines.length; i += (chunkSize - overlap)) {
+    const chunkLines = lines.slice(i, i + chunkSize);
+    chunks.push({
+      file,
+      content: chunkLines.join('\n'),
+      startLine: i + 1,
+      endLine: i + chunkLines.length
+    });
+    if (i + chunkSize >= lines.length) break;
+  }
+  return chunks;
+}
+
 class BM25 {
   constructor() { this.docs = []; this.idf = {}; this.avgdl = 0; }
   tokenize(t) { return t.toLowerCase().replace(/[^a-z0-9_]/g,' ').split(/\s+/).filter(x=>x.length>1); }
@@ -30,7 +49,15 @@ class BM25 {
     return this.docs.map(d => {
       let s = 0; qt.forEach(t => { if(!this.idf[t]||!d.tf[t])return; s += this.idf[t]*(d.tf[t]*2.5)/(d.tf[t]+1.5*(0.25+0.75*d.tk.length/this.avgdl)); });
       const lines = d.content.split('\n');
-      return { file: d.file, name: d.file, score: Math.round(s*100)/100, preview: lines.slice(0, 5).join('\n'), startLine: 1, endLine: lines.length };
+      return { 
+        file: d.file, 
+        name: d.file, 
+        score: Math.round(s*100)/100, 
+        content: d.content,
+        preview: lines.slice(0, 5).join('\n'), 
+        startLine: d.startLine, 
+        endLine: d.endLine 
+      };
     }).filter(d=>d.score > 0.01).sort((a,b)=>b.score-a.score).slice(0,k);
   }
 }
@@ -77,10 +104,11 @@ app.post('/api/upload', (req, res) => {
   
   files.forEach(f => {
     CODEBASE[f.path] = f.content;
-    bm25.add({ file: f.path, content: f.content });
+    const chunks = chunkContent(f.path, f.content);
+    chunks.forEach(c => bm25.add(c));
   });
   bm25.build();
-  console.log(`Indexed ${files.length} files successfully.`);
+  console.log(`Indexed ${files.length} files (${bm25.docs.length} chunks) successfully.`);
   res.json({ ok: true, filesAdded: files.length });
 });
 
@@ -113,14 +141,13 @@ async function* runDemoAgent(query) {
   }
   yield { type: 'debug', content: 'Demo running local retrieval...' };
   const res = bm25.search(query);
-  yield { type: 'thought', content: `Querying local codebase... Found ${res.length} potential matches out of ${bm25.docs.length} files.` };
+  yield { type: 'thought', content: `Querying local codebase... Found ${res.length} potential matches out of ${bm25.docs.length} chunks.` };
   yield { type: 'tool_call', tool: 'search_codebase', args: { query } };
   yield { type: 'tool_result', tool: 'search_codebase', result: res };
   if(res.length) {
-    yield { type: 'thought', content: `Simulating reading file content for top hit: ${res[0].file}` };
-    yield { type: 'tool_call', tool: 'read_file', args: { path: res[0].file } };
-    const clines = CODEBASE[res[0].file].split('\n');
-    yield { type: 'tool_result', tool: 'read_file', result: { file: res[0].file, content: CODEBASE[res[0].file].substring(0, 500) + '...', linesRead: clines.length, totalLines: clines.length } };
+    yield { type: 'thought', content: `Matched chunk in ${res[0].file} (Lines ${res[0].startLine}-${res[0].endLine})` };
+    yield { type: 'tool_call', tool: 'read_file', args: { path: res[0].file, startLine: res[0].startLine, endLine: res[0].endLine } };
+    yield { type: 'tool_result', tool: 'read_file', result: { file: res[0].file, content: res[0].content, linesRead: res[0].content.split('\n').length, totalLines: CODEBASE[res[0].file].split('\n').length, startLine: res[0].startLine, endLine: res[0].endLine } };
   }
   yield { type: 'final_answer', content: 'In Demo Mode, the AI reasoning is simulated. Add a live key to get an actual code fix response!' };
 }
@@ -141,7 +168,7 @@ app.post('/api/agent/stream', async (req, res) => {
         const sysPrompt = `You are a surgical IDE AI assistant. You must analyze the user's issue based strictly on the retrieved files provided below.\nExplain the bug or solution accurately.`;
         const matched = bm25.search(query, 5); // get top 5 context files
         
-        yield { type: 'thought', content: `Used local BM25 to search codebase for "${query}". Found ${matched.length} files.` };
+        yield { type: 'thought', content: `Used local BM25 to search codebase for "${query}". Found ${matched.length} chunks.` };
         yield { type: 'tool_call', tool: 'search_codebase', args: { query, limit: 5 } };
         yield { type: 'tool_result', tool: 'search_codebase', result: matched };
 
@@ -150,12 +177,12 @@ app.post('/api/agent/stream', async (req, res) => {
            return;
         }
 
-        yield { type: 'thought', content: `Sending ${matched.length} contextual files to ${provider.toUpperCase()} (${provider === 'gemini' ? 'gemini-2.0-flash' : 'llama-3.3-70b-versatile'}) for analysis...` };
+        yield { type: 'thought', content: `Sending ${matched.length} contextual chunks to ${provider.toUpperCase()} (${provider === 'gemini' ? 'gemini-2.0-flash' : 'llama-3.3-70b-versatile'}) for analysis...` };
         
-        // Build huge prompt payload containing all context
-        let contextContent = matched.map(m => `--- FILE: ${m.file} ---\n\`\`\`\n${CODEBASE[m.file]}\n\`\`\``).join('\n\n');
+        // Build surgical prompt payload containing only retrieved chunks
+        let contextContent = matched.map(m => `--- FILE: ${m.file} (Lines ${m.startLine}-${m.endLine}) ---\n\`\`\`\n${m.content}\n\`\`\``).join('\n\n');
         const history = [
-          { role: 'user', parts: [{ text: `${sysPrompt}\n\nUSER ISSUE: ${query}\n\nCODE CONTEXT:\n${contextContent}` }] }
+          { role: 'user', parts: [{ text: `${sysPrompt}\n\nUSER ISSUE: ${query}\n\nRELEVANT CODE CHUNKS:\n${contextContent}` }] }
         ];
 
         const rawAns = await callAI(provider, apiKey, history);

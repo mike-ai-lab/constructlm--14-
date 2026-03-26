@@ -506,6 +506,7 @@ async function uploadFolder(e) {
     return;
   }
   
+  logEvent({ type: 'indexing_started', message: `Processing ${toUpload.length} files...` });
   tree.innerHTML = `<div style="padding:20px;text-align:center;color:var(--blue);font-size:12px;">Indexing ${toUpload.length} files...</div>`;
   
   try {
@@ -514,11 +515,13 @@ async function uploadFolder(e) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ files: toUpload })
     });
-    const res = await r.json();
-    if(res.ok) {
-      alert(`Success! Indexed ${res.filesAdded} local files.`);
-      init(); // Rebuild tree mapping
+    const jsonResult = await r.json();
+    if(jsonResult.ok) {
+      logEvent({ type: 'indexing_complete', files: jsonResult.filesAdded, status: 'success' });
+      alert(`Success! Indexed ${jsonResult.filesAdded} local files.`);
+      init(); 
     } else {
+      logEvent({ type: 'indexing_failed', error: 'Validation Error' });
       tree.innerHTML = `<div style="color:var(--red);">Validation Failed.</div>`;
     }
   } catch(err) {
@@ -530,24 +533,31 @@ async function uploadFolder(e) {
 function renderFileTree(files) {
   const tree = document.getElementById('fileTree');
   tree.innerHTML = '';
-  const dirs = {};
+  const dirMap = {};
 
   files.forEach(f => {
     const parts = f.path.split('/');
-    const dir = parts.length > 1 ? parts[0] : '';
-    if (!dirs[dir]) dirs[dir] = [];
-    dirs[dir].push(f);
+    const dir = parts.slice(0, -1).join('/') || 'Root';
+    if (!dirMap[dir]) dirMap[dir] = [];
+    dirMap[dir].push(f);
   });
 
-  for (const [dir, dirFiles] of Object.entries(dirs)) {
-    if (dir) {
-      const label = document.createElement('div');
-      label.style.cssText = 'padding:6px 10px 3px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;';
-      label.textContent = '📂 ' + dir;
-      tree.appendChild(label);
-    }
-    dirFiles.forEach(f => tree.appendChild(buildFileNode(f)));
-  }
+  // Sort groups: Root first, then alphabetical
+  const sortedDirs = Object.keys(dirMap).sort((a,b) => (a==='Root' ? -1 : b==='Root' ? 1 : a.localeCompare(b)));
+
+  sortedDirs.forEach(dir => {
+    const group = document.createElement('div');
+    group.className = 'tree-group';
+    
+    const label = document.createElement('div');
+    label.style.cssText = 'padding:8px 10px 4px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;cursor:default;';
+    label.textContent = (dir === 'Root' ? '📂 ' : '📁 ') + dir;
+    tree.appendChild(label);
+    
+    dirMap[dir].sort((a,b) => a.path.localeCompare(b.path)).forEach(f => {
+      tree.appendChild(buildFileNode(f));
+    });
+  });
 }
 
 function buildFileNode(f) {
