@@ -11,7 +11,8 @@
       "autoApprove": [
         "list_allowed_directories",
         "read_text_file",
-        "edit_file"
+        "edit_file",
+        "list_directory"
       ],
       "disabledTools": []
     }

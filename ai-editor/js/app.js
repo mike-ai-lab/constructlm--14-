@@ -92,11 +92,26 @@ function updateTabs() {
     `
     
     tab.onclick = (e) => {
-      if (e.target.classList.contains('tab-close')) {
+      if (e.target.closest('.tab-close')) {
         e.stopPropagation()
         closeTab(filePath)
       } else {
         openFile(filePath)
+      }
+    }
+    
+    // Middle-click to close tab
+    tab.onmousedown = (e) => {
+      if (e.button === 1) { // Middle mouse button
+        e.preventDefault()
+        closeTab(filePath)
+      }
+    }
+    
+    // Prevent default middle-click behavior
+    tab.onauxclick = (e) => {
+      if (e.button === 1) {
+        e.preventDefault()
       }
     }
     
@@ -395,6 +410,38 @@ function setupEventListeners() {
   })
   
   sendBtn.addEventListener('click', sendMessage)
+  
+  // Global keyboard shortcuts
+  document.addEventListener('keydown', e => {
+    // Ctrl/Cmd + W - Close current tab
+    if ((e.ctrlKey || e.metaKey) && e.key === 'w' && currentFile) {
+      e.preventDefault()
+      closeTab(currentFile)
+    }
+    
+    // Ctrl/Cmd + N - New file
+    if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+      e.preventDefault()
+      newFile()
+    }
+    
+    // Ctrl/Cmd + S - Save (already auto-saves, but show feedback)
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      e.preventDefault()
+      saveCurrentFile()
+      saveFilesToStorage()
+      logActivity('Saved', 'success')
+    }
+    
+    // Delete key - Delete selected file (when explorer is focused)
+    if (e.key === 'Delete' && selectedFiles.size > 0 && document.activeElement.closest('#explorerFiles')) {
+      e.preventDefault()
+      selectedFiles.forEach(filePath => {
+        closeFile(filePath, { stopPropagation: () => {} })
+      })
+      selectedFiles.clear()
+    }
+  })
 }
 
 // Chat message functions (only for user/AI conversation)
@@ -424,7 +471,20 @@ function addChatMessage(text, type = 'ai', isLoading = false) {
 function updateChatMessage(messageDiv, text, type = 'success') {
   messageDiv.className = `message ai ${type}`
   const bubble = messageDiv.querySelector('.message-bubble')
-  bubble.textContent = text
+  
+  // Check if text contains token info (formatted with emoji)
+  if (text.includes('📊 Tokens:')) {
+    const parts = text.split('\n\n📊 Tokens:')
+    const mainText = parts[0]
+    const tokenText = parts[1] ? '📊 Tokens:' + parts[1] : ''
+    
+    bubble.innerHTML = `
+      <div>${mainText.replace(/\n/g, '<br>')}</div>
+      ${tokenText ? `<div class="token-info">${tokenText}</div>` : ''}
+    `
+  } else {
+    bubble.textContent = text
+  }
 }
 
 // Diff functions
@@ -548,8 +608,16 @@ async function handleSemanticPatch(instruction) {
     saveFilesToStorage()
     updateExplorer()
     
-    // Show summary
-    const summary = window.patchClient.getSummary(result)
+    // Show summary with token usage
+    let summary = window.patchClient.getSummary(result)
+    
+    if (result.usage) {
+      const totalTokens = result.usage.total_tokens || 0
+      const promptTokens = result.usage.prompt_tokens || 0
+      const completionTokens = result.usage.completion_tokens || 0
+      summary += `\n\n📊 Tokens: ${totalTokens.toLocaleString()} (prompt: ${promptTokens.toLocaleString()}, completion: ${completionTokens.toLocaleString()})`
+    }
+    
     updateChatMessage(loadingMsg, summary, 'ai')
     
     logActivity(`Applied patches to ${result.results.applied.length} file(s)`, 'success')
@@ -627,21 +695,34 @@ async function handleFullGeneration(instruction) {
     
     const data = await res.json()
     
-    loadingMsg.remove()
+    // Build summary message with token usage
+    let summaryMsg = ''
+    let tokenInfo = ''
+    
+    if (data.usage) {
+      const totalTokens = data.usage.total_tokens || 0
+      const promptTokens = data.usage.prompt_tokens || 0
+      const completionTokens = data.usage.completion_tokens || 0
+      tokenInfo = `\n\n📊 Tokens: ${totalTokens.toLocaleString()} (prompt: ${promptTokens.toLocaleString()}, completion: ${completionTokens.toLocaleString()})`
+    }
     
     if (data.files) {
       // Multi-file response - preserve folder structure
+      const fileCount = Object.keys(data.files).length
+      const folders = new Set()
+      
       Object.entries(data.files).forEach(([filePath, content]) => {
         // Keep the full path with folders
         files[filePath] = content
         
-        // Auto-expand parent folders
+        // Track folders
         const parts = filePath.split('/')
         if (parts.length > 1) {
           let path = ''
           for (let i = 0; i < parts.length - 1; i++) {
             path += (path ? '/' : '') + parts[i]
             expandedFolders.add(path)
+            folders.add(parts[i])
           }
         }
       })
@@ -655,14 +736,27 @@ async function handleFullGeneration(instruction) {
         openFile(firstFile)
       }
       
-      logActivity(`Generated ${Object.keys(data.files).length} file(s) with folder structure`, 'success')
+      // Build summary message
+      const folderList = folders.size > 0 ? `\nFolders: ${[...folders].join(', ')}` : ''
+      summaryMsg = `✓ Generated ${fileCount} file${fileCount > 1 ? 's' : ''}${folderList}${tokenInfo}`
+      
+      updateChatMessage(loadingMsg, summaryMsg, 'ai')
+      logActivity(`Generated ${fileCount} file(s) with folder structure`, 'success')
     } else if (data.code) {
       // Single file response
       files[currentFile] = data.code
-      editor.setValue(data.code)
+      const editorElement = document.getElementById('editor')
+      if (editorElement) {
+        editorElement.value = data.code
+      }
       saveFilesToStorage()
+      
+      summaryMsg = `✓ Code generated for ${currentFile}${tokenInfo}`
+      updateChatMessage(loadingMsg, summaryMsg, 'ai')
       logActivity('Code generated', 'success')
     } else {
+      summaryMsg = `No code generated${tokenInfo}`
+      updateChatMessage(loadingMsg, summaryMsg, 'ai')
       logActivity('No code generated', 'info')
     }
   } catch (error) {
@@ -765,8 +859,7 @@ function openFile(filename) {
 function closeFile(filename, e) {
   e.stopPropagation()
   
-  if (!confirm(`Delete "${filename}"?`)) return
-  
+  // Delete file immediately without confirmation
   delete files[filename]
   
   // Remove from open tabs
@@ -788,6 +881,7 @@ function closeFile(filename, e) {
   saveFilesToStorage()
   updateExplorer()
   updateTabs()
+  logActivity(`Deleted: ${filename}`, 'info')
 }
 
 function updateExplorer() {
@@ -1003,19 +1097,36 @@ function newFolder() {
 function deleteFolder(folderPath, e) {
   e.stopPropagation()
   
-  if (!confirm(`Delete folder "${folderPath}" and all its contents?`)) return
-  
-  // Delete all files in folder
+  // Delete folder and all contents immediately without confirmation
+  const deletedFiles = []
   Object.keys(files).forEach(path => {
     if (path.startsWith(folderPath + '/')) {
       delete files[path]
+      deletedFiles.push(path)
+      
+      // Remove from open tabs
+      const tabIndex = openTabs.indexOf(path)
+      if (tabIndex !== -1) {
+        openTabs.splice(tabIndex, 1)
+      }
     }
   })
+  
+  // If current file was in deleted folder, switch to another tab
+  if (currentFile && currentFile.startsWith(folderPath + '/')) {
+    if (openTabs.length > 0) {
+      openFile(openTabs[0])
+    } else {
+      currentFile = null
+      showPlaceholder()
+    }
+  }
   
   expandedFolders.delete(folderPath)
   saveFilesToStorage()
   updateExplorer()
-  logActivity(`Deleted folder: ${folderPath}`, 'success')
+  updateTabs()
+  logActivity(`Deleted folder: ${folderPath} (${deletedFiles.length} files)`, 'info')
 }
 
 function uploadFiles() {
@@ -1154,11 +1265,7 @@ function moveToFolder(sourcePath, targetFolder, isSourceFolder) {
     expandedFolders.delete(sourcePath)
     expandedFolders.add(newPath)
   } else {
-    // Move single file
-    if (files[newPath]) {
-      if (!confirm(`File ${newPath} already exists. Overwrite?`)) return
-    }
-    
+    // Move single file - overwrite if exists
     files[newPath] = files[sourcePath]
     delete files[sourcePath]
     
@@ -1192,8 +1299,10 @@ function showContextMenu(e, path, isFolder) {
   const items = isFolder ? [
     { label: 'New File in Folder', action: () => newFileInFolder(path) },
     { label: 'New Subfolder', action: () => newSubfolder(path) },
-    { label: 'Rename', action: () => renameItem(path, true) },
     { separator: true },
+    { label: 'Download Folder', action: () => downloadFolder(path) },
+    { separator: true },
+    { label: 'Rename', action: () => renameItem(path, true) },
     { label: 'Delete Folder', action: () => deleteFolder(path, { stopPropagation: () => {} }) }
   ] : [
     ...(canPreview ? [
@@ -1204,6 +1313,8 @@ function showContextMenu(e, path, isFolder) {
       },
       { separator: true }
     ] : []),
+    { label: 'Download File', action: () => downloadFile(path) },
+    { separator: true },
     { label: 'Rename', action: () => renameItem(path, false) },
     { label: 'Duplicate', action: () => duplicateFile(path) },
     { separator: true },
@@ -1332,6 +1443,129 @@ function copyCode() {
     logActivity('Code copied to clipboard', 'success')
   }).catch(() => {
     logActivity('Failed to copy code', 'error')
+  })
+}
+
+/**
+ * Download a single file
+ */
+function downloadFile(filePath) {
+  if (!files[filePath]) {
+    logActivity('File not found', 'error')
+    return
+  }
+  
+  const fileName = filePath.split('/').pop()
+  const content = files[filePath]
+  const blob = new Blob([content], { type: 'text/plain' })
+  const url = window.URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = fileName
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+  window.URL.revokeObjectURL(url)
+  
+  logActivity(`Downloaded: ${fileName}`, 'success')
+}
+
+/**
+ * Download a folder as ZIP
+ */
+function downloadFolder(folderPath) {
+  // Get all files in the folder
+  const folderFiles = {}
+  Object.entries(files).forEach(([path, content]) => {
+    if (path.startsWith(folderPath + '/')) {
+      folderFiles[path] = content
+    }
+  })
+  
+  if (Object.keys(folderFiles).length === 0) {
+    logActivity('Folder is empty', 'error')
+    return
+  }
+  
+  const folderName = folderPath.split('/').pop()
+  
+  logActivity(`Downloading folder: ${folderName}...`, 'info')
+  
+  fetch('http://localhost:5000/download-project', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      projectName: folderName,
+      files: folderFiles
+    })
+  })
+  .then(response => {
+    if (!response.ok) throw new Error('Download failed')
+    return response.blob()
+  })
+  .then(blob => {
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `${folderName}.zip`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    
+    logActivity(`Downloaded: ${folderName}.zip`, 'success')
+  })
+  .catch(error => {
+    logActivity(`Download failed: ${error.message}`, 'error')
+    console.error('Download error:', error)
+  })
+}
+
+/**
+ * Download selected files as ZIP
+ */
+function downloadSelected() {
+  if (selectedFiles.size === 0) {
+    logActivity('No files selected', 'error')
+    return
+  }
+  
+  const selectedFilesObj = {}
+  selectedFiles.forEach(path => {
+    if (files[path]) {
+      selectedFilesObj[path] = files[path]
+    }
+  })
+  
+  logActivity(`Downloading ${selectedFiles.size} selected files...`, 'info')
+  
+  fetch('http://localhost:5000/download-project', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      projectName: 'selected-files',
+      files: selectedFilesObj
+    })
+  })
+  .then(response => {
+    if (!response.ok) throw new Error('Download failed')
+    return response.blob()
+  })
+  .then(blob => {
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'selected-files.zip'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    
+    logActivity(`Downloaded: selected-files.zip`, 'success')
+  })
+  .catch(error => {
+    logActivity(`Download failed: ${error.message}`, 'error')
+    console.error('Download error:', error)
   })
 }
 

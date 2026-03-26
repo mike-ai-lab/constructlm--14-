@@ -65,11 +65,9 @@ export function copyCode() {
 }
 
 export function clearCode() {
-  if (confirm('Clear all code?')) {
-    setEditorValue('');
-    saveToHistory();
-    log('Code cleared', 'info');
-  }
+  setEditorValue('');
+  saveToHistory();
+  log('Code cleared', 'info');
 }
 
 export function initializeEditor() {

@@ -12,12 +12,11 @@ export function detectAllErrors(code) {
   
   while (safetyCounter < MAX_ITERATIONS) {
     try {
-      // Try with TypeScript preset first, fallback to React only
-      try {
-        Babel.transform(workingCode, { presets: ['typescript', 'react'] });
-      } catch (tsError) {
-        Babel.transform(workingCode, { presets: ['react'] });
-      }
+      // Try with TypeScript preset first (most permissive)
+      Babel.transform(workingCode, { 
+        presets: ['typescript', 'react'],
+        filename: 'component.tsx'
+      });
       break;
     } catch (e) {
       const errorMsg = e.message;
@@ -53,12 +52,31 @@ export function detectAllErrors(code) {
         break;
       }
       
-      // Record this error
-      errors.push({ message: errorMsg, line, column: col });
-      
+      // IGNORE TYPESCRIPT-RELATED FALSE POSITIVES
       const lines = workingCode.split('\n');
       const errorLine = lines[line - 1];
       if (!errorLine) break;
+      
+      // Check if this is a TypeScript-related false positive
+      const isTypeScriptRelated = 
+        errorMsg.includes("'return' outside of function") ||
+        (errorMsg.includes('Unexpected token') && errorLine.includes(':') && /:\s*[A-Za-z<>[\]|]+/.test(errorLine)) ||
+        (errorMsg.includes('expected ","') && errorLine.includes(':') && /:\s*[A-Za-z<>[\]|]+/.test(errorLine));
+      
+      if (isTypeScriptRelated) {
+        // This is likely a TypeScript syntax issue that Babel is misinterpreting
+        // Skip this error and try to continue
+        log(`Skipping TypeScript-related false positive on line ${line}`, 'debug');
+        
+        // Try to strip TypeScript syntax from this line
+        lines[line - 1] = errorLine.replace(/:\s*[A-Za-z.<>[\]|]+(?=\s*[)=,{])/g, '');
+        workingCode = lines.join('\n');
+        safetyCounter++;
+        continue;
+      }
+      
+      // Record this error (only if it's not a TypeScript false positive)
+      errors.push({ message: errorMsg, line, column: col });
       
       let fixed = false;
       
@@ -105,9 +123,9 @@ export function detectAllErrors(code) {
         log(`Fixed missing ; on line ${line}`, 'debug');
       }
       
-      // 6. TypeScript type annotations
+      // 6. TypeScript type annotations (fallback)
       if (!fixed && errorMsg.includes('expected ","') && errorLine.includes(':')) {
-        lines[line - 1] = errorLine.replace(/:\s*[A-Za-z.<>[\]]+(?=\s*[)=,{])/g, '');
+        lines[line - 1] = errorLine.replace(/:\s*[A-Za-z.<>[\]|]+(?=\s*[)=,{])/g, '');
         fixed = true;
         log(`Removed type annotation on line ${line}`, 'debug');
       }

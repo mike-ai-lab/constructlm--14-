@@ -1,5 +1,10 @@
-// Debug logging system
 import { state } from './state.js';
+
+export function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text || '';
+  return div.innerHTML;
+}
 
 export function log(message, level = 'info', data = null) {
   const timestamp = new Date().toISOString();
@@ -234,8 +239,4 @@ export function downloadDebugLog() {
   log('Debug log downloaded', 'success');
 }
 
-export function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
-}
+// END DOWNLOAD DEBUG LOG

@@ -6,6 +6,7 @@ import dotenv from "dotenv"
 import path from "path"
 import { fileURLToPath } from "url"
 import fs from "fs"
+import archiver from "archiver"
 
 // Load from parent directory .env.local
 const envPath = path.join(path.dirname(fileURLToPath(import.meta.url)), '../.env.local')
@@ -418,6 +419,55 @@ VALIDATION BEFORE RETURNING:
 
 GENERATE ONLY VALID, WORKING CODE. EVERY COMPONENT MUST RENDER WITHOUT ERRORS.`;
 
+const PROJECT_SYSTEM_PROMPT = `You are a React project generator that creates complete, structured applications with proper folder organization.
+
+CRITICAL RULES FOR PROJECT GENERATION:
+
+1. FOLDER STRUCTURE - ALWAYS organize files into logical folders:
+   ✅ projectName/components/Button.js
+   ✅ projectName/pages/Dashboard.js
+   ✅ projectName/hooks/useCounter.js
+   ✅ projectName/utils/helpers.js
+   ✅ projectName/services/api.js
+   ❌ Button.js (no folder structure)
+   ❌ Dashboard.js (no folder structure)
+
+2. FILE FORMAT - Use this exact format:
+   FILE: projectName/folder/filename.ext
+   <code content>
+   
+   FILE: projectName/folder2/filename2.ext
+   <code content>
+
+3. COMPONENT RULES (same as single components):
+   - export default function ComponentName() { ... }
+   - Return JSX elements only
+   - Use inline styles only (no CSS imports)
+   - Initialize all state with values
+   - No external libraries except React
+   - CORS-enabled image URLs only
+
+4. IMPORTS - Use relative paths for local components:
+   ✅ import Button from '../components/Button';
+   ✅ import { useCounter } from '../hooks/useCounter';
+   ❌ import Button from 'components/Button';
+   ❌ import './Button.css';
+
+5. PROJECT STRUCTURE EXAMPLES:
+
+Simple App:
+FILE: my-app/App.js
+FILE: my-app/components/Header.js
+FILE: my-app/components/Footer.js
+
+Dashboard:
+FILE: dashboard/pages/Dashboard.js
+FILE: dashboard/components/Sidebar.js
+FILE: dashboard/components/MetricCard.js
+FILE: dashboard/components/Charts.js
+
+ALWAYS CREATE STRUCTURED PROJECTS WITH FOLDERS. NEVER PUT ALL FILES IN ROOT.`;
+
 /**
  * Request patches from AI model
  * @param {string} context - Context payload
@@ -458,10 +508,11 @@ async function aiPatchRequester(context) {
     
     const data = await response.json()
     const patchResponse = data.choices[0].message.content
+    const usage = data.usage || {}
     
     debugLogger.success(`AI response received`)
     
-    return patchResponse
+    return { patchResponse, usage }
   } catch (error) {
     debugLogger.error(`AI request failed`, error.message)
     throw error
@@ -607,12 +658,19 @@ app.post("/edit", async (req, res) => {
     const prompt = `Instruction: ${instruction}
 ${filesContext}
 
-Generate complete, working code for all required files. Return in this format:
+Generate complete, working code for all required files. 
 
-FILE: filename1.ext
+IMPORTANT: If generating multiple related files, organize them into folders:
+- Use folder/filename.ext format (e.g., components/Button.js, pages/Home.js)
+- Common folders: components/, pages/, hooks/, utils/, services/
+- Use relative imports between files (e.g., import Button from '../components/Button')
+
+Return in this format:
+
+FILE: folder/filename1.ext
 <code content>
 
-FILE: filename2.ext
+FILE: folder2/filename2.ext
 <code content>`
 
     const response = await fetch(GROQ_ENDPOINT, {
@@ -646,6 +704,7 @@ FILE: filename2.ext
 
     const data = await response.json()
     let responseText = data.choices[0].message.content.trim()
+    const usage = data.usage || {}
     
     // Parse multi-file response
     const fileRegex = /FILE:\s*([^\n]+)\n([\s\S]*?)(?=FILE:|$)/g
@@ -673,17 +732,133 @@ FILE: filename2.ext
       
       res.json({ 
         code: code.trim(),
-        message: `✓ Generated code`
+        message: `✓ Generated code`,
+        usage
       })
     } else {
       console.log(`Generated ${Object.keys(parsedFiles).length} files`)
       res.json({ 
         files: parsedFiles,
-        message: `✓ Generated ${Object.keys(parsedFiles).length} files`
+        message: `✓ Generated ${Object.keys(parsedFiles).length} files`,
+        usage
       })
     }
   } catch (error) {
     console.error("Server error:", error)
+    res.status(500).json({ error: error.message })
+  }
+})
+
+/**
+ * Create project endpoint - generates structured projects with folders
+ * POST /create-project
+ * Body: { projectName: string, instruction: string }
+ */
+app.post("/create-project", async (req, res) => {
+  try {
+    const { projectName, instruction } = req.body
+
+    if (!instruction) {
+      return res.status(400).json({ error: "Missing instruction" })
+    }
+
+    const projectFolder = projectName || 'my-project'
+
+    const prompt = `Create a complete React project called "${projectFolder}" based on this request: ${instruction}
+
+CRITICAL: Generate a structured project with proper folder organization.
+
+Use this EXACT format for each file:
+
+FILE: ${projectFolder}/folder/filename.ext
+<code content>
+
+FILE: ${projectFolder}/folder2/filename2.ext
+<code content>
+
+Example structure:
+FILE: ${projectFolder}/App.js
+FILE: ${projectFolder}/components/Header.js
+FILE: ${projectFolder}/components/Button.js
+FILE: ${projectFolder}/pages/Home.js
+FILE: ${projectFolder}/utils/helpers.js
+
+REQUIREMENTS:
+- Organize files into logical folders (components/, pages/, hooks/, utils/, services/)
+- Use relative imports between files (import Button from '../components/Button')
+- Every component must export default function ComponentName()
+- Use inline styles only (no CSS imports)
+- Initialize all state with values
+- Return JSX elements only
+
+Generate the complete project structure now.`
+
+    const response = await fetch(GROQ_ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${GROQ_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        messages: [
+          {
+            role: "system",
+            content: PROJECT_SYSTEM_PROMPT
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 8192
+      })
+    })
+
+    if (!response.ok) {
+      const error = await response.text()
+      console.error("Groq API error:", response.status, error)
+      return res.status(response.status).json({ error: "Groq API error", status: response.status })
+    }
+
+    const data = await response.json()
+    let responseText = data.choices[0].message.content.trim()
+    const usage = data.usage || {}
+    
+    // Parse multi-file response
+    const fileRegex = /FILE:\s*([^\n]+)\n([\s\S]*?)(?=FILE:|$)/g
+    const parsedFiles = {}
+    let match
+    
+    while ((match = fileRegex.exec(responseText)) !== null) {
+      const filename = match[1].trim()
+      let content = match[2].trim()
+      
+      // Remove markdown code blocks if present
+      if (content.startsWith('```')) {
+        content = content.replace(/^```(?:javascript|jsx|typescript|tsx|html|css|json)?\n?/, '').replace(/\n?```$/, '')
+      }
+      
+      parsedFiles[filename] = content.trim()
+    }
+    
+    if (Object.keys(parsedFiles).length === 0) {
+      return res.status(400).json({ 
+        error: "Failed to generate project structure. Please try again with more specific requirements.",
+        usage
+      })
+    }
+    
+    console.log(`Generated project with ${Object.keys(parsedFiles).length} files:`, Object.keys(parsedFiles))
+    
+    res.json({ 
+      files: parsedFiles,
+      message: `✓ Generated ${Object.keys(parsedFiles).length} files in structured project`,
+      usage
+    })
+  } catch (error) {
+    console.error("Create project error:", error)
     res.status(500).json({ error: error.message })
   }
 })
@@ -721,9 +896,11 @@ app.post("/semantic-patch", async (req, res) => {
     const context = contextBuilder(filesToSend, files, instruction)
     
     // Step 4: AI patch request
-    let patchResponse
+    let patchResponse, usage
     try {
-      patchResponse = await aiPatchRequester(context)
+      const result = await aiPatchRequester(context)
+      patchResponse = result.patchResponse
+      usage = result.usage
     } catch (error) {
       return res.status(500).json({ 
         error: "AI request failed",
@@ -738,7 +915,8 @@ app.post("/semantic-patch", async (req, res) => {
       debugLogger.error(`No patches found in AI response`)
       return res.status(400).json({ 
         error: "AI did not return valid patches",
-        response: patchResponse.substring(0, 200)
+        response: patchResponse.substring(0, 200),
+        usage
       })
     }
     
@@ -754,7 +932,8 @@ app.post("/semantic-patch", async (req, res) => {
         failed: applyResults.failed,
         filesModified: filesToSend
       },
-      files: files
+      files: files,
+      usage
     })
     
   } catch (error) {
@@ -1120,7 +1299,9 @@ function generateBundledHTML(files, entryFile) {
                 }).join(' ');
               });
               
-              compiled = compiled.replace(/export\s+(const|let|var|function|class)\s+(\w+)/g, '$1 $2; exports.$2 = $2;');
+              compiled = compiled.replace(/export\s+(const|let|var|function|class)\s+(\w+)/g, function(match, type, name) {
+                return type + ' ' + name + '; exports.' + name + ' = ' + name + ';';
+              });
             }
             
             // Execute in module context
@@ -1410,6 +1591,48 @@ app.post('/bundle', (req, res) => {
   } catch (error) {
     console.error('bundle alias error', error)
     return res.status(500).json({ error: error.message || String(error) })
+  }
+})
+
+/**
+ * Download project as ZIP
+ * POST /download-project
+ * Body: { projectName: string, files: Object }
+ */
+app.post('/download-project', async (req, res) => {
+  try {
+    const { projectName, files } = req.body
+    
+    if (!files || Object.keys(files).length === 0) {
+      return res.status(400).json({ error: 'No files to download' })
+    }
+    
+    const zipName = (projectName || 'project') + '.zip'
+    
+    res.setHeader('Content-Type', 'application/zip')
+    res.setHeader('Content-Disposition', `attachment; filename="${zipName}"`)
+    
+    const archive = archiver('zip', { zlib: { level: 9 } })
+    
+    archive.on('error', (err) => {
+      console.error('Archive error:', err)
+      res.status(500).json({ error: err.message })
+    })
+    
+    archive.pipe(res)
+    
+    // Add all files to archive
+    for (const [filePath, content] of Object.entries(files)) {
+      archive.append(content, { name: filePath })
+    }
+    
+    await archive.finalize()
+    
+    console.log(`✓ Downloaded project: ${zipName} (${Object.keys(files).length} files)`)
+    
+  } catch (error) {
+    console.error('Download error:', error)
+    res.status(500).json({ error: error.message })
   }
 })
 

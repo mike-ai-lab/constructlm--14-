@@ -202,7 +202,7 @@
       border-radius: 4px;
       font-size: 12px;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: background 0.1s ease, transform 0.1s ease;
       display: flex;
       align-items: center;
       gap: 6px;
@@ -211,6 +211,10 @@
     
     .folder-header:hover {
       background: #2d2d30;
+    }
+    
+    .folder-header:active {
+      transform: scale(0.98);
     }
     
     .folder-header.drag-over {
@@ -259,7 +263,7 @@
       border-radius: 4px;
       font-size: 12px;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: background 0.1s ease, transform 0.1s ease;
       display: flex;
       align-items: center;
       gap: 6px;
@@ -268,6 +272,10 @@
     
     .file-item:hover {
       background: #2d2d30;
+    }
+    
+    .file-item:active {
+      transform: scale(0.98);
     }
     
     .file-item.active {
@@ -318,16 +326,18 @@
     }
     
     .file-close {
-      width: 16px;
-      height: 16px;
+      width: 20px;
+      height: 20px;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      opacity: 0;
-      transition: opacity 0.2s;
+      opacity: 0.6;
+      transition: all 0.15s ease;
       margin-left: auto;
       z-index: 10;
+      border-radius: 3px;
+      padding: 3px;
     }
     
     .file-item:hover .file-close,
@@ -335,8 +345,22 @@
       opacity: 1;
     }
     
+    .file-item.active .file-close {
+      opacity: 0.7;
+    }
+    
     .file-close:hover {
+      background: rgba(255, 255, 255, 0.1);
       color: #f48771;
+      transform: scale(1.1);
+    }
+    
+    .file-close:active {
+      transform: scale(0.9);
+    }
+    
+    .file-close:active {
+      transform: scale(0.9);
     }
     
     .context-menu {
@@ -402,17 +426,22 @@
       border-right: 1px solid #3e3e42;
       font-size: 12px;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: background 0.1s ease, transform 0.1s ease;
       display: flex;
       align-items: center;
       gap: 8px;
       white-space: nowrap;
       flex-shrink: 0;
       position: relative;
+      user-select: none;
     }
     
     .editor-tab:hover {
       background: #37373d;
+    }
+    
+    .editor-tab:active {
+      transform: scale(0.98);
     }
     
     .editor-tab.active {
@@ -459,24 +488,36 @@
     }
     
     .tab-close {
-      width: 16px;
-      height: 16px;
+      width: 20px;
+      height: 20px;
       display: flex;
       align-items: center;
       justify-content: center;
       border-radius: 3px;
-      opacity: 0;
-      transition: all 0.2s;
+      opacity: 0.7;
+      transition: all 0.15s ease;
       flex-shrink: 0;
+      cursor: pointer;
+      margin-left: 6px;
+      padding: 3px;
     }
     
     .editor-tab:hover .tab-close {
       opacity: 1;
     }
     
+    .editor-tab.active .tab-close {
+      opacity: 0.8;
+    }
+    
     .tab-close:hover {
-      background: #4e4e52;
-      color: #f48771;
+      background: rgba(255, 255, 255, 0.1);
+      opacity: 1;
+      transform: scale(1.1);
+    }
+    
+    .tab-close:active {
+      transform: scale(0.95);
     }
     
     .editor-container {
@@ -822,6 +863,17 @@
       font-size: 12px;
       line-height: 1.4;
       word-wrap: break-word;
+      white-space: pre-wrap;
+    }
+    
+    .token-info {
+      display: block;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 11px;
+      opacity: 0.7;
+      font-family: 'Consolas', 'Monaco', monospace;
     }
     
     .message.user .message-bubble {
@@ -1151,8 +1203,19 @@
 
 .file-close .close-icon,
 .tab-close .close-icon {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
+  transition: transform 0.15s ease;
+}
+
+.file-close:hover .close-icon,
+.tab-close:hover .close-icon {
+  transform: scale(1.1);
+}
+
+.file-close:active .close-icon,
+.tab-close:active .close-icon {
+  transform: scale(0.9);
 }
 
 .preview-modal-close .close-icon {

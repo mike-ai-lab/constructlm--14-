@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>IDE AI Agent Pipeline — Live Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#0d1117;--surface:#161b22;--surface2:#1c2330;--surface3:#21262d;
+  --border:#30363d;--border2:#21262d;
+  --blue:#58a6ff;--green:#3fb950;--purple:#bc8cff;--yellow:#e3b341;--red:#f85149;--orange:#d29922;
+  --text:#e6edf3;--text2:#8b949e;--text3:#6e7681;
+  --font-mono:'JetBrains Mono',monospace;--font-ui:'Inter',sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font-ui);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+/* ── TOP BAR ── */
+.topbar{
+  display:flex;align-items:center;gap:12px;padding:0 16px;height:44px;
+  background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;
+}
+.topbar-logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;color:var(--blue);}
+.topbar-logo svg{width:20px;height:20px;}
+.topbar-tabs{display:flex;gap:2px;margin-left:16px;}
+.tab{padding:6px 14px;font-size:12px;border-radius:6px 6px 0 0;cursor:pointer;color:var(--text2);transition:.15s;}
+.tab.active{background:var(--surface3);color:var(--text);}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+.api-key-wrap{position:relative;}
+.api-key-wrap input{
+  background:var(--surface3);border:1px solid var(--border);color:var(--text2);
+  padding:5px 10px;border-radius:6px;font-size:12px;width:220px;font-family:var(--font-mono);
+  outline:none;transition:.2s;
+}
+.api-key-wrap input:focus{border-color:var(--blue);color:var(--text);}
+.badge{padding:3px 8px;border-radius:12px;font-size:11px;font-weight:600;}
+.badge-demo{background:rgba(227,179,65,.15);color:var(--yellow);}
+.badge-live{background:rgba(63,185,80,.15);color:var(--green);}
+
+/* ── MAIN LAYOUT ── */
+.main{display:flex;flex:1;overflow:hidden;}
+
+/* ── LEFT: FILE TREE ── */
+.sidebar{
+  width:230px;flex-shrink:0;background:var(--surface);
+  border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;
+}
+.sidebar-header{
+  padding:10px 12px;font-size:11px;font-weight:600;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.stat-pills{display:flex;gap:6px;padding:8px 12px;border-bottom:1px solid var(--border2);}
+.stat-pill{
+  flex:1;background:var(--surface3);border-radius:6px;padding:5px 6px;text-align:center;
+  font-size:11px;color:var(--text2);
+}
+.stat-pill strong{display:block;font-size:14px;color:var(--text);font-weight:700;}
+.tree{overflow-y:auto;flex:1;padding:6px 0;}
+.tree-file{cursor:pointer;user-select:none;}
+.tree-file-header{
+  display:flex;align-items:center;gap:7px;padding:5px 10px;font-size:12px;
+  color:var(--text2);transition:.1s;border-left:2px solid transparent;
+}
+.tree-file-header:hover{background:var(--surface3);color:var(--text);}
+.tree-file-header.active-file{color:var(--blue);border-left-color:var(--blue);background:rgba(88,166,255,.06);}
+.tree-file-icon{font-size:13px;flex-shrink:0;}
+.tree-file-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tree-file-lines{font-size:10px;color:var(--text3);}
+.tree-symbols{padding-left:24px;display:none;}
+.tree-symbols.open{display:block;}
+.tree-sym{
+  display:flex;align-items:center;gap:5px;padding:3px 8px;font-size:11px;
+  color:var(--text3);cursor:pointer;border-radius:4px;transition:.1s;
+  font-family:var(--font-mono);
+}
+.tree-sym:hover{background:var(--surface3);color:var(--text2);}
+.sym-type{
+  font-size:9px;padding:1px 4px;border-radius:3px;font-weight:700;font-family:var(--font-ui);
+}
+.sym-fn{background:rgba(88,166,255,.2);color:var(--blue);}
+.sym-class{background:rgba(188,140,255,.2);color:var(--purple);}
+.sym-arrow{background:rgba(63,185,80,.2);color:var(--green);}
+
+/* ── CENTER: AGENT CHAT ── */
+.center{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.query-bar{
+  padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface);
+  display:flex;gap:10px;align-items:center;flex-shrink:0;
+}
+.query-input{
+  flex:1;background:var(--surface3);border:1px solid var(--border);color:var(--text);
+  padding:9px 14px;border-radius:8px;font-size:14px;font-family:var(--font-ui);
+  outline:none;transition:.2s;
+}
+.query-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(88,166,255,.1);}
+.query-input::placeholder{color:var(--text3);}
+.btn-run{
+  background:var(--blue);color:#000;padding:9px 18px;border:none;border-radius:8px;
+  font-size:13px;font-weight:600;cursor:pointer;transition:.15s;white-space:nowrap;
+  font-family:var(--font-ui);display:flex;align-items:center;gap:6px;
+}
+.btn-run:hover{background:#79bcff;transform:translateY(-1px);}
+.btn-run:active{transform:translateY(0);}
+.btn-run:disabled{background:var(--surface3);color:var(--text3);cursor:not-allowed;transform:none;}
+.suggestions{padding:8px 16px;display:flex;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--border2);}
+.sug{
+  padding:4px 10px;border-radius:20px;border:1px solid var(--border);font-size:11px;
+  color:var(--text2);cursor:pointer;transition:.15s;background:transparent;
+}
+.sug:hover{border-color:var(--blue);color:var(--blue);}
+.sug-label{font-size:10px;color:var(--text3);align-self:center;margin-right:4px;}
+
+.steps-wrap{flex:1;overflow-y:auto;padding:16px;}
+.steps-wrap::-webkit-scrollbar{width:6px;}
+.steps-wrap::-webkit-scrollbar-track{background:transparent;}
+.steps-wrap::-webkit-scrollbar-thumb{background:var(--border);}
+
+.step{
+  display:flex;gap:12px;margin-bottom:16px;animation:slideIn .3s ease;
+}
+@keyframes slideIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+.step-icon{
+  width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;
+  justify-content:center;font-size:13px;margin-top:2px;
+}
+.icon-thought{background:rgba(188,140,255,.15);color:var(--purple);}
+.icon-tool{background:rgba(88,166,255,.15);color:var(--blue);}
+.icon-result{background:rgba(63,185,80,.15);color:var(--green);}
+.icon-answer{background:rgba(227,179,65,.15);color:var(--yellow);}
+.icon-error{background:rgba(248,81,73,.15);color:var(--red);}
+
+.step-body{flex:1;min-width:0;}
+.step-label{
+  font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
+  margin-bottom:5px;display:flex;align-items:center;gap:8px;
+}
+.step-label-thought{color:var(--purple);}
+.step-label-tool{color:var(--blue);}
+.step-label-result{color:var(--green);}
+.step-label-answer{color:var(--yellow);}
+.step-label-error{color:var(--red);}
+
+.step-content{
+  background:var(--surface);border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;font-size:13px;line-height:1.6;
+}
+.thought-text{color:var(--text2);font-style:italic;}
+.tool-call{display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;}
+.tool-name{
+  background:rgba(88,166,255,.12);color:var(--blue);padding:2px 8px;border-radius:4px;
+  font-family:var(--font-mono);font-size:12px;font-weight:600;white-space:nowrap;
+}
+.tool-args{font-family:var(--font-mono);font-size:12px;color:var(--text2);word-break:break-all;}
+.result-table{width:100%;border-collapse:collapse;font-size:12px;font-family:var(--font-mono);}
+.result-table th{text-align:left;color:var(--text3);padding:3px 8px;font-weight:600;font-size:10px;border-bottom:1px solid var(--border2);}
+.result-table td{padding:4px 8px;color:var(--text);border-bottom:1px solid var(--border2);}
+.result-table tr:last-child td{border-bottom:none;}
+.score-bar{
+  display:inline-block;height:6px;border-radius:3px;background:var(--blue);
+  min-width:4px;margin-left:6px;vertical-align:middle;opacity:.7;
+}
+.result-raw{
+  font-family:var(--font-mono);font-size:11px;color:var(--text2);
+  max-height:140px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;
+}
+.answer-md{font-size:13px;line-height:1.7;color:var(--text);}
+.answer-md code{
+  background:var(--surface3);padding:1px 5px;border-radius:4px;
+  font-family:var(--font-mono);font-size:12px;color:var(--orange);
+}
+.answer-md pre{
+  background:var(--surface3);padding:10px 14px;border-radius:6px;margin:8px 0;
+  overflow-x:auto;border:1px solid var(--border);
+}
+.answer-md pre code{background:none;padding:0;color:var(--text);}
+.answer-md strong{color:var(--yellow);}
+
+.empty-state{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  height:100%;gap:12px;color:var(--text3);text-align:center;padding:40px;
+}
+.empty-state-icon{font-size:48px;margin-bottom:8px;}
+.empty-state h3{font-size:18px;color:var(--text2);}
+.empty-state p{font-size:13px;line-height:1.6;max-width:400px;}
+
+.typing-dot{
+  display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--blue);
+  animation:typingPulse 1s infinite;margin:0 2px;
+}
+.typing-dot:nth-child(2){animation-delay:.2s;}
+.typing-dot:nth-child(3){animation-delay:.4s;}
+@keyframes typingPulse{0%,80%,100%{opacity:.2;}40%{opacity:1;}}
+
+/* ── RIGHT: CONTEXT PANEL ── */
+.right-panel{
+  width:300px;flex-shrink:0;background:var(--surface);border-left:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.panel-header{
+  padding:10px 14px;font-size:11px;font-weight:600;color:var(--text3);
+  text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.panel-header-btn{
+  font-size:10px;color:var(--text3);background:none;border:none;cursor:pointer;
+  text-transform:none;letter-spacing:0;font-weight:400;
+}
+.panel-header-btn:hover{color:var(--text);}
+.context-items{overflow-y:auto;flex:1;padding:8px;}
+.context-item{
+  border:1px solid var(--border2);border-radius:8px;margin-bottom:8px;overflow:hidden;
+  transition:.2s;animation:slideIn .3s ease;
+}
+.context-item:hover{border-color:var(--border);}
+.ctx-header{
+  display:flex;align-items:center;gap:8px;padding:7px 10px;
+  background:var(--surface2);cursor:pointer;
+}
+.ctx-file{font-size:11px;color:var(--blue);font-family:var(--font-mono);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.ctx-score{
+  font-size:10px;font-weight:700;padding:2px 6px;border-radius:10px;flex-shrink:0;
+}
+.score-high{background:rgba(63,185,80,.2);color:var(--green);}
+.score-mid{background:rgba(88,166,255,.2);color:var(--blue);}
+.score-low{background:rgba(139,148,158,.2);color:var(--text2);}
+.ctx-body{padding:8px 10px;display:none;}
+.ctx-body.open{display:block;}
+.ctx-preview{font-family:var(--font-mono);font-size:11px;color:var(--text2);line-height:1.5;white-space:pre-wrap;word-break:break-all;}
+.ctx-meta{font-size:10px;color:var(--text3);margin-bottom:4px;}
+.ctx-tool-tag{
+  display:inline-block;font-size:9px;padding:1px 5px;border-radius:3px;
+  margin-right:4px;font-weight:600;
+}
+.tag-search{background:rgba(88,166,255,.15);color:var(--blue);}
+.tag-symbol{background:rgba(188,140,255,.15);color:var(--purple);}
+.tag-read{background:rgba(63,185,80,.15);color:var(--green);}
+.tag-grep{background:rgba(227,179,65,.15);color:var(--yellow);}
+.ctx-empty{padding:20px;text-align:center;color:var(--text3);font-size:12px;}
+
+.pipeline-vis{
+  border-top:1px solid var(--border);padding:12px;flex-shrink:0;
+}
+.pipeline-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;}
+.pipeline-steps{display:flex;align-items:center;gap:0;}
+.pipe-step{
+  flex:1;text-align:center;font-size:9px;padding:5px 2px;border-radius:4px;
+  color:var(--text3);transition:.3s;background:var(--surface2);
+}
+.pipe-step+.pipe-step{margin-left:3px;}
+.pipe-step.active{color:var(--blue);background:rgba(88,166,255,.1);}
+.pipe-step.done{color:var(--green);background:rgba(63,185,80,.1);}
+.pipe-arrow{font-size:8px;color:var(--text3);}
+
+.token-counter{
+  border-top:1px solid var(--border2);padding:10px 14px;
+}
+.token-track{display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-bottom:5px;}
+.token-bar-bg{background:var(--surface3);border-radius:4px;height:4px;}
+.token-bar-fill{height:4px;border-radius:4px;background:linear-gradient(90deg,var(--green),var(--blue));transition:.5s;}
+
+/* ── VIEWER ── */
+.file-viewer{
+  position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;display:none;
+  align-items:center;justify-content:center;backdrop-filter:blur(4px);
+}
+.file-viewer.open{display:flex;}
+.viewer-box{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  width:min(800px, 90vw);max-height:80vh;display:flex;flex-direction:column;overflow:hidden;
+  box-shadow:0 24px 64px rgba(0,0,0,.5);
+}
+.viewer-header{
+  display:flex;align-items:center;pad:12px 16px;padding:12px 16px;
+  border-bottom:1px solid var(--border);
+}
+.viewer-title{flex:1;font-size:13px;font-family:var(--font-mono);color:var(--blue);}
+.viewer-close{background:none;border:none;color:var(--text2);cursor:pointer;font-size:18px;padding:4px;}
+.viewer-close:hover{color:var(--text);}
+.viewer-code{overflow-y:auto;padding:16px;}
+.viewer-code pre{font-family:var(--font-mono);font-size:12px;line-height:1.6;color:var(--text2);white-space:pre-wrap;}
+.viewer-code .hl{background:rgba(88,166,255,.15);color:var(--text);}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+    </svg>
+    IDE Agent Pipeline
+  </div>
+  <div class="topbar-tabs">
+    <div class="tab active">🤖 Agent</div>
+    <div class="tab" onclick="showIndexInfo()">📊 Index</div>
+    <div class="tab" onclick="openDebugLog()" style="color:var(--orange)">🛠️ Pipeline Log</div>
+  </div>
+  <div class="topbar-right">
+    <div style="display:flex;align-items:center;gap:8px;margin-right:12px;">
+      <span style="font-size:11px;color:var(--text3);">Provider:</span>
+      <select id="providerSelect" style="background:var(--surface3);border:1px solid var(--border);color:var(--text);font-size:11px;padding:3px 6px;border-radius:4px;outline:none;" onchange="updateMode()">
+        <option value="gemini">Gemini</option>
+        <option value="groq">Groq (Llama-3)</option>
+      </select>
+    </div>
+    <div class="api-key-wrap" style="display:flex;align-items:center;gap:6px;">
+      <div style="position:relative;display:flex;align-items:center;">
+        <input type="password" id="apiKeyInput" placeholder="Enter API Key…" style="width:180px;padding-right:30px;" oninput="updateMode()"/>
+        <span id="toggleKey" onclick="toggleKeyVisibility()" style="position:absolute;right:8px;cursor:pointer;font-size:12px;color:var(--text3);user-select:none;">👁️</span>
+      </div>
+      <button onclick="testKey()" id="testKeyBtn" style="background:var(--surface3);border:1px solid var(--border);color:var(--text2);font-size:10px;padding:4px 8px;border-radius:6px;cursor:pointer;">Verify</button>
+    </div>
+    <span class="badge badge-demo" id="modeBadge" style="margin-left:10px;">DEMO MODE</span>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- LEFT SIDEBAR: file tree + symbol index -->
+  <div class="sidebar">
+    <div class="sidebar-header" style="justify-content:space-between">
+      <span>📁 Workspace</span>
+      <label style="cursor:pointer;background:var(--blue);color:#000;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;">
+        ⬆ Upload Project
+        <input type="file" id="folderInput" webkitdirectory directory multiple style="display:none" onchange="uploadFolder(event)"/>
+      </label>
+    </div>
+    <div class="stat-pills">
+      <div class="stat-pill"><strong id="statFiles">—</strong>Files</div>
+      <div class="stat-pill"><strong id="statSymbols">—</strong>Symbols</div>
+      <div class="stat-pill"><strong id="statChunks">—</strong>Chunks</div>
+    </div>
+    <div class="tree" id="fileTree">
+      <div style="padding:20px;color:var(--text3);font-size:12px;text-align:center;">Loading index…</div>
+    </div>
+  </div>
+
+  <!-- CENTER: query + agent steps -->
+  <div class="center">
+    <div class="query-bar">
+      <input class="query-input" id="queryInput" placeholder="Ask the agent about this codebase…" onkeydown="if(event.key==='Enter')runAgent()"/>
+      <button class="btn-run" id="runBtn" onclick="runAgent()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M5 3l14 9-14 9V3z"/></svg>
+        Run Agent
+      </button>
+    </div>
+    <div class="suggestions">
+      <span class="sug-label">Try:</span>
+      <span class="sug" onclick="setSug(this)">find the bug in token validation</span>
+      <span class="sug" onclick="setSug(this)">rate limit memory leak</span>
+      <span class="sug" onclick="setSug(this)">how does authentication work</span>
+      <span class="sug" onclick="setSug(this)">validateEmail function</span>
+      <span class="sug" onclick="setSug(this)">cart total calculation</span>
+      <span class="sug" onclick="setSug(this)">where is bcrypt used</span>
+    </div>
+    <div class="steps-wrap" id="stepsWrap">
+      <div class="empty-state" id="emptyState">
+        <div class="empty-state-icon">🔍</div>
+        <h3>IDE Agent Demo</h3>
+        <p>This agent uses <strong>real BM25 semantic search</strong>, a <strong>symbol index</strong>, and surgical file reads to answer questions about the virtual codebase — without ever reading a full file.</p>
+        <p style="margin-top:8px;font-size:12px;color:var(--text3);">No API key? Demo mode runs a fully real retrieval pipeline with scripted reasoning. Add a Gemini key above for live AI reasoning.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL: context window + pipeline viz -->
+  <div class="right-panel">
+    <div class="panel-header">
+      <span>📎 Context Retrieved</span>
+      <button class="panel-header-btn" onclick="clearContext()">Clear</button>
+    </div>
+    <div class="context-items" id="contextItems">
+      <div class="ctx-empty">Context chunks will appear here as the agent retrieves them.</div>
+    </div>
+
+    <div class="pipeline-vis">
+      <div class="pipeline-label">Pipeline Stage</div>
+      <div class="pipeline-steps">
+        <div class="pipe-step" id="pipe0">Intent<br>Parse</div>
+        <div class="pipe-step" id="pipe1">BM25<br>Search</div>
+        <div class="pipe-step" id="pipe2">Symbol<br>Resolve</div>
+        <div class="pipe-step" id="pipe3">Surgical<br>Read</div>
+        <div class="pipe-step" id="pipe4">LLM<br>Reason</div>
+        <div class="pipe-step" id="pipe5">Answer</div>
+      </div>
+    </div>
+
+    <div class="token-counter">
+      <div class="token-track">
+        <span>Context window</span>
+        <span id="tokenCount">0 / 128k tokens</span>
+      </div>
+      <div class="token-bar-bg">
+        <div class="token-bar-fill" id="tokenBar" style="width:0%"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- FILE VIEWER MODAL -->
+<div class="file-viewer" id="fileViewer" onclick="if(event.target===this)closeViewer()">
+  <div class="viewer-box">
+    <div class="viewer-header">
+      <span class="viewer-title" id="viewerTitle"></span>
+      <button class="viewer-close" onclick="closeViewer()">✕</button>
+    </div>
+    <div class="viewer-code" id="viewerCode"></div>
+  </div>
+</div>
+
+<!-- DEBUG MODAL -->
+<div class="file-viewer" id="debugModal" onclick="if(event.target===this)closeDebugLog()">
+  <div class="viewer-box" style="width:min(900px, 95vw);">
+    <div class="viewer-header">
+      <span class="viewer-title">🛠️ Pipeline Trace (Raw Events)</span>
+      <button onclick="copyDebugLog()" style="background:var(--blue);color:#000;border:none;padding:4px 10px;border-radius:4px;font-size:11px;margin-right:12px;font-weight:700;cursor:pointer;">Copy Log</button>
+      <button class="viewer-close" onclick="closeDebugLog()">✕</button>
+    </div>
+    <div class="viewer-code">
+      <pre id="debugLogContent" style="color:var(--text3);font-size:11px;"></pre>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STATE ─────────────────────────────────────────────────
+let debugLogs = [];
+function logEvent(ev) {
+  debugLogs.push({ time: new Date().toISOString().slice(11,19), ...ev });
+  const el = document.getElementById('debugLogContent');
+  if(el) el.textContent = debugLogs.map(l => `[${l.time}] ${JSON.stringify(l,null,2)}`).join('\n\n');
+}
+function openDebugLog() { document.getElementById('debugModal').classList.add('open'); }
+function closeDebugLog() { document.getElementById('debugModal').classList.remove('open'); }
+function copyDebugLog() {
+  const text = debugLogs.map(l => `[${l.time}] ${JSON.stringify(l,null,2)}`).join('\n\n');
+  navigator.clipboard.writeText(text).then(() => alert('Copied to clipboard!'));
+}
+
+let indexData = null;
+let running = false;
+let totalTokens = 0;
+let contextCount = 0;
+
+// ─── INIT ──────────────────────────────────────────────────
+async function init() {
+  const savedKey = localStorage.getItem('demoApiKey');
+  const savedProvider = localStorage.getItem('demoApiProvider');
+  if(savedKey) document.getElementById('apiKeyInput').value = savedKey;
+  if(savedProvider) document.getElementById('providerSelect').value = savedProvider;
+  updateMode(); // Ensures badge reflects saved state initially
+
+  try {
+    const r = await fetch('/api/index');
+    indexData = await r.json();
+    document.getElementById('statFiles').textContent = indexData.files.length;
+    document.getElementById('statSymbols').textContent = indexData.totalSymbols;
+    document.getElementById('statChunks').textContent = indexData.totalChunks;
+    
+    if(indexData.files.length === 0) {
+      document.getElementById('fileTree').innerHTML = `<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px;">App is empty. Click "Upload Project" above to import a real folder.</div>`;
+    } else {
+      renderFileTree(indexData.files);
+    }
+  } catch(e) {
+    document.getElementById('fileTree').innerHTML = `<div style="padding:12px;color:var(--red);font-size:12px;">⚠ Failed to load index: ${e.message}</div>`;
+  }
+}
+
+// ─── UPLOAD PROJECT FOLDER ─────────────────────────────────
+async function uploadFolder(e) {
+  const files = e.target.files;
+  if (!files.length) return;
+  
+  // Basic security filtering (client side)
+  const MAX_SIZE = 1000000; // 1MB limit per file speed
+  const validExts = /\.(js|jsx|ts|tsx|html|css|json|md|py|go|rs|java|c|cpp|h|hpp|cs|php|rb|txt)$/i;
+  
+  const toUpload = [];
+  const tree = document.getElementById('fileTree');
+  tree.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px;">Reading local project...</div>';
+  
+  for(let i=0; i<files.length; i++) {
+    const f = files[i];
+    const fp = f.webkitRelativePath;
+    
+    // Skip heavy/build dirs
+    if(fp.includes('/node_modules/') || fp.includes('/.git/') || fp.includes('/dist/') || fp.includes('/build/')) continue;
+    if(f.size > MAX_SIZE) continue;
+    if(!f.name.match(validExts)) continue;
+    
+    try {
+      const text = await f.text();
+      toUpload.push({ path: fp, content: text });
+    } catch(err) { console.warn("Skip binary/unreadable:", f.name); }
+  }
+  
+  if(!toUpload.length) {
+    tree.innerHTML = '<div style="padding:20px;text-align:center;color:var(--yellow);font-size:12px;">No valid code files found!</div>';
+    return;
+  }
+  
+  tree.innerHTML = `<div style="padding:20px;text-align:center;color:var(--blue);font-size:12px;">Indexing ${toUpload.length} files...</div>`;
+  
+  try {
+    const r = await fetch('/api/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ files: toUpload })
+    });
+    const res = await r.json();
+    if(res.ok) {
+      alert(`Success! Indexed ${res.filesAdded} local files.`);
+      init(); // Rebuild tree mapping
+    } else {
+      tree.innerHTML = `<div style="color:var(--red);">Validation Failed.</div>`;
+    }
+  } catch(err) {
+    tree.innerHTML = `<div style="color:var(--red);padding:10px;">Network Error: Data might be too massive. ${err.message}</div>`;
+  }
+}
+
+// ─── FILE TREE ─────────────────────────────────────────────
+function renderFileTree(files) {
+  const tree = document.getElementById('fileTree');
+  tree.innerHTML = '';
+  const dirs = {};
+
+  files.forEach(f => {
+    const parts = f.path.split('/');
+    const dir = parts.length > 1 ? parts[0] : '';
+    if (!dirs[dir]) dirs[dir] = [];
+    dirs[dir].push(f);
+  });
+
+  for (const [dir, dirFiles] of Object.entries(dirs)) {
+    if (dir) {
+      const label = document.createElement('div');
+      label.style.cssText = 'padding:6px 10px 3px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;';
+      label.textContent = '📂 ' + dir;
+      tree.appendChild(label);
+    }
+    dirFiles.forEach(f => tree.appendChild(buildFileNode(f)));
+  }
+}
+
+function buildFileNode(f) {
+  const ext = f.path.split('.').pop();
+  const icon = ext === 'js' ? '🟡' : ext === 'ts' ? '🔵' : '📄';
+  const wrap = document.createElement('div');
+  wrap.className = 'tree-file';
+  wrap.dataset.path = f.path;
+
+  const header = document.createElement('div');
+  header.className = 'tree-file-header';
+  header.innerHTML = `
+    <span class="tree-file-icon">${icon}</span>
+    <span class="tree-file-name">${f.path.split('/').pop()}</span>
+    <span class="tree-file-lines">${f.lines}L</span>
+  `;
+  header.onclick = () => {
+    document.querySelectorAll('.tree-file-header').forEach(h => h.classList.remove('active-file'));
+    header.classList.add('active-file');
+    syms.classList.toggle('open');
+    openFile(f.path);
+  };
+
+  const syms = document.createElement('div');
+  syms.className = 'tree-symbols';
+  f.symbols.forEach(s => {
+    const sym = document.createElement('div');
+    sym.className = 'tree-sym';
+    const typeClass = s.type === 'class' ? 'sym-class' : s.type === 'arrow' ? 'sym-arrow' : 'sym-fn';
+    const typeLabel = s.type === 'class' ? 'cls' : 'fn';
+    sym.innerHTML = `<span class="sym-type ${typeClass}">${typeLabel}</span><span>${s.name}</span>`;
+    sym.title = `L${s.startLine}–${s.endLine}`;
+    sym.onclick = (e) => { e.stopPropagation(); openFileAtLine(f.path, s.startLine, s.endLine); };
+    syms.appendChild(sym);
+  });
+
+  wrap.appendChild(header);
+  wrap.appendChild(syms);
+  return wrap;
+}
+
+// ─── FILE VIEWER ───────────────────────────────────────────
+async function openFile(path, hl = null) {
+  const r = await fetch(`/api/file?path=${encodeURIComponent(path)}`);
+  const data = await r.json();
+  if (data.error) return;
+
+  document.getElementById('viewerTitle').textContent = path;
+  const lines = data.content.split('\n');
+  const pre = document.createElement('pre');
+  lines.forEach((line, i) => {
+    const span = document.createElement('span');
+    span.style.cssText = 'display:block;';
+    const lineNum = document.createElement('span');
+    lineNum.textContent = String(i+1).padStart(3,' ') + '  ';
+    lineNum.style.cssText = 'color:var(--text3);user-select:none;';
+    span.appendChild(lineNum);
+    const code = document.createElement('span');
+    code.textContent = line;
+    if (hl && i+1 >= hl[0] && i+1 <= hl[1]) {
+      span.style.background = 'rgba(88,166,255,.12)';
+      code.style.color = 'var(--text)';
+    }
+    span.appendChild(code);
+    pre.appendChild(span);
+  });
+  const viewerCode = document.getElementById('viewerCode');
+  viewerCode.innerHTML = '';
+  viewerCode.appendChild(pre);
+  document.getElementById('fileViewer').classList.add('open');
+
+  // Scroll to highlight
+  if (hl) {
+    setTimeout(() => {
+      const spans = pre.querySelectorAll('span[style*="rgba"]');
+      if (spans[0]) spans[0].scrollIntoView({ block: 'center' });
+    }, 100);
+  }
+}
+
+function openFileAtLine(path, startLine, endLine) {
+  openFile(path, [startLine, endLine]);
+}
+function closeViewer() { document.getElementById('fileViewer').classList.remove('open'); }
+
+// ─── PIPELINE VIZ ──────────────────────────────────────────
+let pipeStage = -1;
+function setPipeStage(n) {
+  for (let i = 0; i <= 5; i++) {
+    const el = document.getElementById('pipe' + i);
+    el.className = 'pipe-step' + (i < n ? ' done' : i === n ? ' active' : '');
+  }
+  pipeStage = n;
+}
+function resetPipeline() { setPipeStage(-1); pipeStage = -1; }
+
+// ─── TOKEN COUNTER ─────────────────────────────────────────
+function addTokens(text) {
+  const est = Math.ceil(text.length / 4);
+  totalTokens += est;
+  const max = 128000;
+  document.getElementById('tokenCount').textContent = `~${totalTokens.toLocaleString()} / 128k tokens`;
+  document.getElementById('tokenBar').style.width = Math.min(100, totalTokens / max * 100) + '%';
+}
+
+// ─── CONTEXT PANEL ─────────────────────────────────────────
+function clearContext() {
+  document.getElementById('contextItems').innerHTML = '<div class="ctx-empty">Context chunks will appear here as the agent retrieves them.</div>';
+  contextCount = 0; totalTokens = 0;
+  document.getElementById('tokenCount').textContent = '0 / 128k tokens';
+  document.getElementById('tokenBar').style.width = '0%';
+}
+
+function addContextItem(tool, data) {
+  const container = document.getElementById('contextItems');
+  const empty = container.querySelector('.ctx-empty');
+  if (empty) empty.remove();
+
+  const tagClass = { search_codebase:'tag-search', find_symbol:'tag-symbol', read_file:'tag-read', grep:'tag-grep' }[tool] || '';
+  const tagLabel = { search_codebase:'BM25', find_symbol:'Symbol', read_file:'Read', grep:'Grep' }[tool] || tool;
+
+  let file = '', preview = '', score = null, lines = '';
+
+  if (tool === 'search_codebase' && Array.isArray(data)) {
+    data.slice(0, 3).forEach(item => addContextItem('_search_result', item));
+    return;
+  }
+  if (tool === '_search_result') {
+    file = data.file; preview = data.preview; score = data.score; lines = `L${data.startLine}–${data.endLine}`;
+    tool = 'search_codebase';
+  } else if (tool === 'find_symbol' && Array.isArray(data)) {
+    data.slice(0, 2).forEach(s => {
+      file = s.file; preview = `${s.name} @ L${s.startLine}–${s.endLine}`;
+      _addCtxEl('find_symbol', 'symbol', file, preview, 1.0, lines, 'tag-symbol', 'Symbol');
+    });
+    return;
+  } else if (tool === 'read_file') {
+    file = data.file || ''; preview = (data.content || '').split('\n').slice(0, 5).join('\n');
+    score = null; lines = `L${data.startLine}–${data.endLine} (${data.linesRead}/${data.totalLines} lines)`;
+  } else if (tool === 'grep' && Array.isArray(data)) {
+    data.slice(0, 5).forEach(r => {
+      file = r.file; preview = `L${r.line}: ${r.content}`;
+      _addCtxEl('grep', 'grep', file, preview, null, '', 'tag-grep', 'Grep');
+    });
+    return;
+  }
+
+  _addCtxEl(tool, tool, file, preview, score, lines, tagClass, tagLabel);
+}
+
+function _addCtxEl(tool, type, file, preview, score, lines, tagClass, tagLabel) {
+  const container = document.getElementById('contextItems');
+  contextCount++;
+  const scoreClass = !score ? '' : score > 0.8 ? 'score-high' : score > 0.4 ? 'score-mid' : 'score-low';
+  const scoreStr = score != null ? (score > 1 ? score.toFixed(2) : (score*10).toFixed(1)) : '';
+
+  const item = document.createElement('div');
+  item.className = 'context-item';
+  item.innerHTML = `
+    <div class="ctx-header" onclick="this.nextElementSibling.classList.toggle('open')">
+      <span class="ctx-file">${file || type}</span>
+      ${score != null ? `<span class="ctx-score ${scoreClass}">${scoreStr}</span>` : ''}
+    </div>
+    <div class="ctx-body">
+      <div class="ctx-meta">
+        <span class="ctx-tool-tag ${tagClass}">${tagLabel}</span>
+        ${lines ? `<span style="color:var(--text3)">${lines}</span>` : ''}
+      </div>
+      <div class="ctx-preview">${escHtml(preview || '').slice(0,300)}</div>
+    </div>
+  `;
+  container.insertBefore(item, container.firstChild);
+  addTokens(preview || '');
+}
+
+// ─── STEPS RENDERER ────────────────────────────────────────
+function getStepsContainer() {
+  const wrap = document.getElementById('stepsWrap');
+  const es = document.getElementById('emptyState');
+  if (es) es.remove();
+  return wrap;
+}
+
+function addThought(text) {
+  setPipeStage(Math.min(pipeStage + 1, 4));
+  const el = document.createElement('div');
+  el.className = 'step';
+  el.innerHTML = `
+    <div class="step-icon icon-thought">💭</div>
+    <div class="step-body">
+      <div class="step-label step-label-thought">Agent Thought</div>
+      <div class="step-content"><span class="thought-text">${escHtml(text)}</span></div>
+    </div>`;
+  getStepsContainer().appendChild(el);
+  el.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
+
+function addToolCall(tool, args) {
+  if (tool === 'search_codebase') setPipeStage(1);
+  else if (tool === 'find_symbol') setPipeStage(2);
+  else if (tool === 'read_file') setPipeStage(3);
+  const argsStr = Object.entries(args).map(([k,v]) => `${k}: <span style="color:var(--green)">"${escHtml(String(v))}"</span>`).join(', ');
+  const el = document.createElement('div');
+  el.className = 'step';
+  el.innerHTML = `
+    <div class="step-icon icon-tool">🔧</div>
+    <div class="step-body">
+      <div class="step-label step-label-tool">Tool Call</div>
+      <div class="step-content">
+        <div class="tool-call">
+          <span class="tool-name">${tool}</span>
+          <span class="tool-args">${argsStr}</span>
+        </div>
+      </div>
+    </div>`;
+  getStepsContainer().appendChild(el);
+  el.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
+
+function addToolResult(tool, result) {
+  const el = document.createElement('div');
+  el.className = 'step';
+  let bodyHtml = '';
+
+  if (tool === 'search_codebase' && Array.isArray(result)) {
+    const rows = result.map(r => {
+      const barW = Math.round((r.score / (result[0].score || 1)) * 60);
+      return `<tr>
+        <td>${escHtml(r.file)}</td>
+        <td style="color:var(--purple)">${escHtml(r.name)}</td>
+        <td><span style="color:var(--green);font-weight:700">${r.score}</span><span class="score-bar" style="width:${barW}px"></span></td>
+        <td style="color:var(--text3)">L${r.startLine}–${r.endLine}</td>
+      </tr>`;
+    }).join('');
+    bodyHtml = `<table class="result-table"><thead><tr><th>File</th><th>Symbol</th><th>BM25 Score</th><th>Lines</th></tr></thead><tbody>${rows}</tbody></table>`;
+  } else if (tool === 'find_symbol' && Array.isArray(result)) {
+    const rows = result.map(s => `<tr><td style="color:var(--purple)">${escHtml(s.name)}</td><td>${escHtml(s.file)}</td><td>L${s.startLine}–${s.endLine}</td><td style="color:var(--text3)">${s.type}</td></tr>`).join('');
+    bodyHtml = `<table class="result-table"><thead><tr><th>Symbol</th><th>File</th><th>Location</th><th>Type</th></tr></thead><tbody>${rows}</tbody></table>`;
+  } else if (tool === 'read_file' && result.content) {
+    const lines = result.content.split('\n');
+    const preview = lines.slice(0, 12).map((l,i) => `<span style="color:var(--text3)">${String(result.startLine+i).padStart(3,' ')}  </span>${escHtml(l)}`).join('\n');
+    const more = lines.length > 12 ? `\n<span style="color:var(--text3)">… ${lines.length-12} more lines</span>` : '';
+    bodyHtml = `
+      <div style="font-size:11px;color:var(--text2);margin-bottom:5px;">
+        <span style="color:var(--green)">✓</span> Read <strong>${result.linesRead}</strong> of <strong>${result.totalLines}</strong> lines
+        (skipped <strong>${result.totalLines - result.linesRead}</strong>)
+      </div>
+      <div class="result-raw">${preview}${more}</div>`;
+  } else if (tool === 'grep' && Array.isArray(result)) {
+    const rows = result.slice(0,8).map(r => `<tr><td>${escHtml(r.file)}</td><td>L${r.line}</td><td style="color:var(--yellow)">${escHtml(r.content)}</td></tr>`).join('');
+    bodyHtml = `<table class="result-table"><thead><tr><th>File</th><th>Line</th><th>Match</th></tr></thead><tbody>${rows}</tbody></table>`;
+  } else {
+    bodyHtml = `<div class="result-raw">${escHtml(JSON.stringify(result, null, 2)).slice(0,400)}</div>`;
+  }
+
+  el.innerHTML = `
+    <div class="step-icon icon-result">📦</div>
+    <div class="step-body">
+      <div class="step-label step-label-result">Result — ${tool}</div>
+      <div class="step-content">${bodyHtml}</div>
+    </div>`;
+  getStepsContainer().appendChild(el);
+  el.scrollIntoView({ behavior: 'smooth', block: 'end' });
+
+  // Add to context panel
+  addContextItem(tool, result);
+}
+
+function addFinalAnswer(text) {
+  setPipeStage(5);
+  const el = document.createElement('div');
+  el.className = 'step';
+  el.innerHTML = `
+    <div class="step-icon icon-answer">✨</div>
+    <div class="step-body">
+      <div class="step-label step-label-answer">Agent Answer</div>
+      <div class="step-content"><div class="answer-md">${renderMd(text)}</div></div>
+    </div>`;
+  getStepsContainer().appendChild(el);
+  el.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
+
+function addTyping() {
+  const el = document.createElement('div');
+  el.className = 'step'; el.id = 'typingIndicator';
+  el.innerHTML = `
+    <div class="step-icon icon-thought" style="background:rgba(88,166,255,.15)">🤖</div>
+    <div class="step-body">
+      <div class="step-label" style="color:var(--blue)">Agent Thinking</div>
+      <div class="step-content"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div>
+    </div>`;
+  getStepsContainer().appendChild(el);
+  el.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  return el;
+}
+function removeTyping() {
+  const el = document.getElementById('typingIndicator');
+  if (el) el.remove();
+}
+
+function addError(msg) {
+  const el = document.createElement('div');
+  el.className = 'step';
+  el.innerHTML = `
+    <div class="step-icon icon-error">⚠</div>
+    <div class="step-body">
+      <div class="step-label step-label-error">Error</div>
+      <div class="step-content" style="color:var(--red)">${escHtml(msg)}</div>
+    </div>`;
+  getStepsContainer().appendChild(el);
+  el.scrollIntoView({ behavior: 'smooth', block: 'end' });
+}
+
+// ─── RUN AGENT ─────────────────────────────────────────────
+function toggleKeyVisibility() {
+  const input = document.getElementById('apiKeyInput');
+  const icon = document.getElementById('toggleKey');
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.textContent = '🔒';
+  } else {
+    input.type = 'password';
+    icon.textContent = '👁️';
+  }
+}
+
+async function testKey() {
+  const provider = document.getElementById('providerSelect').value;
+  const key = document.getElementById('apiKeyInput').value.trim();
+  const btn = document.getElementById('testKeyBtn');
+  if(!key) return alert('Enter a key first');
+  
+  btn.textContent = 'Checking...';
+  btn.style.color = 'var(--yellow)';
+  
+  try {
+    const r = await fetch('/api/test-key', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ provider, key })
+    });
+    const data = await r.json();
+    if(data.ok) {
+      btn.textContent = '✅ Valid';
+      btn.style.color = 'var(--green)';
+    } else {
+      btn.textContent = '❌ Fail';
+      btn.style.color = 'var(--red)';
+      addError(`Validation Failed (${provider.toUpperCase()}): ${data.error || 'Check your key'}`);
+    }
+  } catch(e) {
+    btn.textContent = 'Error';
+    addError(`System Error: ${e.message}`);
+  }
+}
+
+async function runAgent() {
+  if (running) return;
+  const query = document.getElementById('queryInput').value.trim();
+  if (!query) { document.getElementById('queryInput').focus(); return; }
+  const apiKey = document.getElementById('apiKeyInput').value.trim();
+  const provider = document.getElementById('providerSelect').value;
+
+  running = true;
+  document.getElementById('runBtn').disabled = true;
+  document.getElementById('runBtn').textContent = '⏳ Running…';
+  resetPipeline(); setPipeStage(0);
+  clearContext();
+
+  const wrap = document.getElementById('stepsWrap');
+  wrap.innerHTML = '';
+
+  const modeLabel = apiKey ? `🤖 ${provider.toUpperCase()} Live` : '📼 Demo Mode';
+  const modeColor = apiKey ? 'background:rgba(63,185,80,.15);color:var(--green)' : 'background:rgba(227,179,65,.15);color:var(--yellow)';
+
+  const qEl = document.createElement('div');
+  qEl.className = 'step';
+  qEl.innerHTML = `
+    <div class="step-icon" style="background:rgba(88,166,255,.2);color:var(--blue)">👤</div>
+    <div class="step-body">
+      <div class="step-label" style="color:var(--blue)">Query</div>
+      <div class="step-content"><strong>${escHtml(query)}</strong>
+        <span style="margin-left:10px;font-size:11px;padding:2px 6px;border-radius:10px;${modeColor}">${modeLabel}</span>
+      </div>
+    </div>`;
+  wrap.appendChild(qEl);
+
+  addTyping();
+
+  try {
+    const response = await fetch('/api/agent/stream', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, apiKey, provider })
+    });
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop(); // Keep partial line in buffer
+
+      for (const line of lines) {
+        if (!line.trim() || !line.startsWith('data: ')) continue;
+        const data = JSON.parse(line.replace('data: ', ''));
+        logEvent(data);
+        removeTyping();
+
+        switch(data.type) {
+          case 'debug': console.log('DEBUG:', data.content); break; // Handled in logEvent
+          case 'thought': addThought(data.content); addTyping(); break;
+          case 'tool_call': addToolCall(data.tool, data.args); addTyping(); break;
+          case 'tool_result': addToolResult(data.tool, data.result); addTyping(); break;
+          case 'final_answer': addFinalAnswer(data.content); break;
+          case 'error': addError(data.message); break;
+          case 'done': running = false; break;
+        }
+      }
+    }
+  } catch(err) {
+    removeTyping(); addError(err.message);
+  } finally {
+    running = false;
+    document.getElementById('runBtn').disabled = false;
+    document.getElementById('runBtn').textContent = 'Run Agent';
+  }
+}
+
+// ─── HELPERS ───────────────────────────────────────────────
+function setSug(el) {
+  document.getElementById('queryInput').value = el.textContent;
+  document.getElementById('queryInput').focus();
+}
+function updateMode() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  const provider = document.getElementById('providerSelect').value;
+  
+  if (key) localStorage.setItem('demoApiKey', key);
+  else localStorage.removeItem('demoApiKey');
+  localStorage.setItem('demoApiProvider', provider);
+
+  const badge = document.getElementById('modeBadge');
+  badge.className = 'badge ' + (key ? 'badge-live' : 'badge-demo');
+  badge.textContent = key ? 'LIVE MODE' : 'DEMO MODE';
+}
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function renderMd(text) {
+  // Basic markdown: ```code```, `inline`, **bold**, \n
+  return text
+    .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>');
+}
+function showIndexInfo() {
+  if (!indexData) return;
+  alert(`Index Stats:\n• Files: ${indexData.files.length}\n• Symbols: ${indexData.totalSymbols}\n• BM25 chunks: ${indexData.totalChunks}\n\nFiles:\n${indexData.files.map(f=>` ${f.path} (${f.lines}L, ${f.symbols.length} syms)`).join('\n')}`);
+}
+
+init();
+</script>
+</body>
+</html>

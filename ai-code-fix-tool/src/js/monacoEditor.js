@@ -5,6 +5,8 @@ import { saveToHistory } from './editor.js';
 
 let monacoEditor = null;
 let isInitialized = false;
+let autoRunEnabled = true; // Auto-run enabled by default
+let autoRunCallback = null; // Callback for auto-run preview update
 
 export async function initializeMonaco() {
   if (isInitialized) return monacoEditor;
@@ -12,7 +14,7 @@ export async function initializeMonaco() {
   return new Promise((resolve) => {
     require.config({ 
       paths: { 
-        vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs' 
+        vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.0/min/vs' 
       } 
     });
     
@@ -156,6 +158,58 @@ export default IconDemo;`,
         saveToHistory();
         // Auto-detect errors after typing (debounced)
         autoDetectErrors();
+        // Auto-run preview update if enabled
+        autoRunPreview();
+      });
+      
+      // Store the generated command ID for AI Fix
+      const aiFixCommandId = monacoEditor.addCommand(0, () => {
+        if (window.autoAIContextFix) window.autoAIContextFix();
+      });
+
+      // Register hover provider for AI Fix
+      monaco.languages.registerHoverProvider('typescript', {
+        provideHover: (model, position) => {
+          const errorsAtPosition = state.errors.filter(e => e.line === position.lineNumber);
+          
+          if (errorsAtPosition.length > 0) {
+            return {
+              range: new monaco.Range(position.lineNumber, 1, position.lineNumber, model.getLineMaxColumn(position.lineNumber)),
+              contents: [
+                { value: `**AI Suggestion**` },
+                { value: `${errorsAtPosition[0].message}` },
+                { isTrusted: true, value: `[Explain and Fix with AI](command:${aiFixCommandId})` }
+              ]
+            };
+          }
+          return null;
+        }
+      });
+
+      // Register Code Action Provider (the lightbulb)
+      monaco.languages.registerCodeActionProvider('typescript', {
+        provideCodeActions: (model, range, context, token) => {
+          const errorsAtRange = state.errors.filter(e => 
+            e.line >= range.startLineNumber && e.line <= range.endLineNumber
+          );
+
+          if (errorsAtRange.length > 0) {
+            return {
+              actions: [
+                {
+                  title: 'Explain and Fix with AI',
+                  kind: 'quickfix',
+                  diagnostics: context.markers,
+                  command: {
+                    id: aiFixCommandId,
+                    arguments: []
+                  }
+                }
+              ],
+              dispose: () => {}
+            };
+          }
+        }
       });
       
       isInitialized = true;
@@ -175,6 +229,36 @@ function autoDetectErrors() {
       window.autoDetectErrorsCallback();
     }
   }, 1000); // Wait 1 second after typing stops
+}
+
+// Auto-run preview with debouncing
+let autoRunTimeout = null;
+function autoRunPreview() {
+  if (!autoRunEnabled) return;
+  
+  clearTimeout(autoRunTimeout);
+  autoRunTimeout = setTimeout(() => {
+    // Trigger preview update from app.js
+    if (autoRunCallback) {
+      autoRunCallback();
+    }
+  }, 1500); // Wait 1.5 seconds after typing stops
+}
+
+// Set auto-run state
+export function setAutoRun(enabled) {
+  autoRunEnabled = enabled;
+  log(`Auto-run ${enabled ? 'enabled' : 'disabled'}`, 'info');
+}
+
+// Get auto-run state
+export function getAutoRun() {
+  return autoRunEnabled;
+}
+
+// Set auto-run callback
+export function setAutoRunCallback(callback) {
+  autoRunCallback = callback;
 }
 
 export function getMonacoEditor() {
@@ -204,10 +288,27 @@ export function focusEditor() {
 }
 
 // Navigate to specific line in Monaco
-export function goToLine(lineNumber) {
+export function goToLine(lineNumber, column = 1) {
   if (monacoEditor) {
     monacoEditor.revealLineInCenter(lineNumber);
-    monacoEditor.setPosition({ lineNumber, column: 1 });
+    monacoEditor.setPosition({ lineNumber, column });
     monacoEditor.focus();
   }
+}
+
+// Set visual underlines (markers) in editor
+export function setEditorMarkers(errors) {
+  if (!monacoEditor) return;
+  
+  const model = monacoEditor.getModel();
+  const markers = errors.map(err => ({
+    severity: monaco.MarkerSeverity.Error,
+    message: err.message,
+    startLineNumber: err.line,
+    startColumn: err.column,
+    endLineNumber: err.line,
+    endColumn: model.getLineMaxColumn(err.line)
+  }));
+  
+  monaco.editor.setModelMarkers(model, 'owner', markers);
 }

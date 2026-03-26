@@ -1,34 +1,77 @@
-// AI service for code fixing
-import { state, loadAPIKey } from './state.js';
-import { log } from './logger.js';
+// AI service for code fixing - Multi-provider support
+import { state, loadAPIKeys } from './state.js';
+import { log, escapeHtml } from './logger.js';
 import { addChatMessage, parseAIResponse, formatAIResponse } from './chat.js';
 import { showDiff } from './diff.js';
+
+// Import all AI provider services
+import * as GroqService from './services/groqService.js';
+import * as GeminiService from './services/geminiService.js';
+import * as CerebrasService from './services/cerebrasService.js';
+import * as OpenRouterService from './services/openrouterService.js';
+import * as OllamaService from './services/ollamaService.js';
 
 export async function startAIFix(errors, originalCode) {
   if (errors.length === 0 || state.isProcessing) return;
   
   log('=== AI FIX STARTED ===', 'info');
+  log(`Using provider: ${state.selectedProvider}, model: ${state.selectedModel}`, 'info');
   log('Original code to fix:', 'info', originalCode);
   
   state.isProcessing = true;
   updateStatus('AI Processing...', 'processing');
   
-  addChatMessage('Generating fix...', true);
-  
   const errorsList = errors.map((err, i) => 
     `Error ${i + 1} (Line ${err.line}:${err.column}):\n${err.message}`
   ).join('\n\n');
 
-  log('Calling Groq API', 'info', { errorCount: errors.length });
+  // Add highly visual request info to chat
+  const requestHtml = `
+    <div class="request-block">
+      <details class="request-details">
+        <summary class="request-summary">
+          <i data-lucide="send"></i>
+          Request: Fixing ${errors.length} error${errors.length > 1 ? 's' : ''}
+        </summary>
+        <div class="request-content">
+          <div class="request-section-title">Detected Errors</div>
+          <pre class="request-errors">${escapeHtml(errorsList)}</pre>
+          <div class="request-section-title">Context Code</div>
+          <pre class="request-code">${escapeHtml(originalCode.slice(0, 500))}${originalCode.length > 500 ? '...' : ''}</pre>
+        </div>
+      </details>
+    </div>
+  `;
+  addChatMessage(requestHtml, true);
+  
+  // Estimate input tokens (rough characters/4 rule for UI)
+  const inputTokens = Math.ceil((originalCode.length + errorsList.length + 200) / 4);
+
+  log(`Calling ${state.selectedProvider.toUpperCase()} API`, 'info', { 
+    provider: state.selectedProvider,
+    model: state.selectedModel,
+    errorCount: errors.length 
+  });
   log('Errors to fix:', 'info', errorsList);
 
-  // Check API key
-  if (!state.apiKey) {
-    const key = loadAPIKey();
-    if (!key) {
-      log('API key missing', 'error');
-      alert('API key not found!\n\nPlease edit src/js/config.js and add your Groq API key to the API_KEYS.GROQ field.');
+  // Check API keys - load if not present
+  const currentApiKey = state.apiKeys[state.selectedProvider];
+  if (!currentApiKey && state.selectedProvider !== 'ollama') {
+    log('API key missing, attempting to load...', 'warning');
+    await loadAPIKeys();
+    
+    if (!state.apiKeys[state.selectedProvider]) {
+      log('API key still missing after load', 'error');
+      const providerNames = {
+        groq: 'Groq',
+        gemini: 'Gemini',
+        cerebras: 'Cerebras',
+        openrouter: 'OpenRouter',
+        ollama: 'Ollama'
+      };
+      alert(`${providerNames[state.selectedProvider]} API key not found!\n\nPlease configure your API key in Settings.`);
       state.isProcessing = false;
+      updateStatus('Error', 'error');
       return { success: false };
     }
   }
@@ -63,28 +106,38 @@ ${originalCode}
   log('Full prompt sent to AI:', 'debug', prompt);
 
   try {
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${state.apiKey}`
-      },
-      body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.3,
-        max_tokens: 4000,
-        stream: true
-      })
-    });
+    // Call appropriate provider service
+    let response;
+    const apiKey = state.apiKeys[state.selectedProvider];
+    const model = state.selectedModel;
 
-    if (!response.ok) {
+    switch (state.selectedProvider) {
+      case 'groq':
+        response = await GroqService.callGroqAPI(prompt, apiKey, model);
+        break;
+      case 'gemini':
+        response = await GeminiService.callGeminiAPI(prompt, apiKey, model);
+        break;
+      case 'cerebras':
+        response = await CerebrasService.callCerebrasAPI(prompt, apiKey, model);
+        break;
+      case 'openrouter':
+        response = await OpenRouterService.callOpenRouterAPI(prompt, apiKey, model);
+        break;
+      case 'ollama':
+        response = await OllamaService.callOllamaAPI(prompt, apiKey, model, state.ollamaBaseUrl);
+        break;
+      default:
+        throw new Error(`Unknown provider: ${state.selectedProvider}`);
+    }
+
+    if (!response.ok && state.selectedProvider !== 'gemini') {
       log('API failed', 'error', { status: response.status });
       throw new Error(`API error: ${response.status}`);
     }
 
     log('API response received', 'success');
-    await handleStreamingResponse(response);
+    await handleStreamingResponse(response, inputTokens);
     
     log('=== AI FIX COMPLETED ===', 'info');
     return { success: true };
@@ -98,57 +151,38 @@ ${originalCode}
   }
 }
 
-async function handleStreamingResponse(response) {
+async function handleStreamingResponse(response, inputTokens = 0) {
   log('Stream processing started', 'info');
   
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = '';
-  let fullResponse = '';
-  let chunkCount = 0;
-  
   const aiMessageBubble = addChatMessage('<div class="streaming-indicator"></div>');
+  let fullResponse = '';
   
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) {
-      log('Stream ended', 'success', { chunks: chunkCount, length: fullResponse.length });
-      log('Complete AI response:', 'info', fullResponse);
-      break;
-    }
+  try {
+    // Use provider-specific streaming handler
+    const service = getProviderService(state.selectedProvider);
+    fullResponse = await service.handleStreamingResponse(
+      response, 
+      aiMessageBubble, 
+      parseAIResponse, 
+      (parsed, raw) => formatAIResponse(parsed, raw, { inputTokens })
+    );
     
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split('\n');
-    buffer = lines.pop() || '';
+    log('Stream ended', 'success', { length: fullResponse.length });
+    log('Complete AI response:', 'info', fullResponse);
     
-    for (const line of lines) {
-      if (line.startsWith('data: ')) {
-        const data = line.slice(6);
-        if (data === '[DONE]') continue;
-        
-        try {
-          const parsed = JSON.parse(data);
-          const content = parsed.choices?.[0]?.delta?.content;
-          if (content) {
-            chunkCount++;
-            fullResponse += content;
-            state.currentAIResponse = fullResponse;
-            
-            const parsed = parseAIResponse(fullResponse);
-            aiMessageBubble.innerHTML = formatAIResponse(parsed, fullResponse);
-          }
-        } catch (e) {
-          log('Stream parse error', 'warning', { error: e.message });
-        }
-      }
-    }
+  } catch (error) {
+    log('Stream processing error', 'error', { error: error.message });
+    throw error;
   }
   
   const finalParsed = parseAIResponse(fullResponse);
   log('Response parsed', 'info', { hasCode: !!finalParsed.code });
   
   if (finalParsed.code) {
-    log('Validating fixed code', 'info');
+    log('Validating fixed code received from AI...', 'info', { 
+      codeLength: finalParsed.code.length,
+      isAutoAccept: document.getElementById('auto-accept-toggle')?.checked 
+    });
     
     // Strip inline comments that AI sometimes adds (they break JSX)
     let cleanedCode = finalParsed.code
@@ -168,25 +202,58 @@ async function handleStreamingResponse(response) {
     
     log('Fixed code from AI:', 'info', cleanedCode);
     
+    state.suggestedCode = cleanedCode;
+    
+    // 1. APPLY IMMEDIATELY (Insert into editor first as requested)
+    log('Applying AI suggestion to editor...', 'debug');
+    showDiff(state.originalCode, state.suggestedCode);
+    
+    // 2. VALIDATE SECOND (Let the pipeline run naturally)
     try {
-      // Try TypeScript preset first, fallback to React only
       try {
         Babel.transform(cleanedCode, { presets: ['typescript', 'react'] });
       } catch (tsError) {
         Babel.transform(cleanedCode, { presets: ['react'] });
       }
-      state.suggestedCode = cleanedCode;
-      updateStatus('Fix Ready', 'success');
-      showDiff(state.originalCode, state.suggestedCode);
-      log('Fixed code is valid', 'success');
+      updateStatus('Fix Applied', 'success');
+      log('Fixed code successfully processed and editor updated', 'success');
     } catch (e) {
-      updateStatus('Fix Failed', 'error');
-      addChatMessage('[WARNING] Fixed code still has errors.');
-      log('Fixed code invalid', 'error', { error: e.message });
+      updateStatus('Fix Ready (with lens)', 'warning');
+      addChatMessage('[NOTICE] AI suggestion applied, but it contains syntax errors that need manual adjustment.');
+      log('CODE VALIDATION WARNING: AI response contains syntax errors', 'warning', { 
+        error: e.message
+      });
     }
+  } else {
+    log('NO CODE FOUND IN AI RESPONSE: The AI might have only sent an explanation without a code block.', 'warning');
+    addChatMessage('[WARNING] AI did not return a valid code block. Check the chat history.');
   }
   
   state.isProcessing = false;
+}
+
+// Get provider service module
+function getProviderService(provider) {
+  switch (provider) {
+    case 'groq': return GroqService;
+    case 'gemini': return GeminiService;
+    case 'cerebras': return CerebrasService;
+    case 'openrouter': return OpenRouterService;
+    case 'ollama': return OllamaService;
+    default: throw new Error(`Unknown provider: ${provider}`);
+  }
+}
+
+// Export models for UI
+export function getAvailableModels(provider) {
+  switch (provider) {
+    case 'groq': return GroqService.GROQ_MODELS;
+    case 'gemini': return GeminiService.GEMINI_MODELS;
+    case 'cerebras': return CerebrasService.CEREBRAS_MODELS;
+    case 'openrouter': return OpenRouterService.OPENROUTER_MODELS;
+    case 'ollama': return OllamaService.OLLAMA_LOCAL_MODELS;
+    default: return [];
+  }
 }
 
 export function updateStatus(text, type = 'success') {

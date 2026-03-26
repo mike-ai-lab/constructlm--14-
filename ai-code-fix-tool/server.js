@@ -30,11 +30,15 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // API endpoint to get the API key
+  // API endpoint to get the API keys
   if (req.url === '/api/config') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
-      GROQ_API_KEY: process.env.VITE_GROQ_API_KEY || ''
+      GROQ_API_KEY: process.env.VITE_GROQ_API_KEY || '',
+      GEMINI_API_KEY: process.env.VITE_GEMINI_API_KEY || '',
+      CEREBRAS_API_KEY: process.env.VITE_CEREBRAS_API_KEY || '',
+      OPENROUTER_API_KEY: process.env.VITE_OPENROUTER_API_KEY || '',
+      OLLAMA_API_KEY: process.env.VITE_OLLAMA_API_KEY || ''
     }));
     return;
   }
@@ -91,8 +95,12 @@ server.listen(PORT, () => {
   console.log('========================================');
   console.log(`Server running at http://localhost:${PORT}/`);
   console.log('');
-  console.log('API Key loaded from .env.local:');
+  console.log('API Keys loaded from .env.local:');
   console.log(process.env.VITE_GROQ_API_KEY ? '✓ Groq API Key found' : '✗ Groq API Key NOT found');
+  console.log(process.env.VITE_GEMINI_API_KEY ? '✓ Gemini API Key found' : '✗ Gemini API Key NOT found');
+  console.log(process.env.VITE_CEREBRAS_API_KEY ? '✓ Cerebras API Key found' : '✗ Cerebras API Key NOT found');
+  console.log(process.env.VITE_OPENROUTER_API_KEY ? '✓ OpenRouter API Key found' : '✗ OpenRouter API Key NOT found');
+  console.log(process.env.VITE_OLLAMA_API_KEY ? '✓ Ollama API Key found' : '✗ Ollama API Key NOT found');
   console.log('');
   console.log('Press Ctrl+C to stop');
   console.log('========================================');

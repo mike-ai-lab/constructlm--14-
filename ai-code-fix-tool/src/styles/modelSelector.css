@@ -1,0 +1,365 @@
+/* Model Selector Dropdown */
+
+.model-dropdown {
+  position: fixed;
+  display: none;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  width: 420px;
+  max-height: 600px;
+  overflow-y: auto;
+  z-index: 10001;
+  animation: dropdownSlide 0.2s ease-out;
+}
+
+.dark-theme .model-dropdown {
+  background: #1a1a1a;
+  border-color: #333;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes dropdownSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.model-dropdown::-webkit-scrollbar {
+  width: 8px;
+}
+
+.model-dropdown::-webkit-scrollbar-track {
+  background: #f3f4f6;
+}
+
+.dark-theme .model-dropdown::-webkit-scrollbar-track {
+  background: #262626;
+}
+
+.model-dropdown::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+.dark-theme .model-dropdown::-webkit-scrollbar-thumb {
+  background: #404040;
+}
+
+.model-dropdown-header {
+  padding: 16px 18px;
+  border-bottom: 1px solid #e5e7eb;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  position: sticky;
+  top: 0;
+  background: white;
+  z-index: 1;
+}
+
+.dark-theme .model-dropdown-header {
+  background: #1a1a1a;
+  border-color: #333;
+  color: #f0f0f0;
+}
+
+.model-provider-section {
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.dark-theme .model-provider-section {
+  border-color: #262626;
+}
+
+.model-provider-section:last-child {
+  border-bottom: none;
+}
+
+.model-provider-section.active .model-provider-header {
+  background: #f9fafb;
+}
+
+.dark-theme .model-provider-section.active .model-provider-header {
+  background: #262626;
+}
+
+.model-provider-header {
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  user-select: none;
+}
+
+.dark-theme .model-provider-header {
+  color: #d1d5db;
+}
+
+.model-provider-header:hover {
+  background: #f9fafb;
+}
+
+.dark-theme .model-provider-header:hover {
+  background: #262626;
+}
+
+.model-provider-header .chevron {
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.model-provider-header.expanded .chevron {
+  transform: rotate(90deg);
+}
+
+.model-count {
+  margin-left: auto;
+  font-size: 11px;
+  padding: 2px 8px;
+  background: #e5e7eb;
+  color: #6b7280;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.dark-theme .model-count {
+  background: #333;
+  color: #9ca3af;
+}
+
+.model-provider-models {
+  display: none;
+  padding: 4px 0;
+}
+
+.model-option {
+  padding: 10px 18px 10px 40px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border-left: 3px solid transparent;
+}
+
+.model-option:hover {
+  background: #f9fafb;
+  border-left-color: #3b82f6;
+}
+
+.dark-theme .model-option:hover {
+  background: #262626;
+}
+
+.model-option.selected {
+  background: #eff6ff;
+  border-left-color: #3b82f6;
+}
+
+.dark-theme .model-option.selected {
+  background: #1e3a5f;
+}
+
+.model-option-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #111827;
+  margin-bottom: 4px;
+}
+
+.dark-theme .model-option-name {
+  color: #f0f0f0;
+}
+
+.model-option.selected .model-option-name {
+  color: #1e40af;
+  font-weight: 600;
+}
+
+.dark-theme .model-option.selected .model-option-name {
+  color: #60a5fa;
+}
+
+.model-option-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.model-option-context {
+  font-size: 11px;
+  color: #6b7280;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.dark-theme .model-option-context {
+  color: #9ca3af;
+}
+
+.mini-badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.mini-badge.vision {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.dark-theme .mini-badge.vision {
+  background: #1e3a5f;
+  color: #60a5fa;
+}
+
+.mini-badge.text {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+.dark-theme .mini-badge.text {
+  background: #312e81;
+  color: #a5b4fc;
+}
+
+.mini-badge.multimodal {
+  background: #fce7f3;
+  color: #9f1239;
+}
+
+.dark-theme .mini-badge.multimodal {
+  background: #4a1a2c;
+  color: #f9a8d4;
+}
+
+.mini-badge.fast {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.dark-theme .mini-badge.fast {
+  background: #064e3b;
+  color: #6ee7b7;
+}
+
+.mini-badge.reasoning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.dark-theme .mini-badge.reasoning {
+  background: #451a03;
+  color: #fcd34d;
+}
+
+.mini-badge.local {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.dark-theme .mini-badge.local {
+  background: #312e81;
+  color: #a5b4fc;
+}
+
+.mini-badge.cloud {
+  background: #dbeafe;
+  color: #075985;
+}
+
+.dark-theme .mini-badge.cloud {
+  background: #0c4a6e;
+  color: #7dd3fc;
+}
+
+.mini-badge.general,
+.mini-badge.versatile {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.dark-theme .mini-badge.general,
+.dark-theme .mini-badge.versatile {
+  background: #333;
+  color: #9ca3af;
+}
+
+.mini-badge.safety,
+.mini-badge.guard,
+.mini-badge.moderation {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.dark-theme .mini-badge.safety,
+.dark-theme .mini-badge.guard,
+.dark-theme .mini-badge.moderation {
+  background: #4a1a1a;
+  color: #fca5a5;
+}
+
+.mini-badge.speech,
+.mini-badge.transcription {
+  background: #fce7f3;
+  color: #831843;
+}
+
+.dark-theme .mini-badge.speech,
+.dark-theme .mini-badge.transcription {
+  background: #4a1a2c;
+  color: #f9a8d4;
+}
+
+.mini-badge.agents {
+  background: #fef3c7;
+  color: #78350f;
+}
+
+.dark-theme .mini-badge.agents {
+  background: #451a03;
+  color: #fcd34d;
+}
+
+.mini-badge.compact {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+.dark-theme .mini-badge.compact {
+  background: #312e81;
+  color: #a5b4fc;
+}
+
+.mini-badge.coding {
+  background: #d1fae5;
+  color: #064e3b;
+}
+
+.dark-theme .mini-badge.coding {
+  background: #064e3b;
+  color: #6ee7b7;
+}
+
+.mini-badge.embedding {
+  background: #f3e8ff;
+  color: #6b21a8;
+}
+
+.dark-theme .mini-badge.embedding {
+  background: #3b0764;
+  color: #d8b4fe;
+}

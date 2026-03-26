@@ -1,0 +1,65 @@
+{
+  "customDevices": [
+    {
+      "id": "20001",
+      "name": "Desktop 1440",
+      "width": 1440,
+      "height": 900,
+      "deviceScaleFactor": 1,
+      "userAgent": "desktop"
+    },
+    {
+      "id": "20002",
+      "name": "iPhone 15 Pro Max",
+      "width": 430,
+      "height": 932,
+      "deviceScaleFactor": 3,
+      "userAgent": "mobile"
+    },
+    {
+      "id": "20003",
+      "name": "Samsung Galaxy S24 Ultra",
+      "width": 412,
+      "height": 915,
+      "deviceScaleFactor": 3,
+      "userAgent": "mobile"
+    },
+    {
+      "id": "20004",
+      "name": "iPhone X",
+      "width": 375,
+      "height": 812,
+      "deviceScaleFactor": 3,
+      "userAgent": "mobile"
+    },
+    {
+      "id": "20005",
+      "name": "iPhone 12 Pro",
+      "width": 390,
+      "height": 844,
+      "deviceScaleFactor": 3,
+      "userAgent": "mobile"
+    }
+  ],
+  "suites": [
+    {
+      "id": "default",
+      "name": "Default",
+      "devices": [
+        "10017",
+        "10007"
+      ]
+    },
+    {
+      "id": "custom-main-suite",
+      "name": "Main Responsive Set",
+      "devices": [
+        "20001",
+        "20002",
+        "20003",
+        "20004",
+        "20005"
+      ]
+    }
+  ]
+}

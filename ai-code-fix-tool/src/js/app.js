@@ -1,8 +1,8 @@
 // Main application entry point - MODERN INTERFACE WITH MONACO
-import { state, loadAPIKey } from './state.js';
+import { state, loadAPIKeys } from './state.js';
 // import { log, toggleDebugWindow, clearDebugLog, copyDebugLog } from './logger.js'; // DEBUG WINDOW - Commented out
 import { log } from './logger.js';
-import { initializeMonaco, getEditorValue, setEditorValue, setEditorTheme, goToLine } from './monacoEditor.js';
+import { initializeMonaco, getEditorValue, setEditorValue, setEditorTheme, goToLine, setAutoRun, getAutoRun, setAutoRunCallback, setEditorMarkers } from './monacoEditor.js';
 import { 
   updateLineNumbers, 
   syncLineNumbersScroll, 
@@ -18,6 +18,13 @@ import { addChatMessage, clearChat } from './chat.js';
 import { startAIFix, updateStatus } from './aiService.js';
 import { acceptFix, rejectFix, acceptAllChanges, rejectAllChanges } from './diff.js';
 import { renderPreview, clearPreview, initializePreview } from './preview.js';
+import { openSettings, closeSettings, initializeProviderBadge } from './settings.js';
+import { initializeModelSelector, updateModelBadge } from './modelSelector.js';
+
+// Debug history storage
+let debugHistory = [];
+let currentConsoleTab = 'problems'; // 'problems' or 'debug'
+let currentWorkflowId = null; // Track current workflow for grouping
 
 // Console log function - VS Code style Problems panel
 function logToConsole(message, type = 'info') {
@@ -42,39 +49,71 @@ function displayErrorsInConsole(errors) {
   consoleLog.innerHTML = '';
   
   if (errors.length === 0) {
-    consoleLog.innerHTML = '<div style="opacity: 0.6; color: #34d399;">[✓] No problems found</div>';
+    consoleLog.innerHTML = '<div style="opacity: 0.6; color: #34d399;">[OK] No problems found</div>';
     return;
   }
+  
+  // Add header with count
+  const header = document.createElement('div');
+  header.style.cssText = `
+    padding: 8px;
+    margin-bottom: 8px;
+    background: rgba(239, 68, 68, 0.1);
+    border-left: 3px solid #ef4444;
+    font-weight: 700;
+    font-size: 11px;
+    color: #f87171;
+  `;
+  header.textContent = `[ERR] Found ${errors.length} problem${errors.length > 1 ? 's' : ''}`;
+  consoleLog.appendChild(header);
   
   errors.forEach((err, index) => {
     const errorEntry = document.createElement('div');
     errorEntry.style.cssText = `
-      padding: 6px 8px;
+      padding: 6px 8px 6px 20px;
       margin-bottom: 2px;
       cursor: pointer;
       border-left: 3px solid #ef4444;
-      background: rgba(239, 68, 68, 0.1);
+      background: rgba(239, 68, 68, 0.05);
       font-size: 11px;
       line-height: 1.4;
       transition: background 0.2s;
+      position: relative;
     `;
     
+    // Add tree connector
     errorEntry.innerHTML = `
+      <div style="
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 20px;
+        display: flex;
+        align-items: center;
+      ">
+        <div style="
+          width: 12px;
+          height: 1px;
+          background: rgba(239, 68, 68, 0.3);
+          margin-left: 3px;
+        "></div>
+      </div>
       <div style="display: flex; align-items: start; gap: 8px;">
-        <span style="color: #ef4444; font-weight: bold; flex-shrink: 0;">✗</span>
+        <span style="color: #ef4444; font-weight: bold; flex-shrink: 0; font-family: monospace;">[${index + 1}]</span>
         <div style="flex: 1;">
-          <div style="color: #f87171; font-weight: 500;">Line ${err.line}:${err.column}</div>
-          <div style="color: #d1d5db; margin-top: 2px;">${err.message.split('\n')[0]}</div>
+          <div style="color: #f87171; font-weight: 500; margin-bottom: 2px;">Line ${err.line}:${err.column}</div>
+          <div style="color: #d1d5db; font-size: 10px;">${err.message.split('\n')[0]}</div>
         </div>
       </div>
     `;
     
-    // Click to navigate to error line
+    // Click to navigate to error line and column
     errorEntry.addEventListener('click', () => {
-      goToLine(err.line);
+      goToLine(err.line, err.column);
       errorEntry.style.background = 'rgba(239, 68, 68, 0.2)';
       setTimeout(() => {
-        errorEntry.style.background = 'rgba(239, 68, 68, 0.1)';
+        errorEntry.style.background = 'rgba(239, 68, 68, 0.05)';
       }, 300);
     });
     
@@ -83,7 +122,7 @@ function displayErrorsInConsole(errors) {
     });
     
     errorEntry.addEventListener('mouseleave', () => {
-      errorEntry.style.background = 'rgba(239, 68, 68, 0.1)';
+      errorEntry.style.background = 'rgba(239, 68, 68, 0.05)';
     });
     
     consoleLog.appendChild(errorEntry);
@@ -98,12 +137,232 @@ function clearConsole() {
   }
 }
 
+// Add debug log entry
+function addDebugLog(action, details, status = 'info', level = 0) {
+  const timestamp = new Date().toLocaleTimeString();
+  const entry = {
+    time: timestamp,
+    action: action,
+    details: details,
+    status: status, // 'info', 'success', 'error', 'warning'
+    level: level, // 0 = root, 1 = child, 2 = grandchild
+    workflowId: currentWorkflowId
+  };
+  
+  debugHistory.push(entry);
+  
+  // Update debug log display if it's the active tab
+  if (currentConsoleTab === 'debug') {
+    displayDebugLogs();
+  }
+}
+
+// Start a new workflow (creates a visual break)
+function startWorkflow(workflowName) {
+  currentWorkflowId = Date.now();
+  addDebugLog(workflowName, 'Workflow started', 'info', 0);
+}
+
+// End current workflow
+function endWorkflow(workflowName, success = true) {
+  if (currentWorkflowId) {
+    addDebugLog(workflowName, 'Workflow completed', success ? 'success' : 'error', 0);
+    currentWorkflowId = null;
+  }
+}
+
+// Display debug logs
+function displayDebugLogs() {
+  const debugLog = document.getElementById('debug-log');
+  if (!debugLog) return;
+  
+  if (debugHistory.length === 0) {
+    debugLog.innerHTML = '<div style="opacity: 0.6; color: #9ca3af;">No debug logs yet</div>';
+    return;
+  }
+  
+  debugLog.innerHTML = '';
+  
+  let lastWorkflowId = null;
+  
+  debugHistory.forEach((entry, index) => {
+    // Add visual break between workflows
+    if (entry.workflowId !== lastWorkflowId && lastWorkflowId !== null) {
+      const separator = document.createElement('div');
+      separator.style.cssText = `
+        height: 1px;
+        background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.1), transparent);
+        margin: 12px 0;
+      `;
+      debugLog.appendChild(separator);
+    }
+    lastWorkflowId = entry.workflowId;
+    
+    const logEntry = document.createElement('div');
+    const indent = entry.level * 20;
+    const isRoot = entry.level === 0;
+    
+    logEntry.style.cssText = `
+      margin-bottom: ${isRoot ? '8px' : '4px'};
+      margin-left: ${indent}px;
+      padding: ${isRoot ? '10px' : '6px'} 10px;
+      background: ${isRoot ? 'rgba(255, 255, 255, 0.05)' : 'rgba(255, 255, 255, 0.02)'};
+      border-radius: 4px;
+      border-left: 3px solid ${getStatusColor(entry.status)};
+      position: relative;
+    `;
+    
+    // Add tree connector for child items
+    let treeConnector = '';
+    if (entry.level > 0) {
+      treeConnector = `
+        <div style="
+          position: absolute;
+          left: -${indent}px;
+          top: 0;
+          bottom: 0;
+          width: ${indent}px;
+          display: flex;
+          align-items: center;
+        ">
+          <div style="
+            width: 100%;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            margin-left: 10px;
+          "></div>
+        </div>
+      `;
+    }
+    
+    const statusSymbol = getStatusSymbol(entry.status);
+    const statusColor = getStatusColor(entry.status);
+    
+    logEntry.innerHTML = `
+      ${treeConnector}
+      <div style="display: flex; align-items: start; gap: 8px;">
+        <span style="color: ${statusColor}; font-weight: bold; flex-shrink: 0; font-family: monospace;">${statusSymbol}</span>
+        <div style="flex: 1;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <span style="color: #e5e7eb; font-weight: ${isRoot ? '700' : '500'}; font-size: ${isRoot ? '12px' : '11px'};">${entry.action}</span>
+            <span style="color: #6b7280; font-size: 9px; font-family: monospace;">${entry.time}</span>
+          </div>
+          ${entry.details ? `
+            <div style="color: #9ca3af; font-size: 10px; line-height: 1.5; font-family: 'JetBrains Mono', monospace;">
+              ${formatDetails(entry.details)}
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    `;
+    
+    debugLog.appendChild(logEntry);
+  });
+  
+  debugLog.scrollTop = debugLog.scrollHeight;
+}
+
+function formatDetails(details) {
+  if (typeof details === 'object') {
+    return '<pre style="margin: 4px 0 0 0; padding: 6px; background: rgba(0,0,0,0.3); border-radius: 3px; overflow-x: auto;">' + 
+           JSON.stringify(details, null, 2) + 
+           '</pre>';
+  }
+  return details;
+}
+
+function getStatusSymbol(status) {
+  switch(status) {
+    case 'success': return '[OK]';
+    case 'error': return '[ERR]';
+    case 'warning': return '[WARN]';
+    default: return '[INFO]';
+  }
+}
+
+function getStatusColor(status) {
+  switch(status) {
+    case 'success': return '#34d399';
+    case 'error': return '#ef4444';
+    case 'warning': return '#fbbf24';
+    default: return '#60a5fa';
+  }
+}
+
+// Clear debug logs
+function clearDebugLogs() {
+  debugHistory = [];
+  currentWorkflowId = null;
+  displayDebugLogs();
+}
+
+// Copy debug logs to clipboard
+function copyDebugLogs() {
+  if (debugHistory.length === 0) {
+    return;
+  }
+  
+  let text = '========================================\n';
+  text += 'DEBUG LOG HISTORY\n';
+  text += '========================================\n\n';
+  
+  let lastWorkflowId = null;
+  
+  debugHistory.forEach((entry, index) => {
+    if (entry.workflowId !== lastWorkflowId && lastWorkflowId !== null) {
+      text += '\n' + '='.repeat(50) + '\n\n';
+    }
+    lastWorkflowId = entry.workflowId;
+    
+    const indent = '  '.repeat(entry.level);
+    text += `${indent}[${entry.time}] ${entry.status.toUpperCase()}: ${entry.action}\n`;
+    if (entry.details) {
+      const detailsStr = typeof entry.details === 'object' ? 
+        JSON.stringify(entry.details, null, 2) : 
+        entry.details;
+      text += `${indent}  ${detailsStr}\n`;
+    }
+    text += '\n';
+  });
+  
+  navigator.clipboard.writeText(text);
+}
+
+// Switch console tabs
+function switchConsoleTab(tab) {
+  currentConsoleTab = tab;
+  
+  const problemsTab = document.getElementById('problems-tab');
+  const debugTab = document.getElementById('debug-tab');
+  const consoleLog = document.getElementById('console-log');
+  const debugLog = document.getElementById('debug-log');
+  const copyDebugBtn = document.getElementById('copy-debug-btn');
+  
+  if (tab === 'problems') {
+    problemsTab?.classList.add('active');
+    debugTab?.classList.remove('active');
+    if (consoleLog) consoleLog.style.display = 'block';
+    if (debugLog) debugLog.style.display = 'none';
+    if (copyDebugBtn) copyDebugBtn.style.display = 'none';
+  } else {
+    problemsTab?.classList.remove('active');
+    debugTab?.classList.add('active');
+    if (consoleLog) consoleLog.style.display = 'none';
+    if (debugLog) debugLog.style.display = 'block';
+    if (copyDebugBtn) copyDebugBtn.style.display = 'flex';
+    displayDebugLogs();
+  }
+}
+
 // Main error detection function
 function detectErrors() {
+  startWorkflow('ERROR DETECTION');
   log('=== DETECT ERRORS STARTED ===', 'info');
   
   const code = getEditorValue();
   state.originalCode = code;
+  
+  addDebugLog('Code Analysis', `${code.length} chars, ${code.split('\n').length} lines`, 'info', 1);
   
   log('Code analysis', 'debug', { 
     chars: code.length, 
@@ -121,8 +380,12 @@ function detectErrors() {
     updateStatus('Valid', 'success');
     displayErrorsInConsole([]);
     displayErrors([]);
-    document.getElementById('fix-btn').disabled = true;
+    setEditorMarkers([]);
+    const panelFixBtn = document.getElementById('panel-fix-btn');
+    if (panelFixBtn) panelFixBtn.style.display = 'none';
     log('Code is valid', 'success');
+    addDebugLog('Validation Result', 'Code is valid - no errors found', 'success', 1);
+    endWorkflow('ERROR DETECTION', true);
   } else {
     updateStatus(`${errors.length} Error(s)`, 'error');
     
@@ -132,10 +395,24 @@ function detectErrors() {
       message: e.message.split('\n')[0]
     })));
     
+    addDebugLog('Validation Result', `Found ${errors.length} error(s)`, 'error', 1);
+    
+    // Log each error as a child
+    errors.slice(0, 3).forEach((err, idx) => {
+      addDebugLog(`Error ${idx + 1}`, `Line ${err.line}:${err.column} - ${err.message.split('\n')[0].substring(0, 60)}...`, 'error', 2);
+    });
+    
+    if (errors.length > 3) {
+      addDebugLog('Additional Errors', `${errors.length - 3} more error(s) not shown`, 'warning', 2);
+    }
+    
     // Display in VS Code style console
     displayErrorsInConsole(errors);
     displayErrors(errors);
-    document.getElementById('fix-btn').disabled = false;
+    setEditorMarkers(errors);
+    const panelFixBtn = document.getElementById('panel-fix-btn');
+    if (panelFixBtn) panelFixBtn.style.display = 'flex';
+    endWorkflow('ERROR DETECTION', false);
   }
   
   log('=== DETECT ERRORS COMPLETED ===', 'info');
@@ -148,17 +425,45 @@ window.autoDetectErrorsCallback = function() {
 
 // Main AI fix function
 async function handleAIFix() {
-  const fixBtn = document.getElementById('fix-btn');
-  fixBtn.disabled = true;
+  const fixBtn = document.getElementById('panel-fix-btn');
   
-  // Ensure API key is loaded
-  if (!state.apiKey) {
-    await loadAPIKey();
+  // If no errors detected yet, detect them first
+  if (state.errors.length === 0) {
+    detectErrors();
+    // Wait a bit for detection to complete
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // If still no errors, show message
+    if (state.errors.length === 0) {
+      alert('No errors detected! Your code is valid.');
+      return;
+    }
   }
   
-  await startAIFix(state.errors, state.originalCode);
+  if (fixBtn) fixBtn.disabled = true;
   
-  fixBtn.disabled = false;
+  startWorkflow('AI FIX');
+  addDebugLog('AI Fix Request', `Attempting to fix ${state.errors.length} error(s)`, 'info', 1);
+  
+  // Ensure API keys are loaded
+  const currentApiKey = state.apiKeys[state.selectedProvider];
+  if (!currentApiKey && state.selectedProvider !== 'ollama') {
+    addDebugLog('API Key Check', 'Loading API keys...', 'info', 2);
+    await loadAPIKeys();
+  } else {
+    addDebugLog('API Key Check', 'API key already loaded', 'success', 2);
+  }
+  
+  try {
+    await startAIFix(state.errors, state.originalCode);
+    addDebugLog('AI Response', 'Successfully received AI suggestions', 'success', 1);
+    endWorkflow('AI FIX', true);
+  } catch (error) {
+    addDebugLog('AI Response', error.message, 'error', 1);
+    endWorkflow('AI FIX', false);
+  }
+  
+  if (fixBtn) fixBtn.disabled = false;
 }
 
 // Tab switching (Editor/Preview)
@@ -245,6 +550,17 @@ async function renderReactPreview() {
   }
 }
 
+// Auto-run preview update (called from Monaco editor)
+function autoUpdatePreview() {
+  const previewTab = document.getElementById('previewTab');
+  const isPreviewActive = previewTab && previewTab.classList.contains('active');
+  
+  // Only auto-update if preview tab is active
+  if (isPreviewActive) {
+    renderReactPreview();
+  }
+}
+
 function switchToPreview() {
   const editorTab = document.getElementById('editorTab');
   const previewTab = document.getElementById('previewTab');
@@ -315,11 +631,20 @@ function switchToPreview() {
 function toggleChatPanel() {
   const chatPanel = document.getElementById('chat-panel');
   const toggleText = document.getElementById('chat-toggle-text');
+  const app = document.getElementById('app');
   
   if (!chatPanel) return;
   
   chatPanel.classList.toggle('collapsed');
   state.chatPanelVisible = !chatPanel.classList.contains('collapsed');
+  
+  if (app) {
+    if (state.chatPanelVisible) {
+      app.classList.add('sidebar-active');
+    } else {
+      app.classList.remove('sidebar-active');
+    }
+  }
   
   if (toggleText) {
     toggleText.textContent = state.chatPanelVisible ? 'Hide Chat' : 'Show Chat';
@@ -410,18 +735,29 @@ function setupChatInput() {
 
 // Attach event listeners
 function attachEventListeners() {
-  // Header buttons
-  const detectBtn = document.getElementById('detect-errors-btn');
-  const fixBtn = document.getElementById('fix-btn');
+  // Header and Global buttons
+  const panelFixBtn = document.getElementById('panel-fix-btn');
   const toggleChatBtn = document.getElementById('toggle-chat');
-  // const debugBtn = document.getElementById('debug-log-btn'); // DEBUG WINDOW - Commented out
+  const settingsBtn = document.getElementById('settings-btn');
   const themeBtn = document.getElementById('themeToggle');
+  const autoRunToggle = document.getElementById('auto-run-toggle');
   
-  if (detectBtn) detectBtn.addEventListener('click', detectErrors);
-  if (fixBtn) fixBtn.addEventListener('click', handleAIFix);
+  if (panelFixBtn) panelFixBtn.addEventListener('click', handleAIFix);
   if (toggleChatBtn) toggleChatBtn.addEventListener('click', toggleChatPanel);
+  if (settingsBtn) settingsBtn.addEventListener('click', openSettings);
+  if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
+  if (toggleChatBtn) toggleChatBtn.addEventListener('click', toggleChatPanel);
+  if (settingsBtn) settingsBtn.addEventListener('click', openSettings);
   // if (debugBtn) debugBtn.addEventListener('click', toggleDebugWindow); // DEBUG WINDOW - Commented out
   if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
+  
+  // Auto-run toggle
+  if (autoRunToggle) {
+    autoRunToggle.addEventListener('change', (e) => {
+      setAutoRun(e.target.checked);
+      addDebugLog('Auto-Run', e.target.checked ? 'Enabled' : 'Disabled', 'info', 1);
+    });
+  }
   
   // Tab buttons
   const editorTab = document.getElementById('editorTab');
@@ -468,12 +804,37 @@ function attachEventListeners() {
   // Console panel
   const consoleHeader = document.getElementById('consoleHeader');
   const clearConsoleBtn = document.getElementById('clear-console-btn');
+  const copyDebugBtn = document.getElementById('copy-debug-btn');
+  const problemsTab = document.getElementById('problems-tab');
+  const debugTab = document.getElementById('debug-tab');
   
   if (consoleHeader) consoleHeader.addEventListener('click', toggleConsolePanel);
   if (clearConsoleBtn) {
     clearConsoleBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      clearConsole();
+      if (currentConsoleTab === 'problems') {
+        clearConsole();
+      } else {
+        clearDebugLogs();
+      }
+    });
+  }
+  if (copyDebugBtn) {
+    copyDebugBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      copyDebugLogs();
+    });
+  }
+  if (problemsTab) {
+    problemsTab.addEventListener('click', (e) => {
+      e.stopPropagation();
+      switchConsoleTab('problems');
+    });
+  }
+  if (debugTab) {
+    debugTab.addEventListener('click', (e) => {
+      e.stopPropagation();
+      switchConsoleTab('debug');
     });
   }
   
@@ -502,28 +863,55 @@ function attachEventListeners() {
 
 // Initialize application
 window.addEventListener('DOMContentLoaded', async () => {
+  startWorkflow('APPLICATION INITIALIZATION');
+  
   // Initialize Monaco Editor first
+  addDebugLog('Monaco Editor', 'Loading editor...', 'info', 1);
   await initializeMonaco();
   log('Monaco Editor loaded', 'success');
+  addDebugLog('Monaco Editor', 'Editor loaded successfully', 'success', 1);
+  
+  // Set up auto-run callback for preview updates
+  setAutoRunCallback(autoUpdatePreview);
+  addDebugLog('Auto-Run', 'Preview auto-update configured', 'success', 1);
   
   // Initialize React renderer
+  addDebugLog('React Renderer', 'Initializing preview system...', 'info', 1);
   await initializePreview();
   log('=== AI Code Fix Pro V3 Initialized ===', 'info');
+  addDebugLog('React Renderer', 'Preview system ready', 'success', 1);
   
   // Load API key from server
-  await loadAPIKey();
+  addDebugLog('API Configuration', 'Loading API keys...', 'info', 1);
+  await loadAPIKeys();
+  const hasAnyKey = Object.values(state.apiKeys).some(key => key);
+  addDebugLog('API Configuration', hasAnyKey ? 'API keys loaded' : 'No API keys found', hasAnyKey ? 'success' : 'warning', 1);
+  
+  // Initialize provider badge
+  initializeProviderBadge();
+  
+  // Initialize model selector dropdown
+  initializeModelSelector();
   
   // Initialize editor with default code (Monaco already has content)
+  addDebugLog('Editor Setup', 'Initializing editor state...', 'info', 1);
   initializeEditor();
+  addDebugLog('Editor Setup', 'Editor ready', 'success', 1);
   
   // Attach all event listeners
+  addDebugLog('Event Listeners', 'Attaching event handlers...', 'info', 1);
   attachEventListeners();
+  addDebugLog('Event Listeners', 'All handlers attached', 'success', 1);
   
   // Initialize Lucide icons
   if (typeof lucide !== 'undefined') {
     lucide.createIcons();
   }
   
+  // Expose for Monaco hover commands
+  window.autoAIContextFix = handleAIFix;
+  
   log('Application ready', 'success');
+  endWorkflow('APPLICATION INITIALIZATION', true);
   logToConsole('[OK] Application initialized successfully', 'success');
 });

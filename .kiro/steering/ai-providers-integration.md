@@ -87,7 +87,7 @@ export const streamChatResponse = async (
 
 ### API Details
 - **Endpoint**: `https://generativelanguage.googleapis.com/v1/models/{model}:generateContent`
-- **Authentication**: API key in query parameter
+- **Authentication**: API key in `x-goog-api-key` header (SECURE - never in URL)
 - **Library**: `@google/genai` (lazy loaded)
 - **Protocol**: REST API with JSON response
 
@@ -115,8 +115,8 @@ const loadGoogleGenAI = async () => {
   return GoogleGenAI;
 };
 
-// REST API for better vision compatibility
-const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${key}`;
+// SECURITY: Use header-based authentication (never expose key in URL)
+const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent`;
 
 // Build content parts with images
 const parts: any[] = [{ text: systemInstruction + "\n\n" + fullPrompt }];
@@ -139,6 +139,15 @@ const requestBody = {
     maxOutputTokens: 8192,
   }
 };
+
+const response = await fetch(url, {
+  method: 'POST',
+  headers: { 
+    'Content-Type': 'application/json',
+    'x-goog-api-key': key  // API key in secure header
+  },
+  body: JSON.stringify(requestBody)
+});
 ```
 
 ### Response Handling
@@ -1429,7 +1438,7 @@ Ollama:      http://localhost:11434/api/chat (local)
 
 ### Authentication Headers
 ```typescript
-Gemini:      ?key={apiKey} (query parameter)
+Gemini:      x-goog-api-key: {apiKey} (SECURE - in header, NOT URL)
 Cerebras:    Authorization: Bearer {apiKey}
 Groq:        Authorization: Bearer {apiKey}
 OpenRouter:  Authorization: Bearer {apiKey}
