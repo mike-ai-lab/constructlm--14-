@@ -1,0 +1,306 @@
+PS C:\Users\Administrator\constructlm (14)> node test-model-availability.mjs
+[dotenv@17.3.1] injecting env (6) from .env.local -- tip: ⚡️ secrets 
+for agents: https://dotenvx.com/as2
+
+╔════════════════════════════════════════════════════════════╗       
+║         MODEL AVAILABILITY TEST SCRIPT                     ║       
+╚════════════════════════════════════════════════════════════╝       
+
+🔵 TESTING GROQ MODELS
+────────────────────────────────────────────────────────────
+Testing Llama 3.3 70B • Groq... ✓ AVAILABLE
+  Response: "OK"
+  Tokens: 47
+
+Testing Llama 3.1 8B • Groq... ✓ AVAILABLE
+  Response: "OK"
+  Tokens: 47
+
+Testing Qwen 3 32B... ✓ AVAILABLE
+  Response: "<think>
+Okay, the user wants me to say"
+  Tokens: 28
+
+Testing Llama 4 Scout 17B... ✓ AVAILABLE
+  Response: "OK"
+  Tokens: 22
+
+Testing Llama 4 Maverick 17B... ✗ FAILED
+  Error: HTTP 404: {"error":{"message":"The model `meta-llama/llama-4-maverick-17b-128e-instruct` does not exist or you do not have access to it.","type":"invalid_request_error","code":"model_not_found"}}   
+
+
+Testing GPT OSS 120B... ✓ AVAILABLE
+  Response: ""
+  Tokens: 91
+
+Testing GPT OSS Safeguard 20B... ✓ AVAILABLE
+  Response: ""
+  Tokens: 91
+
+Testing GPT OSS 20B... ✓ AVAILABLE
+  Response: ""
+  Tokens: 91
+
+Testing Llama Guard 4 12B... ✗ FAILED
+  Error: HTTP 400: {"error":{"message":"The model `meta-llama/llama-guard-4-12b` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.","type":"invalid_request_error","code":"model_decommissioned"}}
+
+
+Testing Llama Prompt Guard 86M... ✓ AVAILABLE
+  Response: "0.0006843372248113155"
+  Tokens: 0
+
+Testing Llama Prompt Guard 22M... ✓ AVAILABLE
+  Response: "0.0009794628713279963"
+  Tokens: 0
+
+🟣 TESTING CEREBRAS MODELS
+────────────────────────────────────────────────────────────
+Testing Llama 3.1 8B • Cerebras... ✓ AVAILABLE
+  Response: "OK"
+  Tokens: 47
+
+Testing GPT OSS 120B • Cerebras... ✗ FAILED
+  Error: HTTP 404: {"message":"Model gpt-oss-120b does not exist or you do not have access to it.","type":"not_found_error","param":"model","code":"model_not_found"}
+
+Testing Qwen 3 235B • Cerebras... ✓ AVAILABLE
+  Response: "OK"
+  Tokens: 20
+
+Testing ZAI GLM 4.7 • Cerebras... ✗ FAILED
+  Error: HTTP 404: {"message":"Model zai-glm-4.7 does not exist or you do not have access to it.","type":"not_found_error","param":"model","code":"model_not_found"}
+
+╔════════════════════════════════════════════════════════════╗       
+║                      TEST SUMMARY                          ║       
+╚════════════════════════════════════════════════════════════╝       
+
+Groq Models:
+  ✓ Passed: 9
+  ✗ Failed: 2
+  ⊘ Skipped: 0
+
+Cerebras Models:
+  ✓ Passed: 2
+  ✗ Failed: 2
+  ⊘ Skipped: 0
+
+Total:
+  Tested: 15/15
+  Success Rate: 73.3%
+
+⚠️  Some models failed. Check errors above for details.
+
+PS C:\Users\Administrator\constructlm (14)> node test-groq-all-models.mjs
+[dotenv@17.3.1] injecting env (6) from .env.local -- tip: ⚙️  load mu
+ltiple .env files with { path: ['.env.local', '.env'] }
+======================================================================
+Groq Model Validation Test
+======================================================================
+✓ API Key configured
+Testing 19 models
+
+▶ Testing: canopylabs/orpheus-arabic-saudi
+  Retry 1/1...
+✗ canopylabs/orpheus-arabic-saudi
+  Error: HTTP 400: {"error":{"message":"The model `canopylabs/orpheus-arabic-saudi` does not support chat completions","type":"invalid_request_error"}}
+
+▶ Testing: canopylabs/orpheus-v1-english
+  Retry 1/1...
+✗ canopylabs/orpheus-v1-english
+  Error: HTTP 400: {"error":{"message":"The model `canopylabs/orpheus-v1-english` does not support chat completions","type":"invalid_request_error"}}
+
+▶ Testing: groq/compound
+✓ groq/compound
+  Response: SUCCESS
+▶ Testing: groq/compound-mini
+✓ groq/compound-mini
+  Response: SUCCESS
+▶ Testing: llama-3.1-8b-instant
+✓ llama-3.1-8b-instant
+  Response: Achieved.
+▶ Testing: llama-3.3-70b-versatile
+✓ llama-3.3-70b-versatile
+  Response: SUCCESS
+▶ Testing: meta-llama/llama-4-maverick-17b-128e-instruct
+  Retry 1/1...
+✗ meta-llama/llama-4-maverick-17b-128e-instruct
+  Error: HTTP 404: {"error":{"message":"The model `meta-llama/llama-4-maverick-17b-128e-instruct` does not exist or you do not have access to it.","type":"invalid_request_error","code":"model_not_found"}}   
+
+▶ Testing: meta-llama/llama-4-scout-17b-16e-instruct
+✓ meta-llama/llama-4-scout-17b-16e-instruct
+  Response: SUCCESS
+▶ Testing: meta-llama/llama-guard-4-12b
+  Retry 1/1...
+✗ meta-llama/llama-guard-4-12b
+  Error: HTTP 400: {"error":{"message":"The model `meta-llama/llama-guard-4-12b` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.","type":"invalid_request_error","code":"model_decommissioned"}}
+
+▶ Testing: meta-llama/llama-prompt-guard-2-22m
+✓ meta-llama/llama-prompt-guard-2-22m
+  Response: 0.0014234328409656882
+▶ Testing: meta-llama/llama-prompt-guard-2-86m
+✓ meta-llama/llama-prompt-guard-2-86m
+  Response: 0.0005121067515574396
+▶ Testing: moonshotai/kimi-k2-instruct
+✓ moonshotai/kimi-k2-instruct
+  Response: SUCCESS
+▶ Testing: moonshotai/kimi-k2-instruct-0905
+✓ moonshotai/kimi-k2-instruct-0905
+  Response: SUCCESS
+▶ Testing: openai/gpt-oss-120b
+✓ openai/gpt-oss-120b
+  Response: SUCCESS
+▶ Testing: openai/gpt-oss-20b
+✓ openai/gpt-oss-20b
+  Response: SUCCESS
+▶ Testing: openai/gpt-oss-safeguard-20b
+✓ openai/gpt-oss-safeguard-20b
+  Response: SUCCESS
+▶ Testing: qwen/qwen3-32b
+✓ qwen/qwen3-32b
+  Response: <think>
+Okay, the user said, "Hello! Please respond with a single word: 'SUCCESS'". Let me think.
+
+F
+▶ Testing: whisper-large-v3
+  Retry 1/1...
+✗ whisper-large-v3
+  Error: HTTP 400: {"error":{"message":"The model `whisper-large-v3` 
+does not support chat completions","type":"invalid_request_error"}}  
+
+▶ Testing: whisper-large-v3-turbo
+  Retry 1/1...
+✗ whisper-large-v3-turbo
+  Error: HTTP 400: {"error":{"message":"The model `whisper-large-v3-turbo` does not support chat completions","type":"invalid_request_error"}}
+
+
+======================================================================
+Test Summary
+======================================================================
+Total:  19
+Passed: 13
+Failed: 6
+Time:   17.06s
+
+======================================================================
+Failed Models
+======================================================================
+✗ canopylabs/orpheus-arabic-saudi
+  HTTP 400: {"error":{"message":"The model `canopylabs/orpheus-arabic-saudi` does not support chat completions","type":"invalid_request_error"}}
+
+✗ canopylabs/orpheus-v1-english
+  HTTP 400: {"error":{"message":"The model `canopylabs/orpheus-v1-english` does not support chat completions","type":"invalid_request_error"}}
+
+✗ meta-llama/llama-4-maverick-17b-128e-instruct
+  HTTP 404: {"error":{"message":"The model `meta-llama/llama-4-maverick-17b-128e-instruct` does not exist or you do not have access to it.","type":"invalid_request_error","code":"model_not_found"}}
+
+✗ meta-llama/llama-guard-4-12b
+  HTTP 400: {"error":{"message":"The model `meta-llama/llama-guard-4-12b` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.","type":"invalid_request_error","code":"model_decommissioned"}}
+
+✗ meta-llama/llama-guard-4-12b
+  HTTP 400: {"error":{"message":"The model `meta-llama/llama-guard-4-12b` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.","type":"invalid_request_error","code":"model_decommissioned"}}
+✗ meta-llama/llama-guard-4-12b
+  HTTP 400: {"error":{"message":"The model `meta-llama/llama-guard-4-12b` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.","type":"invalid_request_error","code":"model_decommissioned"}}
+12b` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.","type":"invalid_request_error","code":"model_decommissioned"}}
+ to https://console.groq.com/docs/deprecations for a recommendation on which model to use instead.","type":"invalid_request_error","code":"model_decommissioned"}}
+n which model to use instead.","type":"invalid_request_error","code":"model_decommissioned"}}
+"model_decommissioned"}}
+
+✗ whisper-large-v3
+  HTTP 400: {"error":{"message":"The model `whisper-large-v3` does not support chat completions","type":"invalid_request_error"}}
+
+✗ whisper-large-v3-turbo
+  HTTP 400: {"error":{"message":"The model `whisper-large-v3-turbo` does not support chat completions","type":"invalid_request_error"}}   
+
+
+======================================================================
+✗ Some tests failed
+======================================================================
+
+PS C:\Users\Administrator\constructlm (14)>  node test-ai-providers.mjs
+[dotenv@17.3.1] injecting env (6) from .env.local -- tip: ⚙️  write t
+o custom object with { processEnv: myObject }
+
+======================================================================
+AI Provider Model Validation Test Suite
+======================================================================
+Testing all configured AI providers and models
+
+API Key Status:
+  Gemini:     ✓ Configured
+  Cerebras:   ✓ Configured
+  Groq:       ✓ Configured
+  OpenRouter: ✓ Configured
+  Ollama:     http://localhost:11434
+
+======================================================================
+Testing Google Gemini Models
+======================================================================
+▶ [Gemini] Gemini 2.5 Flash
+  Testing...
+✓ [Gemini] Gemini 2.5 Flash
+  Response: SUCCESS
+▶ [Gemini] Gemini 2.5 Flash Lite
+  Testing...
+✓ [Gemini] Gemini 2.5 Flash Lite
+  Response: SUCCESS
+
+======================================================================
+Testing Cerebras Models
+======================================================================
+▶ [Cerebras] Llama 3.1 8B
+  Testing...
+✓ [Cerebras] Llama 3.1 8B
+  Response: Success.
+
+======================================================================
+Testing Groq Models
+======================================================================
+▶ [Groq] Llama 3.3 70B Versatile
+  Testing...
+✓ [Groq] Llama 3.3 70B Versatile
+  Response: SUCCESS
+▶ [Groq] Llama 3.1 8B Instant
+  Testing...
+✓ [Groq] Llama 3.1 8B Instant
+  Response: Achieved.
+
+======================================================================
+Testing OpenRouter Models
+======================================================================
+▶ [OpenRouter] GPT OSS 20B
+  Testing...
+✓ [OpenRouter] GPT OSS 20B
+  Response: SUCCESS
+▶ [OpenRouter] GLM-4.5-Air
+  Testing...
+  Retry 1/1...
+✓ [OpenRouter] GLM-4.5-Air
+  Response: SUCCESS
+▶ [OpenRouter] Arcee Trinity Large
+  Testing...
+✓ [OpenRouter] Arcee Trinity Large
+  Response: SUCCESS
+
+======================================================================
+Testing Ollama Local Models
+======================================================================
+Note: Ollama must be running locally for these tests
+✗ Ollama is not running or not accessible
+○ [Ollama] Llama 3.1 8B
+  Ollama not running
+○ [Ollama] Mistral 7B
+  Ollama not running
+
+======================================================================
+Test Summary
+======================================================================
+Total Tests: 10
+✓ Passed:  8
+✗ Failed:  0
+○ Skipped: 2
+Duration:  16.59s
+
+======================================================================
+✓ All tests passed!
+======================================================================
+
+PS C:\Users\Administrator\constructlm (14)> 

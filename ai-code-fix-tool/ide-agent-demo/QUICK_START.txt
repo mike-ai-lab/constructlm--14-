@@ -1,0 +1,103 @@
+╔══════════════════════════════════════════════════════════════════╗
+║          🧠 REASONING DISPLAY - QUICK START GUIDE               ║
+╚══════════════════════════════════════════════════════════════════╝
+
+📍 LOCATION: ai-code-fix-tool/ide-agent-demo/ (IDE Agent Demo app)
+
+✅ WHAT'S READY:
+   • Model: arcee-ai/trinity-large-preview:free (REASONING ENABLED)
+   • Badge: Purple "🧠 THINKING" in topbar
+   • Section: Purple reasoning display in chat
+   • Logs: Console shows reasoning detection
+   • Project: 6 files with 26 bugs ready to test
+
+🚀 QUICK TEST (2 minutes):
+
+   1. Start server:
+      cd ai-code-fix-tool/ide-agent-demo
+      node server.js
+
+   2. Open app:
+      http://localhost:3001
+
+   3. Upload test project:
+      Click "⬆ Upload" → Select test_project folder
+
+   4. Configure:
+      Settings → OpenRouter → Enter API key → Save
+
+   5. Ask question:
+      "Find all security vulnerabilities in the authentication system"
+
+   6. Watch for:
+      ✓ Purple "🧠 THINKING" badge (top right, pulsing)
+      ✓ Console: "🧠 REASONING EVENT RECEIVED"
+      ✓ Purple section with reasoning text
+      ✓ Final answer below
+
+🎯 BEST TEST QUESTIONS:
+
+   Quick (30 sec):
+   • "Find all security vulnerabilities in the authentication system"
+   
+   Medium (1 min):
+   • "What are the most critical security issues in payment processing?"
+   
+   Complex (2 min):
+   • "Trace the complete checkout flow and identify all failure points"
+
+📁 FILES CREATED:
+
+   Test Project:
+   • test_project/src/auth/AuthService.js
+   • test_project/src/cart/CartService.js
+   • test_project/src/payment/PaymentProcessor.js
+   • test_project/src/models/User.js
+   • test_project/src/api/routes/orderRoutes.js
+   • test_project/src/utils/emailService.js
+
+   Documentation:
+   • TEST_QUESTIONS.md (15 test questions)
+   • SETUP_TEST_PROJECT.md (detailed setup)
+   • VERIFY_REASONING_SIGNAL.md (troubleshooting)
+   • REASONING_COMPLETE_SUMMARY.md (full summary)
+
+🔍 VERIFY CHANGES:
+
+   In server.js, search for:
+   • "arcee-ai/trinity-large-preview:free"
+   • "[SERVER] 🧠 THINKING BLOCK STARTED"
+
+   In public/index.html, search for:
+   • "reasoningBadge"
+   • "THINKING PROCESS (REASONING DETECTED)"
+
+🐛 TROUBLESHOOTING:
+
+   No reasoning?
+   → Check model in Settings
+   → Verify OpenRouter selected
+   → Test API key connection
+   → Hard refresh browser (Ctrl+Shift+R)
+
+   No badge?
+   → Clear browser cache
+   → Check console for errors
+   → Restart server
+
+   No files?
+   → Click "Clear" in sidebar
+   → Re-upload test_project folder
+
+📊 SUCCESS INDICATORS:
+
+   ✓ 6 files indexed
+   ✓ Purple badge appears when asking
+   ✓ Console shows reasoning logs
+   ✓ Purple section in chat
+   ✓ Agent uses multiple tools
+   ✓ Detailed answer provided
+
+═══════════════════════════════════════════════════════════════════
+
+Ready to test! Upload test_project and ask a question! 🎉

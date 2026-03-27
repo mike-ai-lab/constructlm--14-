@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Thinking Process Integration Test</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #0d1117;
+      color: #e6edf3;
+    }
+    h1 { color: #58a6ff; }
+    .test-section {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .test-result {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 6px;
+      font-family: monospace;
+    }
+    .pass {
+      background: rgba(63, 185, 80, 0.15);
+      border-left: 3px solid #3fb950;
+      color: #3fb950;
+    }
+    .fail {
+      background: rgba(248, 81, 73, 0.15);
+      border-left: 3px solid #f85149;
+      color: #f85149;
+    }
+    .thinking-preview {
+      background: rgba(188, 140, 255, 0.05);
+      border-left: 3px solid #bc8cff;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 6px;
+    }
+    .thinking-icon {
+      background: rgba(188, 140, 255, 0.2);
+      border: 2px solid #bc8cff;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      margin-right: 10px;
+    }
+    button {
+      background: #58a6ff;
+      color: #000;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      margin: 10px 5px;
+    }
+    button:hover {
+      background: #79bcff;
+    }
+    pre {
+      background: #0d1117;
+      padding: 15px;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🧠 Thinking Process Integration Test</h1>
+  
+  <div class="test-section">
+    <h2>Test 1: Server Reasoning Detection</h2>
+    <p>Testing if server correctly detects and extracts thinking tags...</p>
+    <button onclick="testServerDetection()">Run Test</button>
+    <div id="test1-result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>Test 2: Frontend Display Function</h2>
+    <p>Testing if addReasoning() function exists and works...</p>
+    <button onclick="testFrontendFunction()">Run Test</button>
+    <div id="test2-result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>Test 3: Event Handler</h2>
+    <p>Testing if reasoning events are properly handled...</p>
+    <button onclick="testEventHandler()">Run Test</button>
+    <div id="test3-result"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>Test 4: Visual Preview</h2>
+    <p>Preview of how thinking process will appear:</p>
+    <div class="thinking-preview">
+      <div style="display: flex; align-items: flex-start; gap: 12px;">
+        <div class="thinking-icon">🧠</div>
+        <div style="flex: 1;">
+          <div style="font-size: 10px; font-weight: 700; color: #bc8cff; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px;">
+            💭 Thinking Process
+          </div>
+          <div style="font-size: 13px; line-height: 1.7; color: #e6edf3;">
+            Let me analyze this query step by step:<br>
+            1. User is asking about project count<br>
+            2. I should search for "projects" in the codebase<br>
+            3. Then read the relevant file to count them<br>
+            4. Finally provide a specific answer with line numbers
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="test-section">
+    <h2>Test 5: Live API Test</h2>
+    <p>Test with actual OpenRouter API (requires API key):</p>
+    <input type="password" id="apiKey" placeholder="Enter OpenRouter API key" style="width: 100%; padding: 10px; background: #0d1117; border: 1px solid #30363d; color: #e6edf3; border-radius: 6px; margin: 10px 0;">
+    <button onclick="testLiveAPI()">Test Live</button>
+    <div id="test5-result"></div>
+  </div>
+
+  <script>
+    function testServerDetection() {
+      const result = document.getElementById('test1-result');
+      result.innerHTML = '<p>Testing...</p>';
+      
+      const mockResponse = `<think>
+Let me analyze this step by step:
+1. Search for projects
+2. Read the file
+3. Count items
+</think>
+
+There are 3 projects.`;
+
+      const tests = [
+        {
+          name: 'Detect <think> tags',
+          pass: mockResponse.includes('<think>') && mockResponse.includes('</think>')
+        },
+        {
+          name: 'Extract thinking content',
+          pass: mockResponse.match(/<think>([\s\S]*?)<\/think>/) !== null
+        },
+        {
+          name: 'Separate content from thinking',
+          pass: mockResponse.replace(/<think>[\s\S]*?<\/think>/g, '').trim().length > 0
+        }
+      ];
+
+      let html = '';
+      tests.forEach(test => {
+        html += `<div class="test-result ${test.pass ? 'pass' : 'fail'}">
+          ${test.pass ? '✓' : '✗'} ${test.name}
+        </div>`;
+      });
+
+      result.innerHTML = html;
+    }
+
+    function testFrontendFunction() {
+      const result = document.getElementById('test2-result');
+      result.innerHTML = '<p>Checking frontend code...</p>';
+      
+      fetch('/index.html')
+        .then(r => r.text())
+        .then(html => {
+          const tests = [
+            {
+              name: 'addReasoning function exists',
+              pass: html.includes('function addReasoning')
+            },
+            {
+              name: 'Thinking icon styling',
+              pass: html.includes('icon-thought') && html.includes('purple')
+            },
+            {
+              name: 'Thinking Process label',
+              pass: html.includes('Thinking Process')
+            },
+            {
+              name: 'Special border styling',
+              pass: html.includes('border-left:3px solid var(--purple)')
+            }
+          ];
+
+          let output = '';
+          tests.forEach(test => {
+            output += `<div class="test-result ${test.pass ? 'pass' : 'fail'}">
+              ${test.pass ? '✓' : '✗'} ${test.name}
+            </div>`;
+          });
+
+          result.innerHTML = output;
+        })
+        .catch(err => {
+          result.innerHTML = `<div class="test-result fail">✗ Error: ${err.message}</div>`;
+        });
+    }
+
+    function testEventHandler() {
+      const result = document.getElementById('test3-result');
+      result.innerHTML = '<p>Checking event handling...</p>';
+      
+      fetch('/index.html')
+        .then(r => r.text())
+        .then(html => {
+          const tests = [
+            {
+              name: 'reasoning event case exists',
+              pass: html.includes("case 'reasoning':")
+            },
+            {
+              name: 'addReasoning called on event',
+              pass: html.includes("addReasoning(data.content)")
+            },
+            {
+              name: 'Event switch statement',
+              pass: html.includes("switch(data.type)")
+            }
+          ];
+
+          let output = '';
+          tests.forEach(test => {
+            output += `<div class="test-result ${test.pass ? 'pass' : 'fail'}">
+              ${test.pass ? '✓' : '✗'} ${test.name}
+            </div>`;
+          });
+
+          result.innerHTML = output;
+        })
+        .catch(err => {
+          result.innerHTML = `<div class="test-result fail">✗ Error: ${err.message}</div>`;
+        });
+    }
+
+    async function testLiveAPI() {
+      const result = document.getElementById('test5-result');
+      const apiKey = document.getElementById('apiKey').value;
+      
+      if (!apiKey) {
+        result.innerHTML = '<div class="test-result fail">✗ Please enter an API key</div>';
+        return;
+      }
+
+      result.innerHTML = '<p>Testing with OpenRouter API...</p>';
+
+      try {
+        const response = await fetch('http://localhost:3001/api/agent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            query: 'How many projects are in this portfolio?',
+            provider: 'openrouter',
+            apiKey: apiKey,
+            strategy: 'agentic'
+          })
+        });
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let hasReasoning = false;
+        let reasoningContent = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6));
+                if (data.type === 'reasoning') {
+                  hasReasoning = true;
+                  reasoningContent = data.content;
+                }
+              } catch (e) {}
+            }
+          }
+        }
+
+        if (hasReasoning) {
+          result.innerHTML = `
+            <div class="test-result pass">✓ Reasoning detected!</div>
+            <pre>${reasoningContent.substring(0, 200)}...</pre>
+          `;
+        } else {
+          result.innerHTML = `
+            <div class="test-result fail">✗ No reasoning detected (model may not support thinking)</div>
+            <p style="font-size: 12px; color: #8b949e;">Try using: liquid/lfm-2.5-1.2b-thinking:free</p>
+          `;
+        }
+      } catch (err) {
+        result.innerHTML = `<div class="test-result fail">✗ Error: ${err.message}</div>`;
+      }
+    }
+  </script>
+</body>
+</html>

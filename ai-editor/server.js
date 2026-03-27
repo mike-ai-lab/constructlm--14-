@@ -217,25 +217,55 @@ function dependencyExtractor(matchedFiles, allFiles) {
 function contextBuilder(filesToSend, allFiles, instruction) {
   debugLogger.log(`Building context payload`)
   
-  let context = `# Modify Code
-Goal: ${instruction}
+  let context = `You are a code modification assistant. Your task is to modify existing code based on the user's instruction.
 
-Files:
+CRITICAL RULES:
+1. Return ONLY patches in the specified format
+2. Do NOT return full file contents
+3. Each patch must specify the exact line number
+4. Include enough context (old lines) to uniquely identify the location
+
+USER INSTRUCTION: ${instruction}
+
+FILES TO MODIFY:
 `
   
   for (const filePath of filesToSend) {
     const content = allFiles[filePath]
     if (!content) continue
     
-    context += `\n## ${filePath}\n\`\`\`\n${content}\n\`\`\`\n`
+    const lines = content.split('\n')
+    context += `\n## ${filePath} (${lines.length} lines)\n\`\`\`\n${content}\n\`\`\`\n`
   }
   
-  context += `\n# Return patches in this format:
-PATCH filename @@ line_number @@
-old line
-new line
+  context += `\n
+PATCH FORMAT (REQUIRED):
 
-Do not return full files.`
+PATCH filename @@ line 5 @@
+old line content that needs to be replaced
+new line content to replace it with
+
+PATCH filename @@ line 10 @@
+another old line
+another new line
+
+RULES:
+- Start each patch with "PATCH filename @@ line N @@"
+- N is the line number (1-indexed)
+- Include the old line(s) that will be replaced
+- Include the new line(s) that will replace them
+- You can have multiple patches for the same file
+- Do NOT include line numbers in the old/new content
+- Do NOT return full files, only patches
+
+EXAMPLE:
+If file.js line 5 is "const x = 1;" and you want to change it to "const x = 2;":
+
+PATCH file.js @@ line 5 @@
+const x = 1;
+const x = 2;
+
+Now generate the patches for the instruction above.`
   
   debugLogger.log(`Context payload built`, `${filesToSend.length} files, ${context.length} chars`)
   
@@ -432,14 +462,46 @@ CRITICAL RULES FOR PROJECT GENERATION:
    ❌ Button.js (no folder structure)
    ❌ Dashboard.js (no folder structure)
 
-2. FILE FORMAT - Use this exact format:
+2. ALWAYS INCLUDE README.md - First file must be README.md with:
+   - Project name and description
+   - Complete file tree structure
+   - Setup instructions
+   - Features list
+   
+   Example README.md:
+   \`\`\`markdown
+   # Project Name
+   
+   Description of the project
+   
+   ## Project Structure
+   \`\`\`
+   projectName/
+   ├── README.md
+   ├── App.js
+   ├── components/
+   │   ├── Header.js
+   │   └── Button.js
+   └── pages/
+       └── Home.js
+   \`\`\`
+   
+   ## Features
+   - Feature 1
+   - Feature 2
+   \`\`\`
+
+3. FILE FORMAT - Use this exact format:
+   FILE: projectName/README.md
+   <markdown content with tree>
+   
    FILE: projectName/folder/filename.ext
    <code content>
    
    FILE: projectName/folder2/filename2.ext
    <code content>
 
-3. COMPONENT RULES (same as single components):
+4. COMPONENT RULES (same as single components):
    - export default function ComponentName() { ... }
    - Return JSX elements only
    - Use inline styles only (no CSS imports)
@@ -447,26 +509,74 @@ CRITICAL RULES FOR PROJECT GENERATION:
    - No external libraries except React
    - CORS-enabled image URLs only
 
-4. IMPORTS - Use relative paths for local components:
+5. IMPORTS - Use relative paths for local components:
    ✅ import Button from '../components/Button';
    ✅ import { useCounter } from '../hooks/useCounter';
    ❌ import Button from 'components/Button';
    ❌ import './Button.css';
 
-5. PROJECT STRUCTURE EXAMPLES:
+6. PROJECT STRUCTURE EXAMPLES:
 
 Simple App:
+FILE: my-app/README.md
 FILE: my-app/App.js
 FILE: my-app/components/Header.js
 FILE: my-app/components/Footer.js
 
 Dashboard:
+FILE: dashboard/README.md
 FILE: dashboard/pages/Dashboard.js
 FILE: dashboard/components/Sidebar.js
 FILE: dashboard/components/MetricCard.js
 FILE: dashboard/components/Charts.js
 
-ALWAYS CREATE STRUCTURED PROJECTS WITH FOLDERS. NEVER PUT ALL FILES IN ROOT.`;
+ALWAYS START WITH README.md. ALWAYS CREATE STRUCTURED PROJECTS WITH FOLDERS. NEVER PUT ALL FILES IN ROOT.`;
+
+const PATCH_SYSTEM_PROMPT = `You are a code modification assistant that generates precise patches for existing code.
+
+CRITICAL RULES:
+
+1. RETURN ONLY PATCHES - Never return full file contents
+2. USE EXACT FORMAT - Follow the patch format exactly
+3. SPECIFY LINE NUMBERS - Each patch must have the exact line number
+4. INCLUDE CONTEXT - Show the old line(s) being replaced
+
+PATCH FORMAT:
+
+PATCH filename @@ line N @@
+old line content
+new line content
+
+EXAMPLES:
+
+Example 1: Change a single line
+PATCH Header.js @@ line 5 @@
+  return <h1>Old Title</h1>;
+  return <h1>New Title</h1>;
+
+Example 2: Add new lines
+PATCH App.js @@ line 10 @@
+  const [count, setCount] = useState(0);
+  const [count, setCount] = useState(0);
+  const [darkMode, setDarkMode] = useState(false);
+
+Example 3: Multiple changes in same file
+PATCH Button.js @@ line 3 @@
+export default function Button() {
+export default function Button({ onClick, children }) {
+
+PATCH Button.js @@ line 8 @@
+  <button>Click me</button>
+  <button onClick={onClick}>{children}</button>
+
+RULES FOR REACT COMPONENTS:
+- Maintain export default function format
+- Use inline styles only (no CSS imports)
+- Initialize all state with values
+- Return JSX elements only
+- Use relative imports for local files
+
+GENERATE ONLY PATCHES. DO NOT RETURN FULL FILES.`;
 
 /**
  * Request patches from AI model
@@ -488,7 +598,7 @@ async function aiPatchRequester(context) {
         messages: [
           {
             role: 'system',
-            content: SYSTEM_PROMPT
+            content: PATCH_SYSTEM_PROMPT
           },
           {
             role: 'user',
@@ -580,15 +690,42 @@ function patchApplier(patches, files) {
     failed: []
   }
   
+  // Helper function to resolve partial file paths
+  function resolveFilePath(partialPath, allFiles) {
+    // Try exact match first
+    if (allFiles[partialPath]) {
+      return partialPath
+    }
+    
+    // Try to find a file that ends with the partial path
+    const matchingFiles = Object.keys(allFiles).filter(fullPath => 
+      fullPath.endsWith(partialPath) || fullPath.endsWith('/' + partialPath)
+    )
+    
+    if (matchingFiles.length === 1) {
+      return matchingFiles[0]
+    }
+    
+    if (matchingFiles.length > 1) {
+      debugLogger.log(`Multiple matches for ${partialPath}:`, matchingFiles)
+      return matchingFiles[0] // Return first match
+    }
+    
+    return null
+  }
+  
   for (const patch of patches) {
     try {
-      debugLogger.log(`Applying patch to ${patch.filePath}`)
+      // Resolve the file path
+      const resolvedPath = resolveFilePath(patch.filePath, files)
       
-      const fileContent = files[patch.filePath]
-      if (!fileContent) {
+      if (!resolvedPath) {
         throw new Error(`File not found: ${patch.filePath}`)
       }
       
+      debugLogger.log(`Applying patch to ${resolvedPath}`)
+      
+      const fileContent = files[resolvedPath]
       const lines = fileContent.split('\n')
       const lineNum = patch.lineNum - 1 // Convert to 0-indexed
       
@@ -604,7 +741,7 @@ function patchApplier(patches, files) {
       if (!contextMatches) {
         debugLogger.error(`Patch failed – context mismatch at line ${patch.lineNum}`)
         results.failed.push({
-          filePath: patch.filePath,
+          filePath: resolvedPath,
           lineNum: patch.lineNum,
           reason: 'Context mismatch',
           suggestion: 'Request full file replacement'
@@ -615,11 +752,11 @@ function patchApplier(patches, files) {
       // Apply patch - remove old lines and insert new ones
       lines.splice(lineNum, patch.oldLines.length, ...patch.newLines)
       
-      files[patch.filePath] = lines.join('\n')
+      files[resolvedPath] = lines.join('\n')
       
-      debugLogger.success(`Patch applied to ${patch.filePath}`)
+      debugLogger.success(`Patch applied to ${resolvedPath}`)
       results.success.push({
-        filePath: patch.filePath,
+        filePath: resolvedPath,
         changes: patch.newLines.length
       })
     } catch (error) {
@@ -766,24 +903,47 @@ app.post("/create-project", async (req, res) => {
 
     const prompt = `Create a complete React project called "${projectFolder}" based on this request: ${instruction}
 
-CRITICAL: Generate a structured project with proper folder organization.
+CRITICAL REQUIREMENTS:
 
-Use this EXACT format for each file:
+1. FIRST FILE MUST BE README.md with:
+   - Project name and description
+   - Complete file tree structure (use tree format)
+   - Features list
+   - Setup instructions
 
-FILE: ${projectFolder}/folder/filename.ext
-<code content>
+2. Generate a structured project with proper folder organization
 
-FILE: ${projectFolder}/folder2/filename2.ext
-<code content>
+3. Use this EXACT format for each file:
 
-Example structure:
+FILE: ${projectFolder}/README.md
+# ${projectFolder}
+
+Description here
+
+## Project Structure
+\`\`\`
+${projectFolder}/
+├── README.md
+├── App.js
+├── components/
+│   ├── Header.js
+│   └── Button.js
+└── pages/
+    └── Home.js
+\`\`\`
+
+## Features
+- Feature 1
+- Feature 2
+
 FILE: ${projectFolder}/App.js
+<code content>
+
 FILE: ${projectFolder}/components/Header.js
-FILE: ${projectFolder}/components/Button.js
-FILE: ${projectFolder}/pages/Home.js
-FILE: ${projectFolder}/utils/helpers.js
+<code content>
 
 REQUIREMENTS:
+- THE VERY FIRST FILE MUST BE README.md WITH PROJECT TREE
 - Organize files into logical folders (components/, pages/, hooks/, utils/, services/)
 - Use relative imports between files (import Button from '../components/Button')
 - Every component must export default function ComponentName()
@@ -791,7 +951,9 @@ REQUIREMENTS:
 - Initialize all state with values
 - Return JSX elements only
 
-Generate the complete project structure now.`
+IMPORTANT: Start with README.md containing the complete file tree structure.
+
+Generate the complete project structure now, starting with README.md.`
 
     const response = await fetch(GROQ_ENDPOINT, {
       method: "POST",
@@ -812,7 +974,8 @@ Generate the complete project structure now.`
           }
         ],
         temperature: 0.3,
-        max_tokens: 8192
+        max_tokens: 8192,
+        stream: true
       })
     })
 
@@ -822,41 +985,93 @@ Generate the complete project structure now.`
       return res.status(response.status).json({ error: "Groq API error", status: response.status })
     }
 
-    const data = await response.json()
-    let responseText = data.choices[0].message.content.trim()
-    const usage = data.usage || {}
+    // Set up SSE headers for streaming
+    res.setHeader('Content-Type', 'text/event-stream')
+    res.setHeader('Cache-Control', 'no-cache')
+    res.setHeader('Connection', 'keep-alive')
+
+    let buffer = ''
+    let currentFile = null
+    let currentContent = ''
+    let totalTokens = 0
     
-    // Parse multi-file response
-    const fileRegex = /FILE:\s*([^\n]+)\n([\s\S]*?)(?=FILE:|$)/g
-    const parsedFiles = {}
-    let match
+    // Process the stream
+    const reader = response.body
     
-    while ((match = fileRegex.exec(responseText)) !== null) {
-      const filename = match[1].trim()
-      let content = match[2].trim()
+    for await (const chunk of reader) {
+      const text = chunk.toString()
+      const lines = text.split('\n').filter(line => line.trim() !== '')
       
-      // Remove markdown code blocks if present
-      if (content.startsWith('```')) {
-        content = content.replace(/^```(?:javascript|jsx|typescript|tsx|html|css|json)?\n?/, '').replace(/\n?```$/, '')
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6)
+          
+          if (data === '[DONE]') {
+            // Send final file if exists
+            if (currentFile && currentContent) {
+              res.write(`data: ${JSON.stringify({ 
+                type: 'file', 
+                path: currentFile, 
+                content: currentContent.trim() 
+              })}\n\n`)
+            }
+            
+            res.write(`data: ${JSON.stringify({ 
+              type: 'done',
+              usage: { total_tokens: totalTokens }
+            })}\n\n`)
+            res.end()
+            return
+          }
+          
+          try {
+            const parsed = JSON.parse(data)
+            const delta = parsed.choices?.[0]?.delta?.content || ''
+            
+            if (parsed.usage) {
+              totalTokens = parsed.usage.total_tokens || 0
+            }
+            
+            buffer += delta
+            
+            // Check for FILE: pattern
+            const fileMatch = buffer.match(/FILE:\s*([^\n]+)\n/)
+            if (fileMatch) {
+              // Send previous file if exists
+              if (currentFile && currentContent) {
+                let cleanContent = currentContent.trim()
+                if (cleanContent.startsWith('```')) {
+                  cleanContent = cleanContent.replace(/^```(?:javascript|jsx|typescript|tsx|html|css|json)?\n?/, '').replace(/\n?```$/, '')
+                }
+                
+                res.write(`data: ${JSON.stringify({ 
+                  type: 'file', 
+                  path: currentFile, 
+                  content: cleanContent 
+                })}\n\n`)
+              }
+              
+              // Start new file
+              currentFile = fileMatch[1].trim()
+              currentContent = ''
+              buffer = buffer.slice(fileMatch[0].length)
+              
+              res.write(`data: ${JSON.stringify({ 
+                type: 'file_start', 
+                path: currentFile 
+              })}\n\n`)
+            } else if (currentFile) {
+              // Accumulate content for current file
+              currentContent += delta
+            }
+            
+          } catch (e) {
+            // Ignore parse errors for incomplete chunks
+          }
+        }
       }
-      
-      parsedFiles[filename] = content.trim()
     }
     
-    if (Object.keys(parsedFiles).length === 0) {
-      return res.status(400).json({ 
-        error: "Failed to generate project structure. Please try again with more specific requirements.",
-        usage
-      })
-    }
-    
-    console.log(`Generated project with ${Object.keys(parsedFiles).length} files:`, Object.keys(parsedFiles))
-    
-    res.json({ 
-      files: parsedFiles,
-      message: `✓ Generated ${Object.keys(parsedFiles).length} files in structured project`,
-      usage
-    })
   } catch (error) {
     console.error("Create project error:", error)
     res.status(500).json({ error: error.message })

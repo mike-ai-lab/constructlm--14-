@@ -566,15 +566,33 @@ async function sendMessage() {
   addChatMessage(instruction, 'user')
   input.value = ''
   
-  // Check if this looks like a patch request (modifying existing code)
-  // Only use patches for clear modification keywords, not creation keywords
-  const isPatchRequest = /^(add|modify|update|change|fix|improve|enhance|refactor|remove|delete|replace|optimize|smooth|faster|slower|better|worse)\s+/i.test(instruction)
+  // Detect if this is a project creation request
+  const isProjectCreation = /^(create|build|generate|make|setup|scaffold|init|start|new)\s+/i.test(instruction) && 
+                           (instruction.toLowerCase().includes('project') || 
+                            instruction.toLowerCase().includes('app') ||
+                            instruction.toLowerCase().includes('dashboard') ||
+                            instruction.toLowerCase().includes('website') ||
+                            instruction.toLowerCase().includes('site') ||
+                            instruction.toLowerCase().includes('application'))
   
-  if (isPatchRequest && Object.keys(files).length > 0) {
-    // Try semantic patch approach first
+  // Check if this is a modification request (has files AND modification keywords)
+  const hasFiles = Object.keys(files).length > 0
+  const modificationKeywords = /\b(add|modify|update|change|fix|improve|enhance|refactor|remove|delete|replace|optimize|edit|adjust|tweak|revise|correct|amend)\b/i
+  const hasModificationIntent = modificationKeywords.test(instruction)
+  
+  // Check if instruction mentions specific files or components
+  const mentionsFiles = Object.keys(files).some(filePath => {
+    const fileName = filePath.split('/').pop().replace(/\.(js|jsx|ts|tsx|md)$/, '')
+    return instruction.toLowerCase().includes(fileName.toLowerCase())
+  })
+  
+  const isPatchRequest = hasFiles && (hasModificationIntent || mentionsFiles) && !isProjectCreation
+  
+  if (isPatchRequest) {
+    // Use semantic patch for modifications
     await handleSemanticPatch(instruction)
   } else {
-    // Fall back to full generation
+    // Use full generation for new projects or when no files exist
     await handleFullGeneration(instruction)
   }
 }
@@ -638,6 +656,358 @@ async function handleSemanticPatch(instruction) {
 }
 
 /**
+ * Handle streaming project creation
+ */
+async function handleStreamingProject(endpoint, payload, loadingMsg) {
+  const sendBtn = document.getElementById('sendBtn')
+  const status = document.getElementById('status')
+  
+  // Store generated files temporarily for preview
+  const generatedFiles = {}
+  
+  try {
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Request failed')
+    }
+    
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    
+    let fileCount = 0
+    const folders = new Set()
+    let projectRoot = ''
+    let currentFilePath = ''
+    let usage = null
+    
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      
+      const chunk = decoder.decode(value)
+      const lines = chunk.split('\n')
+      
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = JSON.parse(line.slice(6))
+          
+          if (data.type === 'file_start') {
+            currentFilePath = data.path
+            fileCount++
+            
+            // Track project root and folders
+            const parts = currentFilePath.split('/')
+            if (!projectRoot && parts.length > 1) {
+              projectRoot = parts[0]
+            }
+            
+            // Track actual subfolders (not project root)
+            if (parts.length > 2) {
+              folders.add(parts[1])
+            }
+            
+            // Update message with current file
+            updateChatMessage(loadingMsg, `Creating files... (${fileCount})\n\n📝 ${currentFilePath}`, 'ai')
+            logActivity(`Creating: ${currentFilePath}`, 'info')
+            
+          } else if (data.type === 'file') {
+            // Store file in temporary object for preview
+            generatedFiles[data.path] = data.content
+            
+          } else if (data.type === 'done') {
+            usage = data.usage
+            
+            // Count actual files received
+            const actualFileCount = Object.keys(generatedFiles).length
+            
+            // Build final summary
+            const folderList = folders.size > 0 ? `\nFolders: ${[...folders].sort().join(', ')}` : ''
+            let tokenInfo = ''
+            if (usage && usage.total_tokens) {
+              tokenInfo = `\n\n📊 Tokens: ${usage.total_tokens.toLocaleString()}`
+            }
+            
+            const summaryMsg = `✓ Generated ${actualFileCount} file${actualFileCount > 1 ? 's' : ''} in ${projectRoot}${folderList}${tokenInfo}\n\nReview the changes below.`
+            updateChatMessage(loadingMsg, summaryMsg, 'ai')
+            
+            // Show preview modal
+            showProjectPreview(generatedFiles, projectRoot)
+          }
+        }
+      }
+    }
+    
+  } catch (error) {
+    updateChatMessage(loadingMsg, '❌ Error: ' + error.message, 'error')
+    console.error(error)
+  } finally {
+    isEditing = false
+    sendBtn.disabled = false
+    status.textContent = 'Ready'
+    status.className = 'status ready'
+  }
+}
+
+/**
+ * Show project preview modal with accept/reject options
+ */
+function showProjectPreview(generatedFiles, projectRoot) {
+  // Create modal
+  const modal = document.createElement('div')
+  modal.className = 'project-preview-modal'
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+  `
+  
+  const content = document.createElement('div')
+  content.style.cssText = `
+    background: #1e1e1e;
+    border: 1px solid #3e3e42;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 1200px;
+    height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  `
+  
+  // Header
+  const header = document.createElement('div')
+  header.style.cssText = `
+    padding: 16px 20px;
+    border-bottom: 1px solid #3e3e42;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  `
+  header.innerHTML = `
+    <div>
+      <h3 style="margin: 0; color: #e0e0e0; font-size: 16px;">Project Preview: ${projectRoot}</h3>
+      <p style="margin: 4px 0 0 0; color: #888; font-size: 12px;">${Object.keys(generatedFiles).length} files will be added</p>
+    </div>
+    <button id="closePreview" style="background: transparent; border: none; color: #888; cursor: pointer; font-size: 24px; padding: 0; width: 32px; height: 32px;">×</button>
+  `
+  
+  // File list and preview
+  const body = document.createElement('div')
+  body.style.cssText = `
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  `
+  
+  // File list
+  const fileList = document.createElement('div')
+  fileList.style.cssText = `
+    width: 300px;
+    border-right: 1px solid #3e3e42;
+    overflow-y: auto;
+    background: #252526;
+  `
+  
+  const fileTree = buildPreviewFileTree(generatedFiles)
+  fileList.innerHTML = `
+    <div style="padding: 12px; border-bottom: 1px solid #3e3e42; color: #888; font-size: 11px; font-weight: 600; text-transform: uppercase;">Files to be added</div>
+  `
+  renderPreviewTree(fileTree, fileList, generatedFiles)
+  
+  // File preview
+  const filePreview = document.createElement('div')
+  filePreview.id = 'filePreviewContent'
+  filePreview.style.cssText = `
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    background: #1e1e1e;
+  `
+  filePreview.innerHTML = `
+    <div style="color: #888; text-align: center; padding: 40px;">
+      Select a file to preview
+    </div>
+  `
+  
+  body.appendChild(fileList)
+  body.appendChild(filePreview)
+  
+  // Footer with actions
+  const footer = document.createElement('div')
+  footer.style.cssText = `
+    padding: 16px 20px;
+    border-top: 1px solid #3e3e42;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+  `
+  footer.innerHTML = `
+    <button id="rejectProject" style="padding: 8px 16px; background: transparent; border: 1px solid #f48771; color: #f48771; border-radius: 4px; cursor: pointer; font-size: 13px;">Reject</button>
+    <button id="acceptProject" style="padding: 8px 16px; background: #0e639c; border: none; color: white; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: 500;">Accept & Add Files</button>
+  `
+  
+  content.appendChild(header)
+  content.appendChild(body)
+  content.appendChild(footer)
+  modal.appendChild(content)
+  document.body.appendChild(modal)
+  
+  // Event listeners
+  document.getElementById('closePreview').onclick = () => {
+    modal.remove()
+    logActivity('Project preview closed', 'info')
+  }
+  
+  document.getElementById('rejectProject').onclick = () => {
+    modal.remove()
+    logActivity('Project rejected', 'info')
+  }
+  
+  document.getElementById('acceptProject').onclick = () => {
+    // Add all files to workspace
+    Object.entries(generatedFiles).forEach(([path, content]) => {
+      files[path] = content
+      
+      // Auto-expand parent folders
+      const parts = path.split('/')
+      if (parts.length > 1) {
+        let folderPath = ''
+        for (let i = 0; i < parts.length - 1; i++) {
+          folderPath += (folderPath ? '/' : '') + parts[i]
+          expandedFolders.add(folderPath)
+        }
+      }
+    })
+    
+    saveFilesToStorage()
+    updateExplorer()
+    
+    // Open first file
+    const firstFile = Object.keys(generatedFiles).sort()[0]
+    if (firstFile) {
+      openFile(firstFile)
+    }
+    
+    modal.remove()
+    logActivity(`Added ${Object.keys(generatedFiles).length} files to workspace`, 'success')
+  }
+  
+  // Close on escape
+  const escHandler = (e) => {
+    if (e.key === 'Escape') {
+      modal.remove()
+      document.removeEventListener('keydown', escHandler)
+    }
+  }
+  document.addEventListener('keydown', escHandler)
+}
+
+function buildPreviewFileTree(files) {
+  const tree = { folders: {}, files: [] }
+  
+  Object.keys(files).forEach(path => {
+    const parts = path.split('/')
+    
+    if (parts.length === 1) {
+      tree.files.push(path)
+    } else {
+      let current = tree
+      for (let i = 0; i < parts.length - 1; i++) {
+        const folder = parts[i]
+        if (!current.folders[folder]) {
+          current.folders[folder] = { folders: {}, files: [] }
+        }
+        current = current.folders[folder]
+      }
+      current.files.push(path)
+    }
+  })
+  
+  return tree
+}
+
+function renderPreviewTree(tree, container, allFiles, prefix = '') {
+  // Render folders
+  Object.keys(tree.folders).sort().forEach(folderName => {
+    const folderPath = prefix ? `${prefix}/${folderName}` : folderName
+    
+    const folderDiv = document.createElement('div')
+    folderDiv.style.cssText = `
+      padding: 6px 12px;
+      color: #dcb67a;
+      font-size: 12px;
+      cursor: pointer;
+      user-select: none;
+    `
+    folderDiv.innerHTML = `📁 ${folderName}`
+    
+    const folderContents = document.createElement('div')
+    folderContents.style.paddingLeft = '16px'
+    
+    container.appendChild(folderDiv)
+    container.appendChild(folderContents)
+    
+    renderPreviewTree(tree.folders[folderName], folderContents, allFiles, folderPath)
+  })
+  
+  // Render files
+  tree.files.sort().forEach(filePath => {
+    const fileName = filePath.split('/').pop()
+    const fileDiv = document.createElement('div')
+    fileDiv.style.cssText = `
+      padding: 6px 12px;
+      color: #e0e0e0;
+      font-size: 12px;
+      cursor: pointer;
+      transition: background 0.1s;
+    `
+    fileDiv.innerHTML = `📄 ${fileName}`
+    
+    fileDiv.onmouseenter = () => {
+      fileDiv.style.background = '#2d2d30'
+    }
+    fileDiv.onmouseleave = () => {
+      fileDiv.style.background = 'transparent'
+    }
+    
+    fileDiv.onclick = () => {
+      const preview = document.getElementById('filePreviewContent')
+      const content = allFiles[filePath]
+      const ext = fileName.split('.').pop()
+      
+      preview.innerHTML = `
+        <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #3e3e42;">
+          <div style="color: #e0e0e0; font-size: 14px; font-weight: 500;">${filePath}</div>
+          <div style="color: #888; font-size: 11px; margin-top: 4px;">${content.split('\n').length} lines</div>
+        </div>
+        <pre style="margin: 0; color: #e0e0e0; font-size: 12px; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; font-family: 'Consolas', 'Monaco', monospace;">${escapeHtml(content)}</pre>
+      `
+    }
+    
+    container.appendChild(fileDiv)
+  })
+}
+
+function escapeHtml(text) {
+  const div = document.createElement('div')
+  div.textContent = text
+  return div.innerHTML
+}
+
+/**
  * Handle full code generation requests
  */
 async function handleFullGeneration(instruction) {
@@ -667,19 +1037,33 @@ async function handleFullGeneration(instruction) {
       currentFile: currentFile
     }
     
-    // If creating a new project, use /create-project endpoint
+    // If creating a new project, use /create-project endpoint with streaming
     if (isProjectCreation) {
       endpoint = 'http://localhost:5000/create-project'
+      
+      // Extract folder path if specified (e.g., "place in folder: art-portfolios")
+      const folderMatch = instruction.match(/(?:place|put|save|in|into)\s+(?:the\s+)?(?:folder|directory|path)[:\s]+([a-zA-Z0-9-_/]+)/i)
+      const targetFolder = folderMatch ? folderMatch[1] : null
+      
       // Extract project name from instruction if possible
       const nameMatch = instruction.match(/(?:create|build|generate|make)\s+(?:a\s+)?(?:new\s+)?(?:project|app|dashboard|website|site|application)?\s+(?:called|named|for)?\s+['\"]?([a-zA-Z0-9-_]+)['\"]?/i)
-      const projectName = nameMatch ? nameMatch[1] : 'my-project'
+      let projectName = nameMatch ? nameMatch[1] : 'my-project'
+      
+      // If target folder specified, use it as the project root
+      if (targetFolder) {
+        projectName = targetFolder
+      }
       
       payload = {
         projectName,
         instruction
       }
       
-      updateChatMessage(loadingMsg, 'Creating new project structure...', 'ai')
+      updateChatMessage(loadingMsg, 'Creating project structure...', 'ai')
+      
+      // Handle streaming response
+      await handleStreamingProject(endpoint, payload, loadingMsg)
+      return
     }
     
     const res = await fetch(endpoint, {

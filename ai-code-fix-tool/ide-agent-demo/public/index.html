@@ -57,18 +57,41 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-ui);height:10
   font-size:11px;color:var(--text2);
 }
 .stat-pill strong{display:block;font-size:14px;color:var(--text);font-weight:700;}
-.tree{overflow-y:auto;flex:1;padding:6px 0;}
-.tree-file{cursor:pointer;user-select:none;}
+.tree{overflow-y:auto;flex:1;padding:4px 0;user-select:none;}
+.tree-folder{margin-bottom:2px;}
+.tree-folder-header{
+  display:flex;align-items:center;gap:6px;padding:4px 8px;font-size:12px;
+  color:var(--text2);cursor:pointer;transition:.1s;border-radius:4px;
+}
+.tree-folder-header:hover{background:var(--surface3);color:var(--text);}
+.tree-folder-chevron{
+  font-size:10px;transition:transform .2s;color:var(--text3);width:12px;text-align:center;
+}
+.tree-folder-chevron.expanded{transform:rotate(90deg);}
+.tree-folder-icon{font-size:14px;flex-shrink:0;}
+.tree-folder-name{flex:1;font-weight:500;}
+.tree-folder-count{font-size:10px;color:var(--text3);background:var(--surface3);padding:1px 5px;border-radius:8px;}
+.tree-folder-children{display:none;padding-left:16px;}
+.tree-folder-children.expanded{display:block;}
+
+.tree-file{cursor:pointer;}
 .tree-file-header{
-  display:flex;align-items:center;gap:7px;padding:5px 10px;font-size:12px;
-  color:var(--text2);transition:.1s;border-left:2px solid transparent;
+  display:flex;align-items:center;gap:6px;padding:4px 8px 4px 20px;font-size:12px;
+  color:var(--text2);transition:.1s;border-left:2px solid transparent;border-radius:4px;
+  position:relative;
 }
 .tree-file-header:hover{background:var(--surface3);color:var(--text);}
-.tree-file-header.active-file{color:var(--blue);border-left-color:var(--blue);background:rgba(88,166,255,.06);}
+.tree-file-header:hover .tree-file-delete{opacity:1;}
+.tree-file-header.active-file{color:var(--blue);border-left-color:var(--blue);background:rgba(88,166,255,.08);}
 .tree-file-icon{font-size:13px;flex-shrink:0;}
 .tree-file-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.tree-file-lines{font-size:10px;color:var(--text3);}
-.tree-symbols{padding-left:24px;display:none;}
+.tree-file-lines{font-size:10px;color:var(--text3);background:var(--surface3);padding:1px 5px;border-radius:8px;}
+.tree-file-delete{
+  opacity:0;transition:.2s;cursor:pointer;padding:2px 6px;border-radius:4px;
+  font-size:11px;color:var(--text3);background:var(--surface3);
+}
+.tree-file-delete:hover{background:var(--red);color:#fff;}
+.tree-symbols{padding-left:40px;display:none;margin-top:2px;margin-bottom:4px;}
 .tree-symbols.open{display:block;}
 .tree-sym{
   display:flex;align-items:center;gap:5px;padding:3px 8px;font-size:11px;
@@ -193,6 +216,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-ui);height:10
 .typing-dot:nth-child(2){animation-delay:.2s;}
 .typing-dot:nth-child(3){animation-delay:.4s;}
 @keyframes typingPulse{0%,80%,100%{opacity:.2;}40%{opacity:1;}}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.6;}}
 
 /* ── RIGHT: CONTEXT PANEL ── */
 .right-panel{
@@ -300,21 +324,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-ui);height:10
     <div class="tab" onclick="openDebugLog()" style="color:var(--orange)">🛠️ Pipeline Log</div>
   </div>
   <div class="topbar-right">
-    <div style="display:flex;align-items:center;gap:8px;margin-right:12px;">
-      <span style="font-size:11px;color:var(--text3);">Provider:</span>
-      <select id="providerSelect" style="background:var(--surface3);border:1px solid var(--border);color:var(--text);font-size:11px;padding:3px 6px;border-radius:4px;outline:none;" onchange="updateMode()">
-        <option value="gemini">Gemini</option>
-        <option value="groq">Groq (Llama-3)</option>
-      </select>
-    </div>
-    <div class="api-key-wrap" style="display:flex;align-items:center;gap:6px;">
-      <div style="position:relative;display:flex;align-items:center;">
-        <input type="password" id="apiKeyInput" placeholder="Enter API Key…" style="width:180px;padding-right:30px;" oninput="updateMode()"/>
-        <span id="toggleKey" onclick="toggleKeyVisibility()" style="position:absolute;right:8px;cursor:pointer;font-size:12px;color:var(--text3);user-select:none;">👁️</span>
-      </div>
-      <button onclick="testKey()" id="testKeyBtn" style="background:var(--surface3);border:1px solid var(--border);color:var(--text2);font-size:10px;padding:4px 8px;border-radius:6px;cursor:pointer;">Verify</button>
-    </div>
-    <span class="badge badge-demo" id="modeBadge" style="margin-left:10px;">DEMO MODE</span>
+    <span class="badge" id="reasoningBadge" style="background:rgba(188,140,255,.15);color:var(--purple);display:none;">🧠 THINKING</span>
+    <span class="badge" id="modeBadge" style="background:rgba(63,185,80,.15);color:var(--green);">READY</span>
+    <button onclick="openSettings()" style="background:var(--surface3);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;cursor:pointer;font-size:12px;display:flex;align-items:center;gap:6px;transition:.2s;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6m5.2-13.2l-4.2 4.2m0 6l4.2 4.2M23 12h-6m-6 0H1m18.2 5.2l-4.2-4.2m0-6l4.2-4.2"/>
+      </svg>
+      Settings
+    </button>
   </div>
 </div>
 
@@ -323,12 +340,17 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-ui);height:10
 
   <!-- LEFT SIDEBAR: file tree + symbol index -->
   <div class="sidebar">
-    <div class="sidebar-header" style="justify-content:space-between">
+    <div class="sidebar-header" style="justify-content:space-between;align-items:center;">
       <span>📁 Workspace</span>
-      <label style="cursor:pointer;background:var(--blue);color:#000;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;">
-        ⬆ Upload Project
-        <input type="file" id="folderInput" webkitdirectory directory multiple style="display:none" onchange="uploadFolder(event)"/>
-      </label>
+      <div style="display:flex;gap:6px;">
+        <button onclick="clearAllFiles()" style="cursor:pointer;background:var(--surface3);color:var(--text2);border:1px solid var(--border);padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600;" title="Clear all files">
+          🗑️ Clear
+        </button>
+        <label style="cursor:pointer;background:var(--blue);color:#000;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;">
+          ⬆ Upload
+          <input type="file" id="folderInput" webkitdirectory directory multiple style="display:none" onchange="uploadFolder(event)"/>
+        </label>
+      </div>
     </div>
     <div class="stat-pills">
       <div class="stat-pill"><strong id="statFiles">—</strong>Files</div>
@@ -428,9 +450,128 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-ui);height:10
   </div>
 </div>
 
+<!-- SETTINGS MODAL -->
+<div class="file-viewer" id="settingsModal" onclick="if(event.target===this)closeSettings()">
+  <div class="viewer-box" style="width:min(600px, 90vw);max-height:85vh;">
+    <div class="viewer-header">
+      <span class="viewer-title">⚙️ Settings</span>
+      <button class="viewer-close" onclick="closeSettings()">✕</button>
+    </div>
+    <div style="padding:24px;overflow-y:auto;max-height:calc(85vh - 60px);">
+      
+      <!-- Strategy Selection -->
+      <div style="margin-bottom:24px;">
+        <label style="display:block;font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;">
+          Execution Strategy
+        </label>
+        <select id="strategySelect" style="width:100%;background:var(--surface3);border:1px solid var(--border);color:var(--text);font-size:13px;padding:10px;border-radius:6px;outline:none;cursor:pointer;">
+          <option value="semantic">Semantic Search (RAG) - Fast retrieval</option>
+          <option value="agentic">Agentic Loop - Multi-step reasoning</option>
+        </select>
+        <p style="font-size:11px;color:var(--text3);margin-top:6px;">Choose how the agent processes queries</p>
+      </div>
+
+      <!-- AI Provider Selection -->
+      <div style="margin-bottom:24px;">
+        <label style="display:block;font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;">
+          AI Provider
+        </label>
+        <select id="providerSelect" style="width:100%;background:var(--surface3);border:1px solid var(--border);color:var(--text);font-size:13px;padding:10px;border-radius:6px;outline:none;cursor:pointer;">
+          <option value="groq">Groq (Llama 3.3 70B) - Recommended</option>
+          <option value="openrouter">OpenRouter (GPT OSS 20B) - Free backup</option>
+          <option value="cerebras">Cerebras (Llama 3.1 8B) - Ultra-fast</option>
+          <option value="gemini">Google Gemini 2.5 Flash</option>
+        </select>
+        <p style="font-size:11px;color:var(--text3);margin-top:6px;">Select your preferred AI model provider</p>
+      </div>
+
+      <!-- Groq API Key -->
+      <div id="groqKeySection" style="margin-bottom:24px;">
+        <label style="display:block;font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;">
+          Groq API Key
+        </label>
+        <div style="position:relative;">
+          <input type="password" id="groqApiKey" placeholder="gsk_..." style="width:100%;background:var(--surface3);border:1px solid var(--border);color:var(--text);font-size:13px;padding:10px 40px 10px 10px;border-radius:6px;outline:none;font-family:var(--font-mono);" />
+          <button onclick="toggleVisibility('groqApiKey')" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;">👁️</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button onclick="testApiKey('groq')" id="testGroqBtn" style="flex:1;background:var(--blue);color:#000;border:none;padding:8px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">Test Connection</button>
+          <button onclick="clearApiKey('groq')" style="background:var(--surface3);color:var(--text2);border:1px solid var(--border);padding:8px 12px;border-radius:6px;font-size:12px;cursor:pointer;">Clear</button>
+        </div>
+        <p style="font-size:11px;color:var(--text3);margin-top:6px;">Get your free key at <a href="https://console.groq.com" target="_blank" style="color:var(--blue);">console.groq.com</a></p>
+      </div>
+
+      <!-- Gemini API Key -->
+      <div id="geminiKeySection" style="margin-bottom:24px;display:none;">
+        <label style="display:block;font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;">
+          Gemini API Key
+        </label>
+        <div style="position:relative;">
+          <input type="password" id="geminiApiKey" placeholder="AIza..." style="width:100%;background:var(--surface3);border:1px solid var(--border);color:var(--text);font-size:13px;padding:10px 40px 10px 10px;border-radius:6px;outline:none;font-family:var(--font-mono);" />
+          <button onclick="toggleVisibility('geminiApiKey')" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;">👁️</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button onclick="testApiKey('gemini')" id="testGeminiBtn" style="flex:1;background:var(--blue);color:#000;border:none;padding:8px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">Test Connection</button>
+          <button onclick="clearApiKey('gemini')" style="background:var(--surface3);color:var(--text2);border:1px solid var(--border);padding:8px 12px;border-radius:6px;font-size:12px;cursor:pointer;">Clear</button>
+        </div>
+        <p style="font-size:11px;color:var(--text3);margin-top:6px;">Get your key at <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--blue);">aistudio.google.com</a></p>
+      </div>
+
+      <!-- OpenRouter API Key -->
+      <div id="openrouterKeySection" style="margin-bottom:24px;display:none;">
+        <label style="display:block;font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;">
+          OpenRouter API Key
+        </label>
+        <div style="position:relative;">
+          <input type="password" id="openrouterApiKey" placeholder="sk-or-..." style="width:100%;background:var(--surface3);border:1px solid var(--border);color:var(--text);font-size:13px;padding:10px 40px 10px 10px;border-radius:6px;outline:none;font-family:var(--font-mono);" />
+          <button onclick="toggleVisibility('openrouterApiKey')" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;">👁️</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button onclick="testApiKey('openrouter')" id="testOpenrouterBtn" style="flex:1;background:var(--blue);color:#000;border:none;padding:8px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">Test Connection</button>
+          <button onclick="clearApiKey('openrouter')" style="background:var(--surface3);color:var(--text2);border:1px solid var(--border);padding:8px 12px;border-radius:6px;font-size:12px;cursor:pointer;">Clear</button>
+        </div>
+        <p style="font-size:11px;color:var(--text3);margin-top:6px;">Get your free key at <a href="https://openrouter.ai/keys" target="_blank" style="color:var(--blue);">openrouter.ai/keys</a></p>
+      </div>
+
+      <!-- Cerebras API Key -->
+      <div id="cerebrasKeySection" style="margin-bottom:24px;display:none;">
+        <label style="display:block;font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px;">
+          Cerebras API Key
+        </label>
+        <div style="position:relative;">
+          <input type="password" id="cerebrasApiKey" placeholder="csk-..." style="width:100%;background:var(--surface3);border:1px solid var(--border);color:var(--text);font-size:13px;padding:10px 40px 10px 10px;border-radius:6px;outline:none;font-family:var(--font-mono);" />
+          <button onclick="toggleVisibility('cerebrasApiKey')" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text3);cursor:pointer;font-size:16px;">👁️</button>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button onclick="testApiKey('cerebras')" id="testCerebrasBtn" style="flex:1;background:var(--blue);color:#000;border:none;padding:8px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">Test Connection</button>
+          <button onclick="clearApiKey('cerebras')" style="background:var(--surface3);color:var(--text2);border:1px solid var(--border);padding:8px 12px;border-radius:6px;font-size:12px;cursor:pointer;">Clear</button>
+        </div>
+        <p style="font-size:11px;color:var(--text3);margin-top:6px;">Get your key at <a href="https://cloud.cerebras.ai/" target="_blank" style="color:var(--blue);">cloud.cerebras.ai</a></p>
+      </div>
+
+      <!-- Save Button -->
+      <div style="border-top:1px solid var(--border);padding-top:20px;margin-top:20px;">
+        <button onclick="saveSettings()" style="width:100%;background:var(--green);color:#000;border:none;padding:12px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;">
+          Save Settings
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <script>
 // ─── STATE ─────────────────────────────────────────────────
 let debugLogs = [];
+let currentSettings = {
+  provider: 'groq',
+  strategy: 'agentic',
+  groqKey: '',
+  geminiKey: '',
+  openrouterKey: '',
+  cerebrasKey: ''
+};
+
 function logEvent(ev) {
   debugLogs.push({ time: new Date().toISOString().slice(11,19), ...ev });
   const el = document.getElementById('debugLogContent');
@@ -450,17 +591,15 @@ let contextCount = 0;
 
 // ─── INIT ──────────────────────────────────────────────────
 async function init() {
-  const savedKey = localStorage.getItem('demoApiKey');
-  const savedProvider = localStorage.getItem('demoApiProvider');
-  if(savedKey) document.getElementById('apiKeyInput').value = savedKey;
-  if(savedProvider) document.getElementById('providerSelect').value = savedProvider;
-  updateMode(); // Ensures badge reflects saved state initially
+  // Load settings from localStorage
+  loadSettings();
+  updateStatusBadge();
 
   try {
     const r = await fetch('/api/index');
     indexData = await r.json();
     document.getElementById('statFiles').textContent = indexData.files.length;
-    document.getElementById('statSymbols').textContent = indexData.totalSymbols;
+    document.getElementById('statSymbols').textContent = indexData.totalSymbols || 0;
     document.getElementById('statChunks').textContent = indexData.totalChunks;
     
     if(indexData.files.length === 0) {
@@ -473,13 +612,281 @@ async function init() {
   }
 }
 
+// ─── SETTINGS MANAGEMENT ───────────────────────────────────
+function loadSettings() {
+  currentSettings.provider = localStorage.getItem('agent_provider') || 'groq';
+  currentSettings.strategy = localStorage.getItem('agent_strategy') || 'agentic';
+  currentSettings.groqKey = localStorage.getItem('agent_groq_key') || '';
+  currentSettings.geminiKey = localStorage.getItem('agent_gemini_key') || '';
+  currentSettings.openrouterKey = localStorage.getItem('agent_openrouter_key') || '';
+  currentSettings.cerebrasKey = localStorage.getItem('agent_cerebras_key') || '';
+}
+
+function saveSettingsToStorage() {
+  localStorage.setItem('agent_provider', currentSettings.provider);
+  localStorage.setItem('agent_strategy', currentSettings.strategy);
+  localStorage.setItem('agent_groq_key', currentSettings.groqKey);
+  localStorage.setItem('agent_gemini_key', currentSettings.geminiKey);
+  localStorage.setItem('agent_openrouter_key', currentSettings.openrouterKey);
+  localStorage.setItem('agent_cerebras_key', currentSettings.cerebrasKey);
+}
+
+function openSettings() {
+  // Populate modal with current settings
+  document.getElementById('providerSelect').value = currentSettings.provider;
+  document.getElementById('strategySelect').value = currentSettings.strategy;
+  document.getElementById('groqApiKey').value = currentSettings.groqKey;
+  document.getElementById('geminiApiKey').value = currentSettings.geminiKey;
+  document.getElementById('openrouterApiKey').value = currentSettings.openrouterKey;
+  document.getElementById('cerebrasApiKey').value = currentSettings.cerebrasKey;
+  
+  // Show/hide appropriate key section
+  updateKeyVisibility();
+  
+  document.getElementById('settingsModal').classList.add('open');
+  
+  // Add provider change listener
+  document.getElementById('providerSelect').onchange = updateKeyVisibility;
+}
+
+function closeSettings() {
+  document.getElementById('settingsModal').classList.remove('open');
+}
+
+function updateKeyVisibility() {
+  const provider = document.getElementById('providerSelect').value;
+  document.getElementById('groqKeySection').style.display = provider === 'groq' ? 'block' : 'none';
+  document.getElementById('geminiKeySection').style.display = provider === 'gemini' ? 'block' : 'none';
+  document.getElementById('openrouterKeySection').style.display = provider === 'openrouter' ? 'block' : 'none';
+  document.getElementById('cerebrasKeySection').style.display = provider === 'cerebras' ? 'block' : 'none';
+}
+
+function saveSettings() {
+  // Get values from modal
+  currentSettings.provider = document.getElementById('providerSelect').value;
+  currentSettings.strategy = document.getElementById('strategySelect').value;
+  currentSettings.groqKey = document.getElementById('groqApiKey').value.trim();
+  currentSettings.geminiKey = document.getElementById('geminiApiKey').value.trim();
+  currentSettings.openrouterKey = document.getElementById('openrouterApiKey').value.trim();
+  currentSettings.cerebrasKey = document.getElementById('cerebrasApiKey').value.trim();
+  
+  // Save to localStorage
+  saveSettingsToStorage();
+  
+  // Update UI
+  updateStatusBadge();
+  
+  // Close modal
+  closeSettings();
+  
+  // Show confirmation
+  const badge = document.getElementById('modeBadge');
+  const oldText = badge.textContent;
+  badge.textContent = '✓ SAVED';
+  setTimeout(() => {
+    updateStatusBadge();
+  }, 2000);
+}
+
+function updateStatusBadge() {
+  const badge = document.getElementById('modeBadge');
+  const hasKey = currentSettings.provider === 'groq' ? currentSettings.groqKey : currentSettings.geminiKey;
+  
+  if (hasKey) {
+    badge.style.background = 'rgba(63,185,80,.15)';
+    badge.style.color = 'var(--green)';
+    badge.textContent = `READY (${currentSettings.provider.toUpperCase()})`;
+  } else {
+    badge.style.background = 'rgba(227,179,65,.15)';
+    badge.style.color = 'var(--yellow)';
+    badge.textContent = 'NO API KEY';
+  }
+}
+
+function toggleVisibility(inputId) {
+  const input = document.getElementById(inputId);
+  input.type = input.type === 'password' ? 'text' : 'password';
+}
+
+async function testApiKey(provider) {
+  const btnId = provider === 'groq' ? 'testGroqBtn' : 'testGeminiBtn';
+  const inputId = provider === 'groq' ? 'groqApiKey' : 'geminiApiKey';
+  const btn = document.getElementById(btnId);
+  const apiKey = document.getElementById(inputId).value.trim();
+  
+  if (!apiKey) {
+    alert('Please enter an API key first');
+    return;
+  }
+  
+  btn.textContent = 'Testing...';
+  btn.disabled = true;
+  
+  try {
+    const r = await fetch('/api/test-key', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ provider, apiKey })
+    });
+    
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    
+    const data = await r.json();
+    
+    if (data.ok || data.success) {
+      btn.textContent = '✓ Valid';
+      btn.style.background = 'var(--green)';
+      setTimeout(() => {
+        btn.textContent = 'Test Connection';
+        btn.style.background = 'var(--blue)';
+      }, 2000);
+    } else {
+      btn.textContent = '✗ Invalid';
+      btn.style.background = 'var(--red)';
+      setTimeout(() => {
+        btn.textContent = 'Test Connection';
+        btn.style.background = 'var(--blue)';
+      }, 2000);
+    }
+  } catch(e) {
+    btn.textContent = '✗ Error';
+    btn.style.background = 'var(--red)';
+    setTimeout(() => {
+      btn.textContent = 'Test Connection';
+      btn.style.background = 'var(--blue)';
+    }, 2000);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function clearApiKey(provider) {
+  const inputMap = {
+    'groq': 'groqApiKey',
+    'gemini': 'geminiApiKey',
+    'openrouter': 'openrouterApiKey',
+    'cerebras': 'cerebrasApiKey'
+  };
+  const inputId = inputMap[provider];
+  if (inputId) {
+    document.getElementById(inputId).value = '';
+  }
+}
+
+// ─── RUN AGENT ─────────────────────────────────────────────
+async function runAgent() {
+  if (running) return;
+  const query = document.getElementById('queryInput').value.trim();
+  if (!query) { 
+    document.getElementById('queryInput').focus(); 
+    return; 
+  }
+  
+  // Get API key from current settings based on provider
+  let apiKey;
+  switch(currentSettings.provider) {
+    case 'groq': apiKey = currentSettings.groqKey; break;
+    case 'gemini': apiKey = currentSettings.geminiKey; break;
+    case 'openrouter': apiKey = currentSettings.openrouterKey; break;
+    case 'cerebras': apiKey = currentSettings.cerebrasKey; break;
+    default: apiKey = currentSettings.groqKey;
+  }
+  const provider = currentSettings.provider;
+  const strategy = currentSettings.strategy;
+  
+  if (!apiKey) {
+    alert('Please configure your API key in Settings first');
+    openSettings();
+    return;
+  }
+
+  running = true;
+  document.getElementById('runBtn').disabled = true;
+  document.getElementById('runBtn').textContent = '⏳ Running…';
+  resetPipeline(); 
+  setPipeStage(0);
+  clearContext();
+  finalAnswerElement = null; // Reset streaming answer
+
+  const wrap = document.getElementById('stepsWrap');
+  wrap.innerHTML = '';
+  
+  const emptyState = document.getElementById('emptyState');
+  if (emptyState) emptyState.style.display = 'none';
+
+  const modeLabel = `🤖 ${provider.toUpperCase()} ${strategy.toUpperCase()}`;
+  const modeColor = 'background:rgba(63,185,80,.15);color:var(--green)';
+
+  const qEl = document.createElement('div');
+  qEl.className = 'step';
+  qEl.innerHTML = `
+    <div class="step-icon" style="background:rgba(88,166,255,.2);color:var(--blue)">👤</div>
+    <div class="step-body">
+      <div class="step-label" style="color:var(--blue)">Query</div>
+      <div class="step-content"><strong>${escHtml(query)}</strong>
+        <span style="margin-left:10px;font-size:11px;padding:2px 6px;border-radius:10px;${modeColor}">${modeLabel}</span>
+      </div>
+    </div>`;
+  wrap.appendChild(qEl);
+
+  addTyping();
+
+  try {
+    const response = await fetch('/api/agent/stream', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, apiKey, provider, strategy })
+    });
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+
+      for (const line of lines) {
+        if (!line.trim() || !line.startsWith('data: ')) continue;
+        const data = JSON.parse(line.replace('data: ', ''));
+        logEvent(data);
+        removeTyping();
+
+        switch(data.type) {
+          case 'debug': console.log('DEBUG:', data.content); break;
+          case 'reasoning': 
+            console.log('🧠 REASONING EVENT RECEIVED:', data.content.substring(0, 100) + '...');
+            addReasoning(data.content); 
+            break;
+          case 'tool_call': addToolCall(data.tool, data.args); addTyping(); break;
+          case 'tool_result': addToolResult(data.tool, data.result); addTyping(); break;
+          case 'final_answer_chunk': updateFinalAnswer(data.content); break;
+          case 'final_answer': addFinalAnswer(data.content); break;
+          case 'error': addError(data.message); break;
+          case 'done': running = false; break;
+        }
+      }
+    }
+  } catch(err) {
+    removeTyping(); 
+    addError(err.message);
+  } finally {
+    running = false;
+    document.getElementById('runBtn').disabled = false;
+    document.getElementById('runBtn').textContent = 'Run Agent';
+  }
+}
+
 // ─── UPLOAD PROJECT FOLDER ─────────────────────────────────
 async function uploadFolder(e) {
   const files = e.target.files;
   if (!files.length) return;
   
   // Basic security filtering (client side)
-  const MAX_SIZE = 1000000; // 1MB limit per file speed
+  const MAX_SIZE = 5000000; // 5MB limit per file
   const validExts = /\.(js|jsx|ts|tsx|html|css|json|md|py|go|rs|java|c|cpp|h|hpp|cs|php|rb|txt)$/i;
   
   const toUpload = [];
@@ -533,36 +940,99 @@ async function uploadFolder(e) {
 function renderFileTree(files) {
   const tree = document.getElementById('fileTree');
   tree.innerHTML = '';
-  const dirMap = {};
-
+  
+  // Build hierarchical structure
+  const root = { name: '', children: {}, files: [] };
+  
   files.forEach(f => {
     const parts = f.path.split('/');
-    const dir = parts.slice(0, -1).join('/') || 'Root';
-    if (!dirMap[dir]) dirMap[dir] = [];
-    dirMap[dir].push(f);
+    let current = root;
+    
+    // Navigate/create folder structure
+    for (let i = 0; i < parts.length - 1; i++) {
+      const folderName = parts[i];
+      if (!current.children[folderName]) {
+        current.children[folderName] = { name: folderName, children: {}, files: [] };
+      }
+      current = current.children[folderName];
+    }
+    
+    // Add file to current folder
+    current.files.push(f);
   });
-
-  // Sort groups: Root first, then alphabetical
-  const sortedDirs = Object.keys(dirMap).sort((a,b) => (a==='Root' ? -1 : b==='Root' ? 1 : a.localeCompare(b)));
-
-  sortedDirs.forEach(dir => {
-    const group = document.createElement('div');
-    group.className = 'tree-group';
-    
-    const label = document.createElement('div');
-    label.style.cssText = 'padding:8px 10px 4px;font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;cursor:default;';
-    label.textContent = (dir === 'Root' ? '📂 ' : '📁 ') + dir;
-    tree.appendChild(label);
-    
-    dirMap[dir].sort((a,b) => a.path.localeCompare(b.path)).forEach(f => {
-      tree.appendChild(buildFileNode(f));
+  
+  // Render tree recursively
+  function renderNode(node, parentEl, depth = 0) {
+    // Render folders first (sorted)
+    const folderNames = Object.keys(node.children).sort();
+    folderNames.forEach(folderName => {
+      const folder = node.children[folderName];
+      const folderEl = createFolderNode(folder, depth);
+      parentEl.appendChild(folderEl);
+      
+      // Recursively render children
+      const childrenContainer = folderEl.querySelector('.tree-folder-children');
+      renderNode(folder, childrenContainer, depth + 1);
     });
-  });
+    
+    // Render files (sorted)
+    node.files.sort((a, b) => a.path.localeCompare(b.path)).forEach(f => {
+      parentEl.appendChild(buildFileNode(f, depth));
+    });
+  }
+  
+  renderNode(root, tree);
 }
 
-function buildFileNode(f) {
-  const ext = f.path.split('.').pop();
-  const icon = ext === 'js' ? '🟡' : ext === 'ts' ? '🔵' : '📄';
+function createFolderNode(folder, depth) {
+  const wrap = document.createElement('div');
+  wrap.className = 'tree-folder';
+  
+  // Count total files in folder (recursive)
+  function countFiles(node) {
+    let count = node.files.length;
+    Object.values(node.children).forEach(child => count += countFiles(child));
+    return count;
+  }
+  const fileCount = countFiles(folder);
+  
+  const header = document.createElement('div');
+  header.className = 'tree-folder-header';
+  header.innerHTML = `
+    <span class="tree-folder-chevron">▶</span>
+    <span class="tree-folder-icon">📁</span>
+    <span class="tree-folder-name">${folder.name}</span>
+    <span class="tree-folder-count">${fileCount}</span>
+  `;
+  
+  const children = document.createElement('div');
+  children.className = 'tree-folder-children';
+  
+  header.onclick = (e) => {
+    e.stopPropagation();
+    const chevron = header.querySelector('.tree-folder-chevron');
+    const icon = header.querySelector('.tree-folder-icon');
+    chevron.classList.toggle('expanded');
+    children.classList.toggle('expanded');
+    icon.textContent = children.classList.contains('expanded') ? '📂' : '📁';
+  };
+  
+  wrap.appendChild(header);
+  wrap.appendChild(children);
+  return wrap;
+}
+
+function buildFileNode(f, depth) {
+  const ext = f.path.split('.').pop().toLowerCase();
+  const iconMap = {
+    'js': '🟨', 'jsx': '⚛️', 'ts': '🔷', 'tsx': '⚛️',
+    'html': '🌐', 'css': '🎨', 'json': '📋',
+    'md': '📝', 'txt': '📄', 'py': '🐍',
+    'java': '☕', 'go': '🐹', 'rs': '🦀',
+    'c': '©️', 'cpp': '©️', 'h': '©️'
+  };
+  const icon = iconMap[ext] || '📄';
+  
   const wrap = document.createElement('div');
   wrap.className = 'tree-file';
   wrap.dataset.path = f.path;
@@ -573,26 +1043,67 @@ function buildFileNode(f) {
     <span class="tree-file-icon">${icon}</span>
     <span class="tree-file-name">${f.path.split('/').pop()}</span>
     <span class="tree-file-lines">${f.lines}L</span>
+    <span class="tree-file-delete" title="Delete file">✕</span>
   `;
-  header.onclick = () => {
+  
+  // Delete button handler
+  const deleteBtn = header.querySelector('.tree-file-delete');
+  deleteBtn.onclick = async (e) => {
+    e.stopPropagation();
+    
+    try {
+      const r = await fetch('/api/delete-file', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: f.path })
+      });
+      
+      const result = await r.json();
+      if (result.ok) {
+        wrap.remove();
+        // Update stats
+        const currentFiles = parseInt(document.getElementById('statFiles').textContent);
+        document.getElementById('statFiles').textContent = currentFiles - 1;
+      } else {
+        alert('Failed to delete file: ' + result.error);
+      }
+    } catch (err) {
+      alert('Error deleting file: ' + err.message);
+    }
+  };
+  
+  header.onclick = (e) => {
+    if (e.target.classList.contains('tree-file-delete')) return;
+    e.stopPropagation();
     document.querySelectorAll('.tree-file-header').forEach(h => h.classList.remove('active-file'));
     header.classList.add('active-file');
-    syms.classList.toggle('open');
+    
+    // Toggle symbols if they exist
+    if (f.symbols && f.symbols.length > 0) {
+      syms.classList.toggle('open');
+    }
+    
     openFile(f.path);
   };
 
   const syms = document.createElement('div');
   syms.className = 'tree-symbols';
-  f.symbols.forEach(s => {
-    const sym = document.createElement('div');
-    sym.className = 'tree-sym';
-    const typeClass = s.type === 'class' ? 'sym-class' : s.type === 'arrow' ? 'sym-arrow' : 'sym-fn';
-    const typeLabel = s.type === 'class' ? 'cls' : 'fn';
-    sym.innerHTML = `<span class="sym-type ${typeClass}">${typeLabel}</span><span>${s.name}</span>`;
-    sym.title = `L${s.startLine}–${s.endLine}`;
-    sym.onclick = (e) => { e.stopPropagation(); openFileAtLine(f.path, s.startLine, s.endLine); };
-    syms.appendChild(sym);
-  });
+  
+  if (f.symbols && f.symbols.length > 0) {
+    f.symbols.forEach(s => {
+      const sym = document.createElement('div');
+      sym.className = 'tree-sym';
+      const typeClass = s.type === 'class' ? 'sym-class' : s.type === 'arrow' ? 'sym-arrow' : 'sym-fn';
+      const typeLabel = s.type === 'class' ? 'cls' : 'fn';
+      sym.innerHTML = `<span class="sym-type ${typeClass}">${typeLabel}</span><span>${s.name}</span>`;
+      sym.title = `L${s.startLine}–${s.endLine}`;
+      sym.onclick = (e) => { 
+        e.stopPropagation(); 
+        openFileAtLine(f.path, s.startLine, s.endLine); 
+      };
+      syms.appendChild(sym);
+    });
+  }
 
   wrap.appendChild(header);
   wrap.appendChild(syms);
@@ -755,6 +1266,33 @@ function addThought(text) {
   el.scrollIntoView({ behavior: 'smooth', block: 'end' });
 }
 
+function addReasoning(text) {
+  // SIGNAL: Show reasoning badge in topbar
+  const reasoningBadge = document.getElementById('reasoningBadge');
+  if (reasoningBadge) {
+    reasoningBadge.style.display = 'inline-block';
+    reasoningBadge.style.animation = 'pulse 1s infinite';
+  }
+  
+  setPipeStage(Math.min(pipeStage + 1, 4));
+  const el = document.createElement('div');
+  el.className = 'step';
+  el.innerHTML = `
+    <div class="step-icon icon-thought" style="background:rgba(188,140,255,.2);border:2px solid var(--purple);">🧠</div>
+    <div class="step-body">
+      <div class="step-label step-label-thought" style="color:var(--purple);font-weight:700;">
+        💭 THINKING PROCESS (REASONING DETECTED)
+      </div>
+      <div class="step-content" style="border-left:3px solid var(--purple);background:rgba(188,140,255,.05);">
+        <span class="thought-text" style="color:var(--text);font-style:normal;line-height:1.7;">${escHtml(text)}</span>
+      </div>
+    </div>`;
+  getStepsContainer().appendChild(el);
+  el.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  
+  console.log('[REASONING DISPLAYED]', text.substring(0, 100));
+}
+
 function addToolCall(tool, args) {
   if (tool === 'search_codebase') setPipeStage(1);
   else if (tool === 'find_symbol') setPipeStage(2);
@@ -785,11 +1323,14 @@ function addToolResult(tool, result) {
   if (tool === 'search_codebase' && Array.isArray(result)) {
     const rows = result.map(r => {
       const barW = Math.round((r.score / (result[0].score || 1)) * 60);
+      const score = r.score ? r.score.toFixed(2) : '0.00';
+      const startLine = r.startLine || 1;
+      const endLine = r.endLine || (startLine + 40);
       return `<tr>
         <td>${escHtml(r.file)}</td>
-        <td style="color:var(--purple)">${escHtml(r.name)}</td>
-        <td><span style="color:var(--green);font-weight:700">${r.score}</span><span class="score-bar" style="width:${barW}px"></span></td>
-        <td style="color:var(--text3)">L${r.startLine}–${r.endLine}</td>
+        <td style="color:var(--purple)">—</td>
+        <td><span style="color:var(--green);font-weight:700">${score}</span><span class="score-bar" style="width:${barW}px"></span></td>
+        <td style="color:var(--text3)">L${startLine}–${endLine}</td>
       </tr>`;
     }).join('');
     bodyHtml = `<table class="result-table"><thead><tr><th>File</th><th>Symbol</th><th>BM25 Score</th><th>Lines</th></tr></thead><tbody>${rows}</tbody></table>`;
@@ -798,12 +1339,14 @@ function addToolResult(tool, result) {
     bodyHtml = `<table class="result-table"><thead><tr><th>Symbol</th><th>File</th><th>Location</th><th>Type</th></tr></thead><tbody>${rows}</tbody></table>`;
   } else if (tool === 'read_file' && result.content) {
     const lines = result.content.split('\n');
-    const preview = lines.slice(0, 12).map((l,i) => `<span style="color:var(--text3)">${String(result.startLine+i).padStart(3,' ')}  </span>${escHtml(l)}`).join('\n');
-    const more = lines.length > 12 ? `\n<span style="color:var(--text3)">… ${lines.length-12} more lines</span>` : '';
+    const totalLines = lines.length;
+    const linesRead = Math.min(12, totalLines);
+    const preview = lines.slice(0, linesRead).map((l,i) => `<span style="color:var(--text3)">${String(i+1).padStart(3,' ')}  </span>${escHtml(l)}`).join('\n');
+    const more = totalLines > linesRead ? `\n<span style="color:var(--text3)">… ${totalLines - linesRead} more lines</span>` : '';
     bodyHtml = `
       <div style="font-size:11px;color:var(--text2);margin-bottom:5px;">
-        <span style="color:var(--green)">✓</span> Read <strong>${result.linesRead}</strong> of <strong>${result.totalLines}</strong> lines
-        (skipped <strong>${result.totalLines - result.linesRead}</strong>)
+        <span style="color:var(--green)">✓</span> Read <strong>${linesRead}</strong> of <strong>${totalLines}</strong> lines
+        (skipped <strong>${totalLines - linesRead}</strong>)
       </div>
       <div class="result-raw">${preview}${more}</div>`;
   } else if (tool === 'grep' && Array.isArray(result)) {
@@ -826,7 +1369,38 @@ function addToolResult(tool, result) {
   addContextItem(tool, result);
 }
 
+let finalAnswerElement = null;
+
+function updateFinalAnswer(text) {
+  setPipeStage(5);
+  
+  if (!finalAnswerElement) {
+    finalAnswerElement = document.createElement('div');
+    finalAnswerElement.className = 'step';
+    finalAnswerElement.innerHTML = `
+      <div class="step-icon icon-answer">✨</div>
+      <div class="step-body">
+        <div class="step-label step-label-answer">Agent Answer</div>
+        <div class="step-content"><div class="answer-md" id="streamingAnswer"></div></div>
+      </div>`;
+    getStepsContainer().appendChild(finalAnswerElement);
+  }
+  
+  const answerDiv = document.getElementById('streamingAnswer');
+  if (answerDiv) {
+    answerDiv.innerHTML = renderMd(text);
+    finalAnswerElement.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }
+}
+
 function addFinalAnswer(text) {
+  if (finalAnswerElement) {
+    // Already streaming, just finalize
+    finalAnswerElement = null;
+    return;
+  }
+  
+  // Non-streaming path
   setPipeStage(5);
   const el = document.createElement('div');
   el.className = 'step';
@@ -871,146 +1445,16 @@ function addError(msg) {
   el.scrollIntoView({ behavior: 'smooth', block: 'end' });
 }
 
-// ─── RUN AGENT ─────────────────────────────────────────────
-function toggleKeyVisibility() {
-  const input = document.getElementById('apiKeyInput');
-  const icon = document.getElementById('toggleKey');
-  if (input.type === 'password') {
-    input.type = 'text';
-    icon.textContent = '🔒';
-  } else {
-    input.type = 'password';
-    icon.textContent = '👁️';
-  }
-}
-
-async function testKey() {
-  const provider = document.getElementById('providerSelect').value;
-  const key = document.getElementById('apiKeyInput').value.trim();
-  const btn = document.getElementById('testKeyBtn');
-  if(!key) return alert('Enter a key first');
-  
-  btn.textContent = 'Checking...';
-  btn.style.color = 'var(--yellow)';
-  
-  try {
-    const r = await fetch('/api/test-key', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ provider, key })
-    });
-    const data = await r.json();
-    if(data.ok) {
-      btn.textContent = '✅ Valid';
-      btn.style.color = 'var(--green)';
-    } else {
-      btn.textContent = '❌ Fail';
-      btn.style.color = 'var(--red)';
-      addError(`Validation Failed (${provider.toUpperCase()}): ${data.error || 'Check your key'}`);
-    }
-  } catch(e) {
-    btn.textContent = 'Error';
-    addError(`System Error: ${e.message}`);
-  }
-}
-
-async function runAgent() {
-  if (running) return;
-  const query = document.getElementById('queryInput').value.trim();
-  if (!query) { document.getElementById('queryInput').focus(); return; }
-  const apiKey = document.getElementById('apiKeyInput').value.trim();
-  const provider = document.getElementById('providerSelect').value;
-
-  running = true;
-  document.getElementById('runBtn').disabled = true;
-  document.getElementById('runBtn').textContent = '⏳ Running…';
-  resetPipeline(); setPipeStage(0);
-  clearContext();
-
-  const wrap = document.getElementById('stepsWrap');
-  wrap.innerHTML = '';
-
-  const modeLabel = apiKey ? `🤖 ${provider.toUpperCase()} Live` : '📼 Demo Mode';
-  const modeColor = apiKey ? 'background:rgba(63,185,80,.15);color:var(--green)' : 'background:rgba(227,179,65,.15);color:var(--yellow)';
-
-  const qEl = document.createElement('div');
-  qEl.className = 'step';
-  qEl.innerHTML = `
-    <div class="step-icon" style="background:rgba(88,166,255,.2);color:var(--blue)">👤</div>
-    <div class="step-body">
-      <div class="step-label" style="color:var(--blue)">Query</div>
-      <div class="step-content"><strong>${escHtml(query)}</strong>
-        <span style="margin-left:10px;font-size:11px;padding:2px 6px;border-radius:10px;${modeColor}">${modeLabel}</span>
-      </div>
-    </div>`;
-  wrap.appendChild(qEl);
-
-  addTyping();
-
-  try {
-    const response = await fetch('/api/agent/stream', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query, apiKey, provider })
-    });
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop(); // Keep partial line in buffer
-
-      for (const line of lines) {
-        if (!line.trim() || !line.startsWith('data: ')) continue;
-        const data = JSON.parse(line.replace('data: ', ''));
-        logEvent(data);
-        removeTyping();
-
-        switch(data.type) {
-          case 'debug': console.log('DEBUG:', data.content); break; // Handled in logEvent
-          case 'thought': addThought(data.content); addTyping(); break;
-          case 'tool_call': addToolCall(data.tool, data.args); addTyping(); break;
-          case 'tool_result': addToolResult(data.tool, data.result); addTyping(); break;
-          case 'final_answer': addFinalAnswer(data.content); break;
-          case 'error': addError(data.message); break;
-          case 'done': running = false; break;
-        }
-      }
-    }
-  } catch(err) {
-    removeTyping(); addError(err.message);
-  } finally {
-    running = false;
-    document.getElementById('runBtn').disabled = false;
-    document.getElementById('runBtn').textContent = 'Run Agent';
-  }
-}
-
 // ─── HELPERS ───────────────────────────────────────────────
 function setSug(el) {
   document.getElementById('queryInput').value = el.textContent;
   document.getElementById('queryInput').focus();
 }
-function updateMode() {
-  const key = document.getElementById('apiKeyInput').value.trim();
-  const provider = document.getElementById('providerSelect').value;
-  
-  if (key) localStorage.setItem('demoApiKey', key);
-  else localStorage.removeItem('demoApiKey');
-  localStorage.setItem('demoApiProvider', provider);
 
-  const badge = document.getElementById('modeBadge');
-  badge.className = 'badge ' + (key ? 'badge-live' : 'badge-demo');
-  badge.textContent = key ? 'LIVE MODE' : 'DEMO MODE';
-}
 function escHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
 function renderMd(text) {
   // Basic markdown: ```code```, `inline`, **bold**, \n
   return text
@@ -1019,6 +1463,29 @@ function renderMd(text) {
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     .replace(/\n/g, '<br>');
 }
+
+async function clearAllFiles() {
+  try {
+    const r = await fetch('/api/clear-all', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    
+    const result = await r.json();
+    if (result.ok) {
+      document.getElementById('fileTree').innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px;">Workspace cleared. Upload a project to get started.</div>';
+      document.getElementById('statFiles').textContent = '0';
+      document.getElementById('statSymbols').textContent = '0';
+      document.getElementById('statChunks').textContent = '0';
+      indexData = { files: [], totalChunks: 0, totalSymbols: 0 };
+    } else {
+      alert('Failed to clear workspace: ' + result.error);
+    }
+  } catch (err) {
+    alert('Error clearing workspace: ' + err.message);
+  }
+}
+
 function showIndexInfo() {
   if (!indexData) return;
   alert(`Index Stats:\n• Files: ${indexData.files.length}\n• Symbols: ${indexData.totalSymbols}\n• BM25 chunks: ${indexData.totalChunks}\n\nFiles:\n${indexData.files.map(f=>` ${f.path} (${f.lines}L, ${f.symbols.length} syms)`).join('\n')}`);
